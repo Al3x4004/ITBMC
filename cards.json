@@ -1,0 +1,13 @@
+[
+  { "id": "c001", "name": "Escudo del Alba",       "rarity": "comun",     "image": "gacha/images/comun/carta_01.png",     "description": "Un viejo escudo que aún brilla." },
+  { "id": "c002", "name": "Daga Susurrante",        "rarity": "comun",     "image": "gacha/images/comun/carta_02.png",     "description": "Silenciosa como la noche." },
+  { "id": "c003", "name": "Capa del Novato",        "rarity": "comun",     "image": "gacha/images/comun/carta_03.png",     "description": "Desgastada pero funcional." },
+  { "id": "c004", "name": "Espada Rúnica",          "rarity": "rara",      "image": "gacha/images/rara/carta_01.png",      "description": "Inscrita con hechizos olvidados." },
+  { "id": "c005", "name": "Capa del Viajero",       "rarity": "rara",      "image": "gacha/images/rara/carta_02.png",      "description": "Ha recorrido mil reinos." },
+  { "id": "c006", "name": "Anillo de Maná",         "rarity": "rara",      "image": "gacha/images/rara/carta_03.png",      "description": "Pulsa con energía arcana." },
+  { "id": "c007", "name": "Armadura del Dragón",    "rarity": "epica",     "image": "gacha/images/epica/carta_01.png",     "description": "Forjada con escamas de dragón." },
+  { "id": "c008", "name": "Báculo del Caos",        "rarity": "epica",     "image": "gacha/images/epica/carta_02.png",     "description": "Canaliza energías inestables." },
+  { "id": "c009", "name": "Yelmo del Guardián",     "rarity": "epica",     "image": "gacha/images/epica/carta_03.png",     "description": "Protege la mente y el cuerpo." },
+  { "id": "c010", "name": "Corona del Dungeon Master", "rarity": "legendaria", "image": "gacha/images/legendaria/carta_01.png", "description": "Solo los más valientes la portan." },
+  { "id": "c011", "name": "Espada del Destino",     "rarity": "legendaria", "image": "gacha/images/legendaria/carta_02.png", "description": "Forjada en los albores del tiempo." }
+]
