@@ -387,6 +387,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
         </div>
       </div>
     </div>
+    <div id="adm-delete-wrap" style="display:none;margin-bottom:1rem;">
+      <button class="btn btn-sm" style="background:rgba(216,90,48,.15);color:#f08060;border-color:rgba(216,90,48,.3);width:100%;" onclick="deletePlayer()">🗑️ Eliminar personaje</button>
+    </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;">
       <button class="btn" onclick="closeEdit()">Cancelar</button>
       <button class="btn btn-p" onclick="saveEdit()">Guardar cambios</button>
@@ -614,8 +617,8 @@ function doLogout(){
 function enterApp(){
   showScreen('screen-app');
   const p=players.find(p=>p.id===session.playerId);
-  document.getElementById('ulabel').textContent=session.isAdmin?'Admin 👑':(p?p.name.split(' ')[0]:'—');
-  document.getElementById('umname').textContent=session.isAdmin?'👑 Dungeon Master':(p?p.name:'—');
+  document.getElementById('ulabel').textContent=session.isAdmin?'Dios 👑':(p?p.name.split(' ')[0]:'—');
+  document.getElementById('umname').textContent=session.isAdmin?'👑 Dios':(p?p.name:'—');
   if(CFG.MODE==='local'){
     document.getElementById('mode-ban-wrap').innerHTML=`
       <div class="mode-ban">
@@ -729,6 +732,10 @@ function mCard(m){
   const completedBtn=canComplete&&m.status!=='done'
     ?`<button class="btn-complete" onclick="completeMission('${m.id}')">✓ Completar</button>`:'';
   const statusBadge=m.status==='done'?`<span class="badge b-teal">Completada</span>`:m.status==='active'?`<span class="badge b-gold">En curso</span>`:`<span class="badge b-gray">Pendiente</span>`;
+  const assignSel=session.isAdmin?`<select class="sstat" onchange="assignMission('${m.id}',this.value)" style="font-size:11px;">
+    <option value="">Sin asignar</option>
+    ${players.map(p=>`<option value="${p.id}" ${m.playerId===p.id?'selected':''}>${p.emblem} ${p.name.split(' ')[0]}</option>`).join('')}
+    </select>`:'';
   return `<div class="mcrd ${m.daily?'daily-mission':''}">
     <div class="minfo">
       <div class="mname">${m.name}${dailyBadge}</div>
@@ -740,9 +747,17 @@ function mCard(m){
       <span class="badge dS" style="display:none"></span>
       <span class="badge d${m.diff}">${m.diff}</span>
       ${statusBadge}
+      ${assignSel}
       ${completedBtn}
     </div>
   </div>`;
+}
+
+function assignMission(missionId, playerId){
+  const m=missions.find(m=>m.id===missionId);if(!m)return;
+  m.playerId=playerId;
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  renderAll();toast('Misión asignada');
 }
 
 function completeMission(id){
@@ -774,18 +789,41 @@ function closeReward(){document.getElementById('reward-pop').classList.remove('s
 
 /* ── héroes ── */
 function renderHeroTabs(){
+  let tabs=players.map((p,i)=>
+    `<div class="htab ${i===curHero&&curHero!=='admin'?'active':''}" onclick="selectHero(${i})"><span class="hdot" style="background:${p.color};"></span>${p.emblem} ${p.name.split(' ')[0]}</div>`
+  ).join('');
+  if(session.isAdmin){
+    tabs+=`<div class="htab ${'admin'===curHero?'active':''}" onclick="selectHero('admin')" style="border-color:rgba(228,164,40,.3);"><span class="hdot" style="background:#e4a428;"></span>👑 Dios</div>`;
+  }
+  document.getElementById('htabs').innerHTML=tabs;
+}
+function renderHeroTabsOLD(){
   document.getElementById('htabs').innerHTML=players.map((p,i)=>
     `<div class="htab ${i===curHero?'active':''}" onclick="selectHero(${i})"><span class="hdot" style="background:${p.color};"></span>${p.emblem} ${p.name.split(' ')[0]}</div>`).join('');
-}
-function selectHero(i){curHero=i;renderHeroTabs();renderHeroProfile(i);}
+}//legacy
+function selectHero(i){curHero=i;renderHeroTabs();renderHeroProfile(i==='admin'?'admin':i);}
 function goToMyProfile(){
   document.getElementById('umenu').style.display='none';
   const idx=players.findIndex(p=>p.id===session.playerId);
   if(idx>=0){curHero=idx;showPage('heroes',document.querySelector('.nb:nth-child(2)'));renderHeroProfile(idx);}
 }
 
+function getAdminProfile(){
+  const allCards=gachaCards.map(c=>({cardId:c.id,obtainedAt:'2000-01-01'}));
+  return {
+    id:'admin_special',realName:'',name:'Dios',cls:'—',role:'Omnisciente',
+    emblem:'👑',color:'#e4a428',colorBg:'rgba(228,164,40,0.15)',
+    level:99,xp:999999,xpNext:999999,gold:Infinity,missions:999,
+    weapon:'La Palabra',armor:'Armadura Divina',accessory:'Corona Eterna',
+    lore:'Existía antes de que el primer personaje fuera creado. Su poder no tiene límites ni necesita demostración.',
+    quote:'Yo soy el principio y el fin de este repo.',
+    pin:'',attrs:{fue:20,int:20,agi:20,car:20,sab:20},
+    gachaTokens:Infinity,gallery:allCards,lastDaily:''
+  };
+}
+
 function renderHeroProfile(i){
-  const p=players[i];if(!p)return;
+  const p=(session.isAdmin&&i==='admin')?getAdminProfile():players[i];if(!p)return;
   const xpPct=Math.round(p.xp/p.xpNext*100);
   const canEdit=session.isAdmin||session.playerId===p.id;
   const recent=missions.filter(m=>m.playerId===p.id&&m.status==='done').slice(-3);
@@ -800,7 +838,7 @@ function renderHeroProfile(i){
           <div class="av av-lg" style="background:${p.colorBg};border-color:${p.color};">${p.emblem}</div>
           <div style="flex:1;min-width:0;">
             <span class="badge b-purple" style="margin-bottom:6px;display:inline-block;">Nivel ${p.level} · ${p.cls}</span>
-            <div class="pname">${p.name}${session.isAdmin?'<span class="adm-rib">ADMIN</span>':''}</div>
+            <div class="pname">${p.name}${session.isAdmin?'<span class="adm-rib">DIOS</span>':`<span class="adm-rib" style="display:none"></span>`}</div>
             <div class="pclass">${p.role}</div>
             <div class="pquote">"${p.quote}"</div>
           </div>
@@ -858,7 +896,7 @@ function renderArcs(){
 
 /* ── ranking ── */
 function renderRanking(){
-  const sorted=[...players].sort((a,b)=>b.xp-a.xp);
+  const sorted=[...players].filter(p=>p.id!=='admin_special').sort((a,b)=>b.xp-a.xp);
   document.getElementById('rank-list').innerHTML=sorted.map((p,i)=>{
     const rc=i===0?'gold':i===1?'silver':i===2?'bronze':'';
     const rs=i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`;
@@ -875,7 +913,7 @@ function renderRanking(){
 /* ══ GACHA ══ */
 function renderGachaGold(){
   const p=players.find(p=>p.id===session.playerId);
-  document.getElementById('gacha-gold-display').textContent=p?`${p.gold} oro`:'— oro';
+  document.getElementById('gacha-gold-display').textContent=session.isAdmin?'∞ oro':p?`${p.gold} oro`:'— oro';
 }
 
 function getRarityByChance(){
@@ -896,8 +934,10 @@ function doPull(times){
   const p=players.find(pl=>pl.id===session.playerId);
   if(!p){toast('Inicia sesión para invocar.');return;}
   const cost=times===1?100:900;
-  if(p.gold<cost){toast(`Necesitas ${cost} oro para invocar.`);return;}
-  p.gold-=cost;
+  if(!session.isAdmin){
+    if(!p||p.gold<cost){toast(`Necesitas ${cost} oro para invocar.`);return;}
+    p.gold-=cost;
+  }
   const cards=Array.from({length:times},()=>pullCard());
   cards.forEach(c=>{if(!p.gallery)p.gallery=[];p.gallery.push({cardId:c.id,obtainedAt:new Date().toISOString()});});
   const reveal=document.getElementById('card-reveal');
@@ -965,11 +1005,28 @@ function openEditModal(pid){
   const ee=document.getElementById('e-emblems');ee.innerHTML='';
   EMBLEMS.forEach(e=>{const d=document.createElement('div');d.style.cssText=`width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;border:1px solid ${e===p.emblem?'var(--accent)':'var(--border)'};background:${e===p.emblem?'var(--bg3)':'transparent'};transition:all .15s;`;d.textContent=e;d.onclick=()=>{p.emblem=e;ee.querySelectorAll('div').forEach(x=>x.style.borderColor='var(--border)');d.style.borderColor='var(--accent)';};ee.appendChild(d);});
   const ae=document.getElementById('adm-extras');
-  if(session.isAdmin){ae.style.display='block';document.getElementById('e-xp').value=p.xp;document.getElementById('e-gold').value=p.gold;document.getElementById('e-cls').value=p.cls;}
-  else ae.style.display='none';
+  const ad=document.getElementById('adm-delete-wrap');
+  if(session.isAdmin){
+    ae.style.display='block';ad.style.display='block';
+    document.getElementById('e-xp').value=p.xp;
+    document.getElementById('e-gold').value=p.gold;
+    document.getElementById('e-cls').value=p.cls;
+  }else{ae.style.display='none';ad.style.display='none';}
   document.getElementById('modal-edit').style.display='block';
 }
 function closeEdit(){document.getElementById('modal-edit').style.display='none';editPid=null;}
+function deletePlayer(){
+  if(!session.isAdmin)return;
+  const p=players.find(p=>p.id===editPid);
+  if(!p)return;
+  if(!confirm('¿Seguro que quieres eliminar a '+p.name+'? Esta acción no se puede deshacer.'))return;
+  players=players.filter(p=>p.id!==editPid);
+  missions=missions.map(m=>m.playerId===editPid?{...m,playerId:''}:m);
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  closeEdit();renderAll();
+  if(curHero>=players.length)curHero=0;
+  toast('Personaje eliminado');
+}
 function saveEdit(){
   const p=players.find(p=>p.id===editPid);if(!p)return;
   p.name=document.getElementById('e-name').value.trim()||p.name;
