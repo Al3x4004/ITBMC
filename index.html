@@ -255,6 +255,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 #modal-edit{background:rgba(0,0,0,0.4);}
 #modal-edit > div{background:var(--bg2);border:0.5px solid var(--border2);}
 
+/* ══ TOAST ══ */
+#toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);border-radius:var(--radius);padding:9px 18px;font-size:13px;display:none;z-index:999;}
+@media(max-width:600px){.g4{grid-template-columns:repeat(2,1fr);}.pbody{grid-template-columns:1fr;}.cgrid{grid-template-columns:repeat(2,1fr);}.nav{display:none;}}
+
 /* ══ CALENDARIO ══ */
 .cal-shell{display:grid;grid-template-columns:1fr 300px;gap:1.25rem;}
 .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
@@ -295,52 +299,39 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 let calState={year:new Date().getFullYear(),month:new Date().getMonth(),selectedDate:null,filter:'all',editingEventId:null};
 
 function renderCalendar(){
-  const {year,month,selectedDate,filter}=calState;
-  const today=new Date();
-  const firstDay=new Date(year,month,1);
-  const lastDay=new Date(year,month+1,0);
-  const startDow=(firstDay.getDay()+6)%7; // Mon=0
-  const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  document.getElementById('cal-month-label').textContent=months[month]+' '+year;
-
-  // Build grid
-  const grid=document.getElementById('cal-grid');
+  var yr=calState.year,mo=calState.month,selD=calState.selectedDate,fil=calState.filter;
+  var today=new Date();
+  var firstDay=new Date(yr,mo,1);
+  var lastDay=new Date(yr,mo+1,0);
+  var startDow=(firstDay.getDay()+6)%7;
+  var mnames=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var lbl=document.getElementById('cal-month-label');
+  if(lbl)lbl.textContent=mnames[mo]+' '+yr;
+  var grid=document.getElementById('cal-grid');
   if(!grid)return;
-  const dows=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-  let html=dows.map(d=>'<div class="cal-dow">'+d+'</div>').join('');
-
-  // Prev month padding
-  const prevLast=new Date(year,month,0).getDate();
-  for(let i=startDow-1;i>=0;i--){
-    const d=prevLast-i;
-    html+='<div class="cal-day other-month"><div class="cal-day-num">'+d+'</div></div>';
+  var dows=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  var html=dows.map(function(d){return '<div class="cal-dow">'+d+'</div>';}).join('');
+  var prevLast=new Date(yr,mo,0).getDate();
+  for(var i=startDow-1;i>=0;i--){
+    html+='<div class="cal-day other-month"><div class="cal-day-num">'+(prevLast-i)+'</div></div>';
   }
-
-  // Current month days
-  for(let d=1;d<=lastDay.getDate();d++){
-    const dateStr=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    const isToday=d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear();
-    const isSel=selectedDate===dateStr;
-    const dayEvs=getFilteredEvents(filter).filter(e=>e.date===dateStr);
-    const evDots=dayEvs.slice(0,3).map(e=>'<div class="cal-event '+e.type+'" onclick="event.stopPropagation();openEventModal(''+e.id+'')" title="'+e.title+'">'+e.title+'</div>').join('');
-    html+='<div class="cal-day'+(isToday?' today':'')+(isSel?' selected':'')+'" onclick="selectCalDay(''+dateStr+'')">'
-      +'<div class="cal-day-num">'+d+'</div>'+evDots+'</div>';
+  for(var day=1;day<=lastDay.getDate();day++){
+    var ds=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    var isToday=day===today.getDate()&&mo===today.getMonth()&&yr===today.getFullYear();
+    var isSel=selD===ds;
+    var dayEvs=getFilteredEvents(fil).filter(function(e){return e.date===ds;});
+    var evDots=dayEvs.slice(0,3).map(function(ev){
+      return '<div class="cal-event '+ev.type+'" onclick="event.stopPropagation();openEventModal(\''+ev.id+'\')" title="'+ev.title+'">'+ev.title+'</div>';
+    }).join('');
+    var cls='cal-day'+(isToday?' today':'')+(isSel?' selected':'');
+    html+='<div class="'+cls+'" onclick="selectCalDay(\''+ds+'\')"><div class="cal-day-num">'+day+'</div>'+evDots+'</div>';
   }
-
-  // Next month padding
-  const totalCells=startDow+lastDay.getDate();
-  const remainder=totalCells%7===0?0:7-(totalCells%7);
-  for(let d=1;d<=remainder;d++){
-    html+='<div class="cal-day other-month"><div class="cal-day-num">'+d+'</div></div>';
-  }
+  var rem=(startDow+lastDay.getDate())%7;
+  if(rem>0){for(var pd=1;pd<=7-rem;pd++)html+='<div class="cal-day other-month"><div class="cal-day-num">'+pd+'</div></div>';}
   grid.innerHTML=html;
-
-  // Selected day panel
-  const selDate=selectedDate||formatDate(today);
-  renderDayEvents(selDate);
+  renderDayEvents(selD||formatDate(today));
   renderUpcoming();
 }
-
 function formatDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 
 function getFilteredEvents(filter){
@@ -381,15 +372,15 @@ function renderUpcoming(){
 }
 
 function eventItemHTML(e){
-  const m=missions.find(mx=>mx.id===e.missionId);
-  const typeLabel={personal:'Personal',team:'Equipo',mission:'Misión'}[e.type]||e.type;
-  return '<div class="event-item '+e.type+'" onclick="openEventModal(''+e.id+'')">'
+  var m=missions.find(function(mx){return mx.id===e.missionId;});
+  var typeLabel={personal:'Personal',team:'Equipo',mission:'Misión'}[e.type]||e.type;
+  var badgeCls=e.type==='team'?'b-teal':e.type==='mission'?'b-gold':'b-purple';
+  return '<div class="event-item '+e.type+'" onclick="openEventModal(\''+e.id+'\')">' 
     +'<div class="event-title">'+e.title+'</div>'
     +'<div class="event-meta">'+e.date+(e.time?' · '+e.time:'')+(m?' · '+m.name:'')+'</div>'
-    +'<span class="event-tag badge '+(e.type==='team'?'b-teal':e.type==='mission'?'b-gold':'b-purple')+'">'+typeLabel+'</span>'
+    +'<span class="event-tag badge '+badgeCls+'">'+typeLabel+'</span>'
     +'</div>';
 }
-
 function calNav(dir){
   if(dir===0){calState.year=new Date().getFullYear();calState.month=new Date().getMonth();}
   else{calState.month+=dir;if(calState.month>11){calState.month=0;calState.year++;}else if(calState.month<0){calState.month=11;calState.year--;}}
@@ -452,9 +443,47 @@ function deleteEvent(){
   closeEventModal();renderCalendar();toast('Evento eliminado');
 }
 
-/* ══ TOAST ══ */
-#toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);border-radius:var(--radius);padding:9px 18px;font-size:13px;display:none;z-index:999;}
-@media(max-width:600px){.g4{grid-template-columns:repeat(2,1fr);}.pbody{grid-template-columns:1fr;}.cgrid{grid-template-columns:repeat(2,1fr);}.nav{display:none;}}
+
+/* ══ CALENDARIO ══ */
+.cal-shell{display:grid;grid-template-columns:1fr 300px;gap:1.25rem;}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
+.cal-month{font-size:16px;font-weight:500;color:var(--text);}
+.cal-nav{display:flex;gap:4px;}
+.cal-nav-btn{width:30px;height:30px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;cursor:pointer;color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.cal-nav-btn:hover{background:var(--bg3);color:var(--text);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cal-dow{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center;padding:6px 0;}
+.cal-day{min-height:80px;border-radius:var(--radius);border:0.5px solid transparent;padding:6px;cursor:pointer;transition:all .15s;position:relative;}
+.cal-day:hover{background:var(--bg3);border-color:var(--border);}
+.cal-day.today{border-color:var(--accent);background:var(--accent-bg);}
+.cal-day.other-month{opacity:.35;}
+.cal-day.selected{border-color:var(--accent);background:var(--accent-bg);}
+.cal-day-num{font-size:12px;font-weight:500;color:var(--text);margin-bottom:4px;}
+.cal-day.today .cal-day-num{color:var(--accent);font-weight:700;}
+.cal-event{font-size:10px;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+.cal-event.personal{background:var(--accent-bg);color:var(--accent);border:0.5px solid var(--accent-border);}
+.cal-event.team{background:var(--teal-bg);color:var(--teal);border:0.5px solid var(--teal-border);}
+.cal-event.mission{background:var(--gold-bg);color:var(--gold);border:0.5px solid var(--gold-border);}
+.cal-sidebar{display:flex;flex-direction:column;gap:1rem;}
+.event-list{display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;}
+.event-item{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:.75rem;cursor:pointer;transition:border-color .15s;}
+.event-item:hover{border-color:var(--border2);}
+.event-item.personal{border-left:2px solid var(--accent);}
+.event-item.team{border-left:2px solid var(--teal);}
+.event-item.mission{border-left:2px solid var(--gold);}
+.event-title{font-size:13px;font-weight:500;color:var(--text);}
+.event-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.event-tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:20px;margin-top:4px;}
+/* Event modal */
+.cal-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;align-items:center;justify-content:center;}
+.cal-modal.show{display:flex;}
+.cal-modal-box{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:420px;animation:popIn .2s ease;}
+
+
+/* ══ CALENDARIO ══ */
+let calState={year:new Date().getFullYear(),month:new Date().getMonth(),selectedDate:null,filter:'all',editingEventId:null};
+
+
 </style>
 
 <body>
@@ -818,6 +847,18 @@ function deleteEvent(){
 
 
 <script>
+/* EARLY BINDINGS */
+window.showScreen=function(id){
+  ['screen-welcome','screen-login','screen-admin','screen-new','screen-app'].forEach(function(s){
+    var el=document.getElementById(s);if(el)el.style.display='none';
+  });
+  var t=document.getElementById(id);
+  if(!t)return;
+  if(id==='screen-app')t.style.display='block';
+  else if(id==='screen-new'){t.style.display='block';}
+  else t.style.display='flex';
+};
+
 /* ══ CONFIG ══ */
 const CFG={
   MODE:'jsonbin',
@@ -1703,91 +1744,6 @@ function renderAdminItemsList(){
 }
 
 
-/* ══ CALENDARIO ══ */
-.cal-shell{display:grid;grid-template-columns:1fr 300px;gap:1.25rem;}
-.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
-.cal-month{font-size:16px;font-weight:500;color:var(--text);}
-.cal-nav{display:flex;gap:4px;}
-.cal-nav-btn{width:30px;height:30px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;cursor:pointer;color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
-.cal-nav-btn:hover{background:var(--bg3);color:var(--text);}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
-.cal-dow{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center;padding:6px 0;}
-.cal-day{min-height:80px;border-radius:var(--radius);border:0.5px solid transparent;padding:6px;cursor:pointer;transition:all .15s;position:relative;}
-.cal-day:hover{background:var(--bg3);border-color:var(--border);}
-.cal-day.today{border-color:var(--accent);background:var(--accent-bg);}
-.cal-day.other-month{opacity:.35;}
-.cal-day.selected{border-color:var(--accent);background:var(--accent-bg);}
-.cal-day-num{font-size:12px;font-weight:500;color:var(--text);margin-bottom:4px;}
-.cal-day.today .cal-day-num{color:var(--accent);font-weight:700;}
-.cal-event{font-size:10px;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
-.cal-event.personal{background:var(--accent-bg);color:var(--accent);border:0.5px solid var(--accent-border);}
-.cal-event.team{background:var(--teal-bg);color:var(--teal);border:0.5px solid var(--teal-border);}
-.cal-event.mission{background:var(--gold-bg);color:var(--gold);border:0.5px solid var(--gold-border);}
-.cal-sidebar{display:flex;flex-direction:column;gap:1rem;}
-.event-list{display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;}
-.event-item{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:.75rem;cursor:pointer;transition:border-color .15s;}
-.event-item:hover{border-color:var(--border2);}
-.event-item.personal{border-left:2px solid var(--accent);}
-.event-item.team{border-left:2px solid var(--teal);}
-.event-item.mission{border-left:2px solid var(--gold);}
-.event-title{font-size:13px;font-weight:500;color:var(--text);}
-.event-meta{font-size:11px;color:var(--muted);margin-top:2px;}
-.event-tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:20px;margin-top:4px;}
-/* Event modal */
-.cal-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;align-items:center;justify-content:center;}
-.cal-modal.show{display:flex;}
-.cal-modal-box{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:420px;animation:popIn .2s ease;}
-
-
-/* ══ CALENDARIO ══ */
-let calState={year:new Date().getFullYear(),month:new Date().getMonth(),selectedDate:null,filter:'all',editingEventId:null};
-
-function renderCalendar(){
-  const {year,month,selectedDate,filter}=calState;
-  const today=new Date();
-  const firstDay=new Date(year,month,1);
-  const lastDay=new Date(year,month+1,0);
-  const startDow=(firstDay.getDay()+6)%7; // Mon=0
-  const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  document.getElementById('cal-month-label').textContent=months[month]+' '+year;
-
-  // Build grid
-  const grid=document.getElementById('cal-grid');
-  if(!grid)return;
-  const dows=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-  let html=dows.map(d=>'<div class="cal-dow">'+d+'</div>').join('');
-
-  // Prev month padding
-  const prevLast=new Date(year,month,0).getDate();
-  for(let i=startDow-1;i>=0;i--){
-    const d=prevLast-i;
-    html+='<div class="cal-day other-month"><div class="cal-day-num">'+d+'</div></div>';
-  }
-
-  // Current month days
-  for(let d=1;d<=lastDay.getDate();d++){
-    const dateStr=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    const isToday=d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear();
-    const isSel=selectedDate===dateStr;
-    const dayEvs=getFilteredEvents(filter).filter(e=>e.date===dateStr);
-    const evDots=dayEvs.slice(0,3).map(e=>'<div class="cal-event '+e.type+'" onclick="event.stopPropagation();openEventModal(''+e.id+'')" title="'+e.title+'">'+e.title+'</div>').join('');
-    html+='<div class="cal-day'+(isToday?' today':'')+(isSel?' selected':'')+'" onclick="selectCalDay(''+dateStr+'')">'
-      +'<div class="cal-day-num">'+d+'</div>'+evDots+'</div>';
-  }
-
-  // Next month padding
-  const totalCells=startDow+lastDay.getDate();
-  const remainder=totalCells%7===0?0:7-(totalCells%7);
-  for(let d=1;d<=remainder;d++){
-    html+='<div class="cal-day other-month"><div class="cal-day-num">'+d+'</div></div>';
-  }
-  grid.innerHTML=html;
-
-  // Selected day panel
-  const selDate=selectedDate||formatDate(today);
-  renderDayEvents(selDate);
-  renderUpcoming();
-}
 
 function formatDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 
@@ -1826,16 +1782,6 @@ function renderUpcoming(){
   const upcoming=getFilteredEvents(calState.filter).filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
   if(!upcoming.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin eventos próximos.</div>';return;}
   wrap.innerHTML=upcoming.map(e=>eventItemHTML(e)).join('');
-}
-
-function eventItemHTML(e){
-  const m=missions.find(mx=>mx.id===e.missionId);
-  const typeLabel={personal:'Personal',team:'Equipo',mission:'Misión'}[e.type]||e.type;
-  return '<div class="event-item '+e.type+'" onclick="openEventModal(''+e.id+'')">'
-    +'<div class="event-title">'+e.title+'</div>'
-    +'<div class="event-meta">'+e.date+(e.time?' · '+e.time:'')+(m?' · '+m.name:'')+'</div>'
-    +'<span class="event-tag badge '+(e.type==='team'?'b-teal':e.type==='mission'?'b-gold':'b-purple')+'">'+typeLabel+'</span>'
-    +'</div>';
 }
 
 function calNav(dir){
@@ -1928,6 +1874,9 @@ function initTheme(){
   showScreen('screen-welcome');
 })();
 
+</script>
+</body>
+</html>
 </script>
 </body>
 </html>
