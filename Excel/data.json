@@ -1,0 +1,52 @@
+{
+  "players": [
+    {
+      "id": "pj001",
+      "realName": "Antonio Conde",
+      "name": "Aldric el Arcano",
+      "cls": "Mago",
+      "role": "Dev / Técnico",
+      "emblem": "🔮",
+      "color": "#7f77dd",
+      "colorBg": "rgba(127,119,221,0.15)",
+      "level": 1,
+      "xp": 0,
+      "xpNext": 1000,
+      "gold": 0,
+      "missions": 0,
+      "weapon": "Báculo arcano",
+      "armor": "Túnica de seda",
+      "accessory": "Cristal oráculo",
+      "lore": "Historia por escribir...",
+      "quote": "...",
+      "pin": "1234",
+      "attrs": { "fue": 1, "int": 5, "agi": 3, "car": 1, "sab": 2 }
+    }
+  ],
+  "missions": [
+    {
+      "id": "m001",
+      "name": "Primera misión de prueba",
+      "arc": "El Despertar del Equipo",
+      "playerId": "pj001",
+      "status": "pending",
+      "diff": "C",
+      "xp": 150,
+      "gold": 30,
+      "attr": "Inteligencia",
+      "attrPts": 2,
+      "deadline": "2026-07-01",
+      "plannerId": ""
+    }
+  ],
+  "arcs": [
+    {
+      "id": "arc001",
+      "name": "El Despertar del Equipo",
+      "lore": "El equipo se embarca en su primera gran aventura corporativa.",
+      "status": "active",
+      "total": 10,
+      "done": 0
+    }
+  ]
+}
