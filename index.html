@@ -178,10 +178,53 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 
 #toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rsm);padding:10px 20px;font-size:13px;color:var(--text);display:none;z-index:999;}
 @media(max-width:600px){.g4{grid-template-columns:repeat(2,1fr);}.pbody{grid-template-columns:1fr;}.cgrid{grid-template-columns:repeat(2,1fr);}.nav{display:none;}}
+
+/* ── LEVEL UP ── */
+.levelup-pop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:400;align-items:center;justify-content:center;}
+.levelup-pop.show{display:flex;}
+.levelup-box{background:var(--bg2);border:2px solid var(--gold);border-radius:var(--radius);padding:2rem;text-align:center;max-width:360px;width:100%;animation:popIn .3s ease;}
+.attr-pts-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:1rem 0;}
+.attr-pt-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rsm);padding:8px 4px;cursor:pointer;transition:all .15s;}
+.attr-pt-btn:hover{border-color:var(--accent);background:rgba(127,119,221,.1);}
+.attr-pt-btn .aicon{font-size:18px;margin-bottom:4px;}
+.attr-pt-btn .aname{font-size:10px;color:var(--muted);}
+.attr-pt-btn .aval{font-size:14px;font-weight:700;color:var(--text);}
+.pts-left{font-size:22px;font-weight:700;color:var(--gold);}
+/* ── TIENDA ── */
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:1rem;}
+.shop-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;display:flex;flex-direction:column;gap:6px;transition:border-color .15s;}
+.shop-item:hover{border-color:var(--border2);}
+.shop-item.can-buy{border-color:rgba(29,158,117,.3);}
+.shop-item.locked{opacity:.5;}
+.shop-item.owned{border-color:rgba(127,119,221,.4);}
+.shop-item.equipped{border-color:var(--gold);background:rgba(228,164,40,.05);}
+.item-icon{font-size:28px;text-align:center;margin-bottom:4px;}
+.item-name{font-size:14px;font-weight:600;color:var(--text);}
+.item-desc{font-size:12px;color:var(--muted);line-height:1.5;flex:1;}
+.item-cost{font-size:13px;font-weight:700;color:var(--gold);}
+.item-reqs{font-size:11px;color:var(--muted);margin-top:2px;}
+.item-bonus{font-size:11px;color:#a9a2f0;margin-top:2px;}
+.item-slot{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
+.equipped-slots{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;margin-bottom:1rem;}
+.eslot{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:6px 10px;font-size:12px;display:flex;align-items:center;gap:6px;min-width:80px;}
+.eslot.filled{border-color:var(--gold);background:rgba(228,164,40,.08);}
+.eslot-label{font-size:10px;color:var(--muted);}
+.admin-panel-wrap{background:rgba(228,164,40,.05);border:1px solid rgba(228,164,40,.2);border-radius:var(--radius);padding:1.25rem;margin-bottom:1.25rem;}
+.admin-item-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 </style>
 </head>
 <body>
 <div id="toast"></div>
+<div class="levelup-pop" id="levelup-pop">
+  <div class="levelup-box">
+    <div style="font-size:42px;margin-bottom:.5rem;">⬆️</div>
+    <div style="font-size:22px;font-weight:700;color:var(--gold);margin-bottom:.25rem;">¡Subiste de nivel!</div>
+    <div id="lu-level" style="font-size:14px;color:var(--muted);margin-bottom:1rem;"></div>
+    <div style="font-size:13px;color:var(--text);margin-bottom:.5rem;">Tienes <span class="pts-left" id="lu-pts">3</span> puntos para repartir</div>
+    <div class="attr-pts-grid" id="lu-attrs"></div>
+    <button class="btn btn-p" id="lu-confirm" onclick="confirmLevelUp()" style="margin-top:.5rem;width:100%;">Confirmar</button>
+  </div>
+</div>
 <div class="reward-pop" id="reward-pop">
   <div class="reward-box">
     <div class="reward-emoji" id="rp-emoji">⚔️</div>
@@ -295,6 +338,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
         <button class="nb" onclick="showPage('arcos',this)">Arcos</button>
         <button class="nb" onclick="showPage('ranking',this)">Ranking</button>
         <button class="nb" onclick="showPage('gacha',this)">Gacha</button>
+        <button class="nb" onclick="showPage('tienda',this)">Tienda</button>
       </nav>
       <div class="upill" onclick="toggleUMenu()" id="upill">
         <span class="udot"></span><span id="ulabel">—</span>
@@ -454,6 +498,13 @@ const DEMO={
     {id:'arc001',name:'El Despertar del Equipo',lore:'El equipo se embarca en su primera gran aventura corporativa.',status:'active',total:18,done:12},
     {id:'arc002',name:'La Forja del Producto',  lore:'Las pruebas más duras están por llegar.',status:'blocked',total:24,done:0},
   ],
+  shop_items:[
+    {id:'item001',name:'Espada del Abismo',icon:'⚔️',desc:'Forjada en las sombras más profundas.',slot:'arma',cost:300,minLevel:2,minAttrs:{fue:5,int:0,agi:0,car:0,sab:0},bonus:{fue:3,int:0,agi:0,car:0,sab:0}},
+    {id:'item002',name:'Capa del Arcano',  icon:'🧥',desc:'Tejida con hilos de maná puro.',slot:'armadura',cost:250,minLevel:1,minAttrs:{fue:0,int:4,agi:0,car:0,sab:0},bonus:{fue:0,int:2,agi:1,car:0,sab:0}},
+    {id:'item003',name:'Anillo Veloz',     icon:'💍',desc:'Acelera los reflejos del portador.',slot:'accesorio',cost:200,minLevel:1,minAttrs:{fue:0,int:0,agi:3,car:0,sab:0},bonus:{fue:0,int:0,agi:3,car:0,sab:0}},
+    {id:'item004',name:'Corona del Orador',icon:'👑',desc:'Eleva la presencia y el carisma.',slot:'especial',cost:500,minLevel:3,minAttrs:{fue:0,int:0,agi:0,car:8,sab:0},bonus:{fue:0,int:0,agi:0,car:5,sab:2}},
+    {id:'item005',name:'Tomo del Sabio',   icon:'📖',desc:'Contiene el conocimiento de eras.',slot:'especial',cost:400,minLevel:2,minAttrs:{fue:0,int:5,agi:0,car:0,sab:3},bonus:{fue:0,int:3,agi:0,car:0,sab:4}},
+  ],
   gacha_cards:[
     {id:'c001',name:'Escudo del Alba',    rarity:'comun',    image:'gacha/images/comun/carta_01.png',    description:'Un viejo escudo que aún brilla.'},
     {id:'c002',name:'Daga Susurrante',    rarity:'comun',    image:'gacha/images/comun/carta_02.png',    description:'Silenciosa como la noche.'},
@@ -467,7 +518,8 @@ const DEMO={
 
 /* ══ ESTADO ══ */
 let session={loggedIn:false,isAdmin:false,playerId:null};
-let players=[],missions=[],arcs=[],gachaCards=[];
+let players=[],missions=[],arcs=[],gachaCards=[],shopItems=[];
+let luState={pid:null,pts:0};
 let curHero=0,editPid=null;
 let cpState={cls:null,color:COLORS[0],emblem:'⚔️',weapon:null,armor:null,accessory:null};
 let galleryHeroIdx=0;
@@ -493,7 +545,7 @@ async function saveToJSONBin(){
     const r=await fetch(JB_URL,{
       method:'PUT',
       headers:{...JB_HDR,'X-Access-Key':CFG.JSONBIN_KEY},
-      body:JSON.stringify({players,missions,arcs,gacha_cards:gachaCards})
+      body:JSON.stringify({players,missions,arcs,gacha_cards:gachaCards,shop_items:shopItems})
     });
     if(!r.ok){
       const txt=await r.text();
@@ -515,12 +567,15 @@ async function loadData(){
     const d=await loadFromJSONBin();
     if(d&&d.players){
       players =d.players;
+      if(d.shop_items)shopItems=d.shop_items;
+      else shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));
       missions=d.missions||DEMO.missions;
       arcs    =d.arcs    ||DEMO.arcs;
     }else{
       players =JSON.parse(JSON.stringify(DEMO.players));
       missions=JSON.parse(JSON.stringify(DEMO.missions));
       arcs    =JSON.parse(JSON.stringify(DEMO.arcs));
+      shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));
       await saveToJSONBin();
     }
   }else{
@@ -541,6 +596,9 @@ async function loadData(){
     if(!p.gachaTokens)p.gachaTokens=0;
     if(!p.gallery)p.gallery=[];
     if(!p.lastDaily)p.lastDaily='';
+    if(!p.inventory)p.inventory=[];
+    if(!p.equipped)p.equipped={arma:null,armadura:null,accesorio:null,especial:null};
+    if(!p.pendingAttrPts)p.pendingAttrPts=0;
   });
   checkDailyMissions();
 }
@@ -572,7 +630,7 @@ function exportJSON(){
     toast('✅ Guardado en la nube automáticamente');
     return;
   }
-  const blob=new Blob([JSON.stringify({players,missions,arcs,gacha_cards:gachaCards},null,2)],{type:'application/json'});
+  const blob=new Blob([JSON.stringify({players,missions,arcs,gacha_cards:gachaCards,shop_items:shopItems},null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download='data.json';a.click();
   URL.revokeObjectURL(url);
@@ -688,7 +746,7 @@ function saveNewChar(){
 }
 
 /* ══ RENDER ══ */
-function renderAll(){renderMStats();renderMissions();renderHeroTabs();renderArcs();renderRanking();renderGachaGold();}
+function renderAll(){renderMStats();renderMissions();renderHeroTabs();renderArcs();renderRanking();renderGachaGold();renderShop();}
 function showPage(name,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
@@ -696,6 +754,7 @@ function showPage(name,btn){
   if(btn)btn.classList.add('active');
   if(name==='heroes')renderHeroProfile(curHero);
   if(name==='gacha'){renderGachaGold();renderMyGallery();renderGalleryTabs();}
+  if(name==='tienda')renderShop();
 }
 
 /* ── misiones stats ── */
@@ -770,8 +829,73 @@ function completeMission(id){
     p.level=Math.floor(p.xp/1000)+1;
     showRewardPopup(m,p);
   }
+  // Bonus diarias
+  if(m.daily&&p){
+    const myDailies=missions.filter(mx=>mx.daily&&mx.playerId===p.id);
+    if(myDailies.length&&myDailies.every(mx=>mx.status==='done')){
+      const bx=myDailies.reduce((s,mx)=>s+mx.xp,0),bg=myDailies.reduce((s,mx)=>s+mx.gold,0);
+      p.xp+=bx;p.gold+=bg;
+      setTimeout(()=>showRewardPopup({name:'¡Bonus diario!',xp:bx,gold:bg,attr:null},p),600);
+    }
+  }
+  // Bonus arco
+  if(m.arc&&p){
+    const arcMs=missions.filter(mx=>mx.arc===m.arc&&mx.playerId===p.id);
+    if(arcMs.length&&arcMs.every(mx=>mx.status==='done')){
+      const arc=arcs.find(a=>a.name===m.arc);
+      const bonusKey='bonusPaid_'+p.id;
+      if(arc&&!arc[bonusKey]){
+        arc[bonusKey]=true;
+        const bx=arcMs.reduce((s,mx)=>s+mx.xp,0),bg=arcMs.reduce((s,mx)=>s+mx.gold,0);
+        p.xp+=bx;p.gold+=bg;
+        setTimeout(()=>showRewardPopup({name:'¡Arco completado: '+m.arc+'!',xp:bx,gold:bg,attr:null},p),1200);
+      }
+    }
+  }
+  // Level up
+  checkLevelUp(p);
   if(CFG.MODE==='jsonbin')saveToJSONBin();
   renderAll();
+}
+
+/* ── level up ── */
+function checkLevelUp(p){
+  if(!p)return;
+  const newLv=Math.floor(p.xp/1000)+1;
+  if(newLv>p.level){
+    const gained=(newLv-p.level)*3;
+    p.level=newLv;p.pendingAttrPts=(p.pendingAttrPts||0)+gained;
+    showLevelUpPopup(p);
+  }
+}
+function showLevelUpPopup(p){
+  luState={pid:p.id,pts:p.pendingAttrPts};
+  document.getElementById('lu-level').textContent='Nivel '+p.level;
+  document.getElementById('lu-pts').textContent=luState.pts;
+  const emojis={fue:'💪',int:'🧠',agi:'⚡',car:'✨',sab:'📖'};
+  document.getElementById('lu-attrs').innerHTML=Object.entries(AN).map(([k,name])=>
+    '<div class="attr-pt-btn" onclick="addAttrPt(\''+k+'\')">'
+    +'<div class="aicon">'+emojis[k]+'</div>'
+    +'<div class="aname">'+name+'</div>'
+    +'<div class="aval" id="lu-'+k+'">'+p.attrs[k]+'</div>'
+    +'</div>').join('');
+  document.getElementById('levelup-pop').classList.add('show');
+}
+function addAttrPt(attr){
+  if(luState.pts<=0)return;
+  luState.pts--;
+  const p=players.find(p=>p.id===luState.pid);
+  if(p){p.attrs[attr]++;document.getElementById('lu-'+attr).textContent=p.attrs[attr];}
+  document.getElementById('lu-pts').textContent=luState.pts;
+  if(luState.pts===0)document.getElementById('lu-confirm').style.background='var(--teal)';
+}
+function confirmLevelUp(){
+  if(luState.pts>0){toast('Aún tienes '+luState.pts+' puntos sin repartir.');return;}
+  const p=players.find(p=>p.id===luState.pid);
+  if(p)p.pendingAttrPts=0;
+  document.getElementById('levelup-pop').classList.remove('show');
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  renderAll();toast('¡Atributos actualizados!');
 }
 
 /* ── reward popup ── */
@@ -856,9 +980,10 @@ function renderHeroProfile(i){
         <div class="pbody">
           <div>
             <div class="stitle">Atributos</div>
-            ${Object.entries(p.attrs).map(([k,v])=>`<div class="srow"><span class="slbl">${AN[k]}</span><div class="strk"><div class="sfill" style="width:${Math.round(v/20*100)}%;background:${AC[k]};"></div></div><span class="snum">${v}</span></div>`).join('')}
+            ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl">'+AN[k]+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(ev/20*100)+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
             <div class="stitle" style="margin-top:1rem;">Equipamiento</div>
             <div class="erow"><span class="epill">⚔️ ${p.weapon}</span><span class="epill">🛡️ ${p.armor}</span><span class="epill">💎 ${p.accessory}</span></div>
+            ${(function(){var eq=Object.values(p.equipped||{}).filter(Boolean);if(!eq.length)return '';var items=eq.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);return '<div class="stitle" style="margin-top:.75rem;">Items equipados</div><div class="erow">'+items.map(function(i){return '<span class="epill" style="border-color:var(--gold);color:var(--gold);">'+i.icon+' '+i.name+'</span>';}).join('')+'</div>';})()}
           </div>
           <div>
             <div class="stitle">Historia</div>
@@ -1040,6 +1165,149 @@ function saveEdit(){
   }
   if(CFG.MODE==='jsonbin')saveToJSONBin();
   closeEdit();renderAll();toast('Personaje actualizado');
+}
+
+
+/* ══ TIENDA ══ */
+function getEffectiveAttrs(p){
+  var base={};Object.keys(p.attrs).forEach(function(k){base[k]=p.attrs[k];});
+  if(!p.equipped)return base;
+  Object.values(p.equipped).forEach(function(itemId){
+    if(!itemId)return;
+    var item=shopItems.find(function(i){return i.id===itemId;});
+    if(item&&item.bonus)Object.entries(item.bonus).forEach(function(e){base[e[0]]=(base[e[0]]||0)+e[1];});
+  });
+  return base;
+}
+function canBuyItem(p,item){
+  if(!p||p.gold<item.cost||p.level<item.minLevel)return false;
+  var attrs=getEffectiveAttrs(p);
+  return Object.entries(item.minAttrs||{}).every(function(e){return (attrs[e[0]]||0)>=e[1];});
+}
+function meetsReqs(p,item){
+  if(!p||p.level<item.minLevel)return false;
+  var attrs=getEffectiveAttrs(p);
+  return Object.entries(item.minAttrs||{}).every(function(e){return (attrs[e[0]]||0)>=e[1];});
+}
+function renderShop(){
+  var p=players.find(function(pl){return pl.id===session.playerId;});
+  var ap=document.getElementById('admin-shop-panel');
+  if(ap)ap.style.display=session.isAdmin?'block':'none';
+  if(session.isAdmin)renderAdminItemsList();
+  var eqWrap=document.getElementById('my-equipped');
+  if(eqWrap){
+    if(!p){eqWrap.innerHTML='';return;}
+    var slots=['arma','armadura','accesorio','especial'];
+    var slotIcons={arma:'⚔️',armadura:'🛡️',accesorio:'💎',especial:'✨'};
+    eqWrap.innerHTML='<div class="stitle">Equipado actualmente</div><div class="equipped-slots">'
+      +slots.map(function(slot){
+        var itemId=p.equipped?p.equipped[slot]:null;
+        var item=shopItems.find(function(i){return i.id===itemId;});
+        return '<div class="eslot '+(item?'filled':'')+'">'
+          +'<span>'+(item?item.icon:slotIcons[slot])+'</span>'
+          +'<div><div class="eslot-label">'+slot+'</div>'
+          +'<div style="font-size:11px;color:'+(item?'var(--text)':'var(--muted)')+';">'+(item?item.name:'Vacío')+'</div></div>'
+          +'</div>';
+      }).join('')+'</div>';
+  }
+  var wrap=document.getElementById('shop-grid-wrap');
+  if(!wrap)return;
+  if(!shopItems.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);">No hay items en la tienda aún.</div>';return;}
+  wrap.innerHTML='<div class="shop-grid">'+shopItems.map(function(item){
+    var owned=p&&(p.inventory||[]).indexOf(item.id)>=0;
+    var equipped=p&&p.equipped&&Object.values(p.equipped).indexOf(item.id)>=0;
+    var canBuy=p&&canBuyItem(p,item)&&!owned;
+    var meetsR=p&&meetsReqs(p,item);
+    var cls=equipped?'equipped':owned?'owned':canBuy?'can-buy':!meetsR?'locked':'';
+    var bonusStr=Object.entries(item.bonus||{}).filter(function(e){return e[1]>0;}).map(function(e){return '+'+e[1]+' '+AN[e[0]];}).join(' · ');
+    var reqStr=Object.entries(item.minAttrs||{}).filter(function(e){return e[1]>0;}).map(function(e){return AN[e[0]]+' '+e[1]+'+';}).join(' · ');
+    var btn='';
+    if(equipped)btn='<button class="btn btn-sm" style="margin-top:auto;" onclick="unequipItem(\''+item.id+'\')">Desequipar</button>';
+    else if(owned)btn='<button class="btn btn-sm btn-p" style="margin-top:auto;" onclick="equipItem(\''+item.id+'\')">Equipar</button>';
+    else if(canBuy)btn='<button class="btn btn-sm btn-gold" style="margin-top:auto;" onclick="buyItem(\''+item.id+'\')">Comprar '+item.cost+' oro</button>';
+    else if(!meetsR)btn='<div style="font-size:11px;color:var(--coral);margin-top:auto;">🔒 Requisitos no cumplidos</div>';
+    else btn='<div style="font-size:11px;color:var(--coral);margin-top:auto;">Oro insuficiente</div>';
+    return '<div class="shop-item '+cls+'">'
+      +'<div class="item-icon">'+item.icon+'</div>'
+      +'<div class="item-name">'+item.name+'</div>'
+      +'<div class="item-slot">'+item.slot+'</div>'
+      +'<div class="item-desc">'+item.desc+'</div>'
+      +(bonusStr?'<div class="item-bonus">⬆️ '+bonusStr+'</div>':'')
+      +(reqStr?'<div class="item-reqs">📋 Req: '+reqStr+' · Nv.'+item.minLevel+'+'+'</div>':'')
+      +'<div class="item-cost">'+(owned?'✅ Comprado':'💰 '+item.cost+' oro')+'</div>'
+      +btn+'</div>';
+  }).join('')+'</div>';
+}
+function buyItem(itemId){
+  var p=players.find(function(pl){return pl.id===session.playerId;});
+  var item=shopItems.find(function(i){return i.id===itemId;});
+  if(!p||!item)return;
+  if(!canBuyItem(p,item)){toast('No puedes comprar este item.');return;}
+  p.gold-=item.cost;
+  if(!p.inventory)p.inventory=[];
+  p.inventory.push(itemId);
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  renderShop();renderAll();
+  toast('¡'+item.icon+' '+item.name+' comprado!');
+}
+function equipItem(itemId){
+  var p=players.find(function(pl){return pl.id===session.playerId;});
+  var item=shopItems.find(function(i){return i.id===itemId;});
+  if(!p||!item)return;
+  if(!p.equipped)p.equipped={arma:null,armadura:null,accesorio:null,especial:null};
+  p.equipped[item.slot]=itemId;
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  renderShop();renderHeroProfile(curHero);
+  toast('¡'+item.icon+' '+item.name+' equipado!');
+}
+function unequipItem(itemId){
+  var p=players.find(function(pl){return pl.id===session.playerId;});
+  var item=shopItems.find(function(i){return i.id===itemId;});
+  if(!p||!item||!p.equipped)return;
+  p.equipped[item.slot]=null;
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  renderShop();renderHeroProfile(curHero);
+  toast(item.name+' desequipado.');
+}
+function adminCreateItem(){
+  var name=document.getElementById('si-name').value.trim();
+  var icon=document.getElementById('si-icon').value.trim()||'📦';
+  var desc=document.getElementById('si-desc').value.trim();
+  var slot=document.getElementById('si-slot').value;
+  var cost=parseInt(document.getElementById('si-cost').value)||0;
+  var minLevel=parseInt(document.getElementById('si-lvl').value)||1;
+  if(!name){toast('El item necesita un nombre.');return;}
+  shopItems.push({id:'item'+Date.now(),name:name,icon:icon,desc:desc,slot:slot,cost:cost,minLevel:minLevel,
+    minAttrs:{fue:parseInt(document.getElementById('si-rfue').value)||0,int:parseInt(document.getElementById('si-rint').value)||0,agi:parseInt(document.getElementById('si-ragi').value)||0,car:parseInt(document.getElementById('si-rcar').value)||0,sab:parseInt(document.getElementById('si-rsab').value)||0},
+    bonus:{fue:parseInt(document.getElementById('si-bfue').value)||0,int:parseInt(document.getElementById('si-bint').value)||0,agi:parseInt(document.getElementById('si-bagi').value)||0,car:parseInt(document.getElementById('si-bcar').value)||0,sab:parseInt(document.getElementById('si-bsab').value)||0}
+  });
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  ['si-name','si-icon','si-desc','si-cost','si-lvl'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['si-rfue','si-rint','si-ragi','si-rcar','si-rsab','si-bfue','si-bint','si-bagi','si-bcar','si-bsab'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='0';});
+  renderShop();toast('Item creado: '+icon+' '+name);
+}
+function adminDeleteItem(itemId){
+  if(!confirm('¿Eliminar este item?'))return;
+  shopItems=shopItems.filter(function(i){return i.id!==itemId;});
+  players.forEach(function(p){
+    if(p.inventory)p.inventory=p.inventory.filter(function(id){return id!==itemId;});
+    if(p.equipped)Object.keys(p.equipped).forEach(function(k){if(p.equipped[k]===itemId)p.equipped[k]=null;});
+  });
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  renderShop();toast('Item eliminado.');
+}
+function renderAdminItemsList(){
+  var wrap=document.getElementById('admin-items-list');
+  if(!wrap)return;
+  if(!shopItems.length){wrap.innerHTML='';return;}
+  wrap.innerHTML='<div class="stitle" style="margin-top:.5rem;">Items existentes</div>'
+    +shopItems.map(function(item){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">'
+        +'<span style="font-size:18px;">'+item.icon+'</span>'
+        +'<span style="flex:1;font-size:13px;">'+item.name+' <span style="color:var(--muted);font-size:11px;">'+item.slot+' · '+item.cost+' oro · Nv.'+item.minLevel+'+'+'</span></span>'
+        +'<button class="btn btn-sm" style="background:rgba(216,90,48,.15);color:#f08060;border-color:rgba(216,90,48,.3);" onclick="adminDeleteItem(\''+item.id+'\')">🗑️</button>'
+        +'</div>';
+    }).join('');
 }
 
 /* ══ TOAST ══ */
