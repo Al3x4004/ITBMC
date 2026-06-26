@@ -456,365 +456,7 @@ function deleteEvent(){
 #toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);border-radius:var(--radius);padding:9px 18px;font-size:13px;display:none;z-index:999;}
 @media(max-width:600px){.g4{grid-template-columns:repeat(2,1fr);}.pbody{grid-template-columns:1fr;}.cgrid{grid-template-columns:repeat(2,1fr);}.nav{display:none;}}
 </style>
-</head>
-<body>
-<div id="toast"></div>
-<div class="levelup-pop" id="levelup-pop">
-  <div class="levelup-box">
-    <div style="font-size:42px;margin-bottom:.5rem;">⬆️</div>
-    <div style="font-size:22px;font-weight:700;color:var(--gold);margin-bottom:.25rem;">¡Subiste de nivel!</div>
-    <div id="lu-level" style="font-size:14px;color:var(--muted);margin-bottom:1rem;"></div>
-    <div style="font-size:13px;color:var(--text);margin-bottom:.5rem;">Tienes <span class="pts-left" id="lu-pts">3</span> puntos para repartir</div>
-    <div class="attr-pts-grid" id="lu-attrs"></div>
-    <button class="btn btn-p" id="lu-confirm" onclick="confirmLevelUp()" style="margin-top:.5rem;width:100%;">Confirmar</button>
-  </div>
-</div>
-<div class="reward-pop" id="reward-pop">
-  <div class="reward-box">
-    <div class="reward-emoji" id="rp-emoji">⚔️</div>
-    <div class="reward-title" id="rp-title">¡Misión completada!</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:.5rem;" id="rp-mission"></div>
-    <div class="reward-chips" id="rp-chips"></div>
-    <button class="btn btn-p" onclick="closeReward()">¡Reclamar!</button>
-  </div>
-</div>
-
-<!-- BIENVENIDA -->
-<div id="screen-welcome" class="centered" style="padding:1rem;">
-  <div class="lbox">
-    <div style="font-size:36px;margin-bottom:1rem;">🏰</div>
-    <h2>Cuartel General</h2>
-    <p>El tablero RPG del equipo ITBMC.</p>
-    <div style="display:flex;flex-direction:column;gap:8px;">
-      <button class="btn btn-p" onclick="showScreen('screen-new')">Crear mi personaje</button>
-      <button class="btn" onclick="showScreen('screen-login')">Ya tengo personaje</button>
-      <button class="btn" style="border-color:rgba(228,164,40,.3);color:var(--gold);" onclick="showScreen('screen-admin')">Entrar como admin 👑</button>
-    </div>
-  </div>
-</div>
-
-<!-- LOGIN -->
-<div id="screen-login" style="display:none;" class="centered">
-  <div class="lbox">
-    <h2>Bienvenido de nuevo</h2>
-    <p>Introduce tu nombre de personaje y contraseña.</p>
-    <div class="field"><label>Nombre del personaje</label><input type="text" id="ln" placeholder="Ej: Aldric el Arcano"/></div>
-    <div class="field"><label>Contraseña</label><input type="password" id="lp" placeholder="Tu contraseña"/><div class="errmsg" id="lerr">Nombre o contraseña incorrectos.</div></div>
-    <div style="display:flex;gap:8px;"><button class="btn" onclick="showScreen('screen-welcome')">← Atrás</button><button class="btn btn-p" style="flex:1" onclick="doLogin()">Entrar</button></div>
-  </div>
-</div>
-
-<!-- ADMIN LOGIN -->
-<div id="screen-admin" style="display:none;" class="centered">
-  <div class="lbox">
-    <h2>Acceso admin 👑</h2>
-    <p>Introduce la contraseña de administrador.</p>
-    <div class="field"><label>Contraseña admin</label><input type="password" id="ap" placeholder="Contraseña"/><div class="errmsg" id="aerr">Contraseña incorrecta.</div></div>
-    <div style="display:flex;gap:8px;"><button class="btn" onclick="showScreen('screen-welcome')">← Atrás</button><button class="btn btn-p" style="flex:1" onclick="doAdminLogin()">Entrar</button></div>
-  </div>
-</div>
-
-<!-- CREADOR -->
-<div id="screen-new" style="display:none;padding:2rem 1rem;">
-  <div style="max-width:560px;margin:0 auto;">
-    <div style="font-size:28px;margin-bottom:.5rem;">⚔️</div>
-    <h2 style="font-size:20px;font-weight:700;margin-bottom:.25rem;">Crea tu personaje</h2>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:1.5rem;">Podrás editar el lore y aspecto después.</p>
-    <div class="steps" id="csteps">
-      <div class="stepi active" onclick="cGoTo(0)">1 · Identidad</div>
-      <div class="stepi" onclick="cGoTo(1)">2 · Clase</div>
-      <div class="stepi" onclick="cGoTo(2)">3 · Aspecto</div>
-      <div class="stepi" onclick="cGoTo(3)">4 · Historia</div>
-    </div>
-    <div class="wp active" id="cp-0">
-      <div class="field"><label>Tu nombre real</label><input type="text" id="cp-rn" placeholder="Ej: Antonio Conde"/></div>
-      <div class="field"><label>Nombre del personaje</label><input type="text" id="cp-pn" placeholder="Ej: Seraphine Ojoagudo"/></div>
-      <div class="field"><label>Contraseña</label><input type="password" id="cp-pin" placeholder="Para editar tu ficha"/></div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
-        <button class="btn" onclick="showScreen('screen-welcome')">← Atrás</button>
-        <button class="btn btn-p" onclick="cNext(0)">Siguiente →</button>
-      </div>
-    </div>
-    <div class="wp" id="cp-1">
-      <div class="stitle">Elige tu clase</div>
-      <div class="cgrid" id="cp-cgrid"></div>
-      <div id="cp-cstats" style="display:none;margin-bottom:1rem;">
-        <div class="stitle">Atributos de esta clase</div>
-        <div id="cp-abars"></div>
-      </div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;">
-        <button class="btn" onclick="cGoTo(0)">← Atrás</button>
-        <button class="btn btn-p" onclick="cNext(1)">Siguiente →</button>
-      </div>
-    </div>
-    <div class="wp" id="cp-2">
-      <div class="stitle">Color del personaje</div>
-      <div class="crow" id="cp-colors"></div>
-      <div class="stitle">Emblema</div>
-      <div id="cp-emblems" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;"></div>
-      <div class="stitle">Equipamiento</div>
-      <div class="g3" id="cp-equip"></div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
-        <button class="btn" onclick="cGoTo(1)">← Atrás</button>
-        <button class="btn btn-p" onclick="cNext(2)">Siguiente →</button>
-      </div>
-    </div>
-    <div class="wp" id="cp-3">
-      <div class="field"><label>Historia del personaje</label><textarea id="cp-lore" placeholder="¿De dónde viene? ¿Cuál es su motivación en el equipo?"></textarea></div>
-      <div class="field"><label>Frase de batalla</label><input type="text" id="cp-quote" placeholder="Ej: El código no falla, fallan los que no lo prueban."/></div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
-        <button class="btn" onclick="cGoTo(2)">← Atrás</button>
-        <button class="btn btn-p" onclick="saveNewChar()">Crear personaje ✓</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- APP -->
-<div id="screen-app" style="display:none;">
-  <div class="shell">
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="sidebar-logo-mark">IT</div>
-      <div class="sidebar-logo-sub">Cuartel General</div>
-    </div>
-    <nav class="nav" role="navigation">
-      <button class="nb active" onclick="showPage('misiones',this)"><span class="nb-icon">⚔️</span>Misiones</button>
-      <button class="nb" onclick="showPage('heroe',this)"><span class="nb-icon">🧙</span>Héroe</button>
-      <button class="nb" onclick="showPage('arcos',this)"><span class="nb-icon">🗺️</span>Arcos</button>
-      <button class="nb" onclick="showPage('ranking',this)"><span class="nb-icon">🏆</span>Ranking</button>
-      <button class="nb" onclick="showPage('gacha',this)"><span class="nb-icon">✨</span>Gacha</button>
-      <button class="nb" onclick="showPage('tienda',this)"><span class="nb-icon">🛒</span>Tienda</button>
-      <button class="nb" onclick="showPage('calendario',this)"><span class="nb-icon">📅</span>Calendario</button>
-    </nav>
-    <div class="sidebar-bottom">
-      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar tema" style="width:100%;margin-bottom:.5rem;justify-content:flex-start;gap:8px;padding:7px 12px;border-radius:var(--radius);border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s;display:flex;align-items:center;">☀️ <span id="theme-label">Modo claro</span></button>
-      <div id="umenu-inline" style="display:none;margin-bottom:.5rem;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius);padding:.5rem;">
-        <div style="padding:6px 8px;font-size:12px;color:var(--muted);border-bottom:0.5px solid var(--border);margin-bottom:4px;" id="umname">—</div>
-        <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="goToMyProfile()">👤 Mi perfil</button>
-        <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="openEditModal(session.playerId)">✏️ Editar personaje</button>
-        <button class="btn btn-sm btn-g" style="width:100%;text-align:left;margin-bottom:2px;" onclick="exportJSON()">⬇️ Exportar JSON</button>
-        <button class="btn btn-sm" style="width:100%;text-align:left;" onclick="doLogout()">← Cerrar sesión</button>
-      </div>
-      <div class="upill" onclick="toggleUMenu()" id="upill" style="width:100%;justify-content:flex-start;">
-        <span class="udot"></span><span id="ulabel">—</span>
-      </div>
-    </div>
-  </aside>
-  <div class="app">
-    <div id="mode-ban-wrap"></div>
-    <div class="topbar"></div>
-
-    <!-- MISIONES -->
-    <div id="page-misiones" class="page active">
-      <div class="g4" style="margin-bottom:1.5rem;" id="mstats"></div>
-      <div><div class="stitle">Diarias <span class="daily-rib">HOY</span></div><div id="m-daily"></div></div>
-      <div style="margin-top:1.25rem;"><div class="stitle">En curso</div><div id="m-active"></div></div>
-      <div style="margin-top:1.25rem;"><div class="stitle">Pendientes</div><div id="m-pending"></div></div>
-      <div style="margin-top:1.25rem;"><div class="stitle">Completadas</div><div id="m-done"></div></div>
-    </div>
-
-    <!-- HÉROES -->
-    <div id="page-heroe" class="page">
-      <div class="htabs" id="htabs"></div>
-      <div id="hprofile"></div>
-    </div>
-
-    <!-- ARCOS -->
-    <div id="page-arcos" class="page">
-      <div class="g2" id="arcs-grid"></div>
-    </div>
-
-    <!-- RANKING -->
-    <div id="page-ranking" class="page">
-      <div class="card"><div class="stitle">Tabla de héroes</div><div id="rank-list"></div></div>
-    </div>
-
-    <!-- GACHA -->
-    <div id="page-gacha" class="page">
-      <div class="card" style="margin-bottom:1rem;">
-        <div class="stitle">Invocación</div>
-        <div class="gacha-wrap">
-          <div class="gacha-cost">Coste: <span>100 oro</span> por tirada · <span>900 oro</span> por 10 tiradas</div>
-          <div id="gacha-gold-display" style="font-size:22px;font-weight:700;color:var(--gold);margin-bottom:1rem;">0 oro</div>
-          <div class="gacha-btn-wrap">
-            <button class="btn btn-gold" onclick="doPull(1)">✨ Invocar x1 (100 oro)</button>
-            <button class="btn btn-gold" onclick="doPull(10)">✨ Invocar x10 (900 oro)</button>
-          </div>
-          <div class="card-reveal" id="card-reveal"></div>
-        </div>
-        <div style="font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:.75rem;">
-          Probabilidades: Común 60% · Rara 25% · Épica 12% · Legendaria 3%
-        </div>
-      </div>
-      <div class="card">
-        <div class="stitle">Mi galería</div>
-        <div id="my-gallery"></div>
-      </div>
-      <div class="card" style="margin-top:1rem;">
-        <div class="stitle">Galería del equipo</div>
-        <div class="htabs" id="gallery-tabs"></div>
-        <div id="team-gallery"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- TIENDA -->
-    <div id="page-tienda" class="page">
-      <div id="admin-shop-panel" style="display:none;">
-        <div class="admin-panel-wrap">
-          <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:1rem;">👑 Panel Admin — Crear Item</div>
-          <div class="admin-item-form">
-            <div class="field"><label>Nombre</label><input type="text" id="si-name" placeholder="Espada del Abismo"/></div>
-            <div class="field"><label>Icono (emoji)</label><input type="text" id="si-icon" placeholder="⚔️" maxlength="2"/></div>
-            <div class="field"><label>Descripción</label><input type="text" id="si-desc" placeholder="Forjada en las sombras..."/></div>
-            <div class="field"><label>Slot</label>
-              <select id="si-slot"><option value="arma">Arma</option><option value="armadura">Armadura</option><option value="accesorio">Accesorio</option><option value="especial">Especial</option></select>
-            </div>
-            <div class="field"><label>Coste (oro)</label><input type="number" id="si-cost" placeholder="500" min="0"/></div>
-            <div class="field"><label>Nivel mínimo</label><input type="number" id="si-lvl" placeholder="1" min="1"/></div>
-            <div style="grid-column:1/-1;">
-              <div class="stitle">Requisitos de atributos (0 = sin requisito)</div>
-              <div class="g3" style="gap:8px;">
-                <div class="field" style="margin:0;"><label>Fuerza mín.</label><input type="number" id="si-rfue" value="0" min="0"/></div>
-                <div class="field" style="margin:0;"><label>Int. mín.</label><input type="number" id="si-rint" value="0" min="0"/></div>
-                <div class="field" style="margin:0;"><label>Agi. mín.</label><input type="number" id="si-ragi" value="0" min="0"/></div>
-                <div class="field" style="margin:0;"><label>Car. mín.</label><input type="number" id="si-rcar" value="0" min="0"/></div>
-                <div class="field" style="margin:0;"><label>Sab. mín.</label><input type="number" id="si-rsab" value="0" min="0"/></div>
-              </div>
-            </div>
-            <div style="grid-column:1/-1;">
-              <div class="stitle">Bonus de atributos al equipar (0 = sin bonus)</div>
-              <div class="g3" style="gap:8px;">
-                <div class="field" style="margin:0;"><label>+Fuerza</label><input type="number" id="si-bfue" value="0" min="0"/></div>
-                <div class="field" style="margin:0;"><label>+Int.</label><input type="number" id="si-bint" value="0" min="0"/></div>
-                <div class="field" style="margin:0;"><label>+Agi.</label><input type="number" id="si-bagi" value="0" min="0"/></div>
-                <div class="field" style="margin:0;"><label>+Car.</label><input type="number" id="si-bcar" value="0" min="0"/></div>
-                <div class="field" style="margin:0;"><label>+Sab.</label><input type="number" id="si-bsab" value="0" min="0"/></div>
-              </div>
-            </div>
-          </div>
-          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
-            <button class="btn btn-gold" onclick="adminCreateItem()">+ Crear item</button>
-          </div>
-          <div id="admin-items-list" style="margin-top:1rem;"></div>
-        </div>
-      </div>
-      <div id="my-equipped"></div>
-      <div class="stitle">Items disponibles</div>
-      <div id="shop-grid-wrap"></div>
-    </div>
-
-    <!-- CALENDARIO -->
-    <div id="page-calendario" class="page">
-      <div class="cal-header">
-        <div class="cal-month" id="cal-month-label">Junio 2026</div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="display:flex;gap:4px;">
-            <button class="btn btn-sm" id="cal-filter-all" onclick="setCalFilter('all',this)" style="font-size:11px;">Todos</button>
-            <button class="btn btn-sm" id="cal-filter-personal" onclick="setCalFilter('personal',this)" style="font-size:11px;">Personal</button>
-            <button class="btn btn-sm" id="cal-filter-team" onclick="setCalFilter('team',this)" style="font-size:11px;">Equipo</button>
-            <button class="btn btn-sm" id="cal-filter-mission" onclick="setCalFilter('mission',this)" style="font-size:11px;">Misiones</button>
-          </div>
-          <div class="cal-nav">
-            <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
-            <button class="cal-nav-btn" onclick="calNav(0)" style="font-size:11px;width:auto;padding:0 8px;">Hoy</button>
-            <button class="cal-nav-btn" onclick="calNav(1)">›</button>
-          </div>
-          <button class="btn btn-sm btn-p" onclick="openEventModal(null)" id="cal-add-btn">+ Evento</button>
-        </div>
-      </div>
-      <div class="cal-shell">
-        <div>
-          <div class="cal-grid" id="cal-grid"></div>
-        </div>
-        <div class="cal-sidebar">
-          <div class="card">
-            <div class="stitle" id="cal-selected-label">Hoy</div>
-            <div class="event-list" id="cal-day-events">
-              <div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin eventos.</div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="stitle">Próximos eventos</div>
-            <div class="event-list" id="cal-upcoming"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL EVENTO -->
-    <div class="cal-modal" id="cal-event-modal">
-      <div class="cal-modal-box">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
-          <h3 style="font-size:15px;font-weight:500;" id="cal-modal-title">Nuevo evento</h3>
-          <button class="btn btn-sm" onclick="closeEventModal()">✕</button>
-        </div>
-        <div class="field"><label>Título</label><input type="text" id="ev-title" placeholder="Reunión de equipo"/></div>
-        <div class="g2">
-          <div class="field"><label>Fecha</label><input type="date" id="ev-date"/></div>
-          <div class="field"><label>Hora</label><input type="time" id="ev-time" value="09:00"/></div>
-        </div>
-        <div class="field"><label>Descripción</label><textarea id="ev-desc" placeholder="Detalles del evento..." style="min-height:60px;"></textarea></div>
-        <div class="g2">
-          <div class="field"><label>Tipo</label>
-            <select id="ev-type">
-              <option value="personal">Personal</option>
-              <option value="team">Equipo</option>
-            </select>
-          </div>
-          <div class="field"><label>Misión vinculada</label>
-            <select id="ev-mission">
-              <option value="">Sin vincular</option>
-            </select>
-          </div>
-        </div>
-        <div id="ev-delete-wrap" style="display:none;margin-bottom:.75rem;">
-          <button class="btn btn-sm" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);width:100%;" onclick="deleteEvent()">🗑️ Eliminar evento</button>
-        </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <button class="btn" onclick="closeEventModal()">Cancelar</button>
-          <button class="btn btn-p" onclick="saveEvent()">Guardar</button>
-        </div>
-      </div>
-    </div>
-
-<!-- MODAL EDICIÓN -->
-<div id="modal-edit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;overflow-y:auto;padding:2rem 1rem;">
-  <div style="max-width:480px;margin:0 auto;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:1.5rem;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
-      <h3 style="font-size:16px;font-weight:600;">Editar personaje</h3>
-      <button class="btn btn-sm" onclick="closeEdit()">✕</button>
-    </div>
-    <div class="field"><label>Nombre del personaje</label><input type="text" id="e-name"/></div>
-    <div class="field"><label>Color</label><div class="crow" id="e-colors"></div></div>
-    <div class="field"><label>Emblema</label><div id="e-emblems" style="display:flex;gap:8px;flex-wrap:wrap;"></div></div>
-    <div class="field"><label>Lore</label><textarea id="e-lore"></textarea></div>
-    <div class="field"><label>Frase de batalla</label><input type="text" id="e-quote"/></div>
-    <div id="adm-extras" style="display:none;">
-      <div style="background:rgba(228,164,40,.08);border:1px solid rgba(228,164,40,.2);border-radius:var(--rsm);padding:.75rem;margin-bottom:1rem;">
-        <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:8px;">OPCIONES ADMIN</div>
-        <div class="g2">
-          <div class="field" style="margin:0;"><label>XP</label><input type="number" id="e-xp"/></div>
-          <div class="field" style="margin:0;"><label>Oro</label><input type="number" id="e-gold"/></div>
-        </div>
-        <div class="field" style="margin-top:8px;"><label>Clase</label>
-          <select id="e-cls"><option>Mago</option><option>Paladín</option><option>Exploradora</option><option>Guerrero</option><option>Pícaro</option><option>Bardo</option></select>
-        </div>
-      </div>
-    </div>
-    <div id="adm-delete-wrap" style="display:none;margin-bottom:1rem;">
-      <button class="btn btn-sm" style="background:rgba(216,90,48,.15);color:#f08060;border-color:rgba(216,90,48,.3);width:100%;" onclick="deletePlayer()">🗑️ Eliminar personaje</button>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;">
-      <button class="btn" onclick="closeEdit()">Cancelar</button>
-      <button class="btn btn-p" onclick="saveEdit()">Guardar cambios</button>
-    </div>
-  </div>
-</div>
-
-<script>
+<script defer>
 /* ══ CONFIG ══ */
 const CFG={
   MODE:'jsonbin',
@@ -1924,6 +1566,367 @@ function initTheme(){
   if(sid){const p=players.find(p=>p.id===sid);if(p){session={loggedIn:true,isAdmin:false,playerId:sid};enterApp();return;}}
   showScreen('screen-welcome');
 })();
+
 </script>
+</head>
+<body>
+<div id="toast"></div>
+<div class="levelup-pop" id="levelup-pop">
+  <div class="levelup-box">
+    <div style="font-size:42px;margin-bottom:.5rem;">⬆️</div>
+    <div style="font-size:22px;font-weight:700;color:var(--gold);margin-bottom:.25rem;">¡Subiste de nivel!</div>
+    <div id="lu-level" style="font-size:14px;color:var(--muted);margin-bottom:1rem;"></div>
+    <div style="font-size:13px;color:var(--text);margin-bottom:.5rem;">Tienes <span class="pts-left" id="lu-pts">3</span> puntos para repartir</div>
+    <div class="attr-pts-grid" id="lu-attrs"></div>
+    <button class="btn btn-p" id="lu-confirm" onclick="confirmLevelUp()" style="margin-top:.5rem;width:100%;">Confirmar</button>
+  </div>
+</div>
+<div class="reward-pop" id="reward-pop">
+  <div class="reward-box">
+    <div class="reward-emoji" id="rp-emoji">⚔️</div>
+    <div class="reward-title" id="rp-title">¡Misión completada!</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:.5rem;" id="rp-mission"></div>
+    <div class="reward-chips" id="rp-chips"></div>
+    <button class="btn btn-p" onclick="closeReward()">¡Reclamar!</button>
+  </div>
+</div>
+
+<!-- BIENVENIDA -->
+<div id="screen-welcome" class="centered" style="padding:1rem;">
+  <div class="lbox">
+    <div style="font-size:36px;margin-bottom:1rem;">🏰</div>
+    <h2>Cuartel General</h2>
+    <p>El tablero RPG del equipo ITBMC.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="btn btn-p" onclick="showScreen('screen-new')">Crear mi personaje</button>
+      <button class="btn" onclick="showScreen('screen-login')">Ya tengo personaje</button>
+      <button class="btn" style="border-color:rgba(228,164,40,.3);color:var(--gold);" onclick="showScreen('screen-admin')">Entrar como admin 👑</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="screen-login" style="display:none;" class="centered">
+  <div class="lbox">
+    <h2>Bienvenido de nuevo</h2>
+    <p>Introduce tu nombre de personaje y contraseña.</p>
+    <div class="field"><label>Nombre del personaje</label><input type="text" id="ln" placeholder="Ej: Aldric el Arcano"/></div>
+    <div class="field"><label>Contraseña</label><input type="password" id="lp" placeholder="Tu contraseña"/><div class="errmsg" id="lerr">Nombre o contraseña incorrectos.</div></div>
+    <div style="display:flex;gap:8px;"><button class="btn" onclick="showScreen('screen-welcome')">← Atrás</button><button class="btn btn-p" style="flex:1" onclick="doLogin()">Entrar</button></div>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div id="screen-admin" style="display:none;" class="centered">
+  <div class="lbox">
+    <h2>Acceso admin 👑</h2>
+    <p>Introduce la contraseña de administrador.</p>
+    <div class="field"><label>Contraseña admin</label><input type="password" id="ap" placeholder="Contraseña"/><div class="errmsg" id="aerr">Contraseña incorrecta.</div></div>
+    <div style="display:flex;gap:8px;"><button class="btn" onclick="showScreen('screen-welcome')">← Atrás</button><button class="btn btn-p" style="flex:1" onclick="doAdminLogin()">Entrar</button></div>
+  </div>
+</div>
+
+<!-- CREADOR -->
+<div id="screen-new" style="display:none;padding:2rem 1rem;">
+  <div style="max-width:560px;margin:0 auto;">
+    <div style="font-size:28px;margin-bottom:.5rem;">⚔️</div>
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:.25rem;">Crea tu personaje</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:1.5rem;">Podrás editar el lore y aspecto después.</p>
+    <div class="steps" id="csteps">
+      <div class="stepi active" onclick="cGoTo(0)">1 · Identidad</div>
+      <div class="stepi" onclick="cGoTo(1)">2 · Clase</div>
+      <div class="stepi" onclick="cGoTo(2)">3 · Aspecto</div>
+      <div class="stepi" onclick="cGoTo(3)">4 · Historia</div>
+    </div>
+    <div class="wp active" id="cp-0">
+      <div class="field"><label>Tu nombre real</label><input type="text" id="cp-rn" placeholder="Ej: Antonio Conde"/></div>
+      <div class="field"><label>Nombre del personaje</label><input type="text" id="cp-pn" placeholder="Ej: Seraphine Ojoagudo"/></div>
+      <div class="field"><label>Contraseña</label><input type="password" id="cp-pin" placeholder="Para editar tu ficha"/></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
+        <button class="btn" onclick="showScreen('screen-welcome')">← Atrás</button>
+        <button class="btn btn-p" onclick="cNext(0)">Siguiente →</button>
+      </div>
+    </div>
+    <div class="wp" id="cp-1">
+      <div class="stitle">Elige tu clase</div>
+      <div class="cgrid" id="cp-cgrid"></div>
+      <div id="cp-cstats" style="display:none;margin-bottom:1rem;">
+        <div class="stitle">Atributos de esta clase</div>
+        <div id="cp-abars"></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button class="btn" onclick="cGoTo(0)">← Atrás</button>
+        <button class="btn btn-p" onclick="cNext(1)">Siguiente →</button>
+      </div>
+    </div>
+    <div class="wp" id="cp-2">
+      <div class="stitle">Color del personaje</div>
+      <div class="crow" id="cp-colors"></div>
+      <div class="stitle">Emblema</div>
+      <div id="cp-emblems" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;"></div>
+      <div class="stitle">Equipamiento</div>
+      <div class="g3" id="cp-equip"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
+        <button class="btn" onclick="cGoTo(1)">← Atrás</button>
+        <button class="btn btn-p" onclick="cNext(2)">Siguiente →</button>
+      </div>
+    </div>
+    <div class="wp" id="cp-3">
+      <div class="field"><label>Historia del personaje</label><textarea id="cp-lore" placeholder="¿De dónde viene? ¿Cuál es su motivación en el equipo?"></textarea></div>
+      <div class="field"><label>Frase de batalla</label><input type="text" id="cp-quote" placeholder="Ej: El código no falla, fallan los que no lo prueban."/></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
+        <button class="btn" onclick="cGoTo(2)">← Atrás</button>
+        <button class="btn btn-p" onclick="saveNewChar()">Crear personaje ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="screen-app" style="display:none;">
+  <div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">IT</div>
+      <div class="sidebar-logo-sub">Cuartel General</div>
+    </div>
+    <nav class="nav" role="navigation">
+      <button class="nb active" onclick="showPage('misiones',this)"><span class="nb-icon">⚔️</span>Misiones</button>
+      <button class="nb" onclick="showPage('heroe',this)"><span class="nb-icon">🧙</span>Héroe</button>
+      <button class="nb" onclick="showPage('arcos',this)"><span class="nb-icon">🗺️</span>Arcos</button>
+      <button class="nb" onclick="showPage('ranking',this)"><span class="nb-icon">🏆</span>Ranking</button>
+      <button class="nb" onclick="showPage('gacha',this)"><span class="nb-icon">✨</span>Gacha</button>
+      <button class="nb" onclick="showPage('tienda',this)"><span class="nb-icon">🛒</span>Tienda</button>
+      <button class="nb" onclick="showPage('calendario',this)"><span class="nb-icon">📅</span>Calendario</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar tema" style="width:100%;margin-bottom:.5rem;justify-content:flex-start;gap:8px;padding:7px 12px;border-radius:var(--radius);border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s;display:flex;align-items:center;">☀️ <span id="theme-label">Modo claro</span></button>
+      <div id="umenu-inline" style="display:none;margin-bottom:.5rem;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius);padding:.5rem;">
+        <div style="padding:6px 8px;font-size:12px;color:var(--muted);border-bottom:0.5px solid var(--border);margin-bottom:4px;" id="umname">—</div>
+        <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="goToMyProfile()">👤 Mi perfil</button>
+        <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="openEditModal(session.playerId)">✏️ Editar personaje</button>
+        <button class="btn btn-sm btn-g" style="width:100%;text-align:left;margin-bottom:2px;" onclick="exportJSON()">⬇️ Exportar JSON</button>
+        <button class="btn btn-sm" style="width:100%;text-align:left;" onclick="doLogout()">← Cerrar sesión</button>
+      </div>
+      <div class="upill" onclick="toggleUMenu()" id="upill" style="width:100%;justify-content:flex-start;">
+        <span class="udot"></span><span id="ulabel">—</span>
+      </div>
+    </div>
+  </aside>
+  <div class="app">
+    <div id="mode-ban-wrap"></div>
+    <div class="topbar"></div>
+
+    <!-- MISIONES -->
+    <div id="page-misiones" class="page active">
+      <div class="g4" style="margin-bottom:1.5rem;" id="mstats"></div>
+      <div><div class="stitle">Diarias <span class="daily-rib">HOY</span></div><div id="m-daily"></div></div>
+      <div style="margin-top:1.25rem;"><div class="stitle">En curso</div><div id="m-active"></div></div>
+      <div style="margin-top:1.25rem;"><div class="stitle">Pendientes</div><div id="m-pending"></div></div>
+      <div style="margin-top:1.25rem;"><div class="stitle">Completadas</div><div id="m-done"></div></div>
+    </div>
+
+    <!-- HÉROES -->
+    <div id="page-heroe" class="page">
+      <div class="htabs" id="htabs"></div>
+      <div id="hprofile"></div>
+    </div>
+
+    <!-- ARCOS -->
+    <div id="page-arcos" class="page">
+      <div class="g2" id="arcs-grid"></div>
+    </div>
+
+    <!-- RANKING -->
+    <div id="page-ranking" class="page">
+      <div class="card"><div class="stitle">Tabla de héroes</div><div id="rank-list"></div></div>
+    </div>
+
+    <!-- GACHA -->
+    <div id="page-gacha" class="page">
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="stitle">Invocación</div>
+        <div class="gacha-wrap">
+          <div class="gacha-cost">Coste: <span>100 oro</span> por tirada · <span>900 oro</span> por 10 tiradas</div>
+          <div id="gacha-gold-display" style="font-size:22px;font-weight:700;color:var(--gold);margin-bottom:1rem;">0 oro</div>
+          <div class="gacha-btn-wrap">
+            <button class="btn btn-gold" onclick="doPull(1)">✨ Invocar x1 (100 oro)</button>
+            <button class="btn btn-gold" onclick="doPull(10)">✨ Invocar x10 (900 oro)</button>
+          </div>
+          <div class="card-reveal" id="card-reveal"></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:.75rem;">
+          Probabilidades: Común 60% · Rara 25% · Épica 12% · Legendaria 3%
+        </div>
+      </div>
+      <div class="card">
+        <div class="stitle">Mi galería</div>
+        <div id="my-gallery"></div>
+      </div>
+      <div class="card" style="margin-top:1rem;">
+        <div class="stitle">Galería del equipo</div>
+        <div class="htabs" id="gallery-tabs"></div>
+        <div id="team-gallery"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TIENDA -->
+    <div id="page-tienda" class="page">
+      <div id="admin-shop-panel" style="display:none;">
+        <div class="admin-panel-wrap">
+          <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:1rem;">👑 Panel Admin — Crear Item</div>
+          <div class="admin-item-form">
+            <div class="field"><label>Nombre</label><input type="text" id="si-name" placeholder="Espada del Abismo"/></div>
+            <div class="field"><label>Icono (emoji)</label><input type="text" id="si-icon" placeholder="⚔️" maxlength="2"/></div>
+            <div class="field"><label>Descripción</label><input type="text" id="si-desc" placeholder="Forjada en las sombras..."/></div>
+            <div class="field"><label>Slot</label>
+              <select id="si-slot"><option value="arma">Arma</option><option value="armadura">Armadura</option><option value="accesorio">Accesorio</option><option value="especial">Especial</option></select>
+            </div>
+            <div class="field"><label>Coste (oro)</label><input type="number" id="si-cost" placeholder="500" min="0"/></div>
+            <div class="field"><label>Nivel mínimo</label><input type="number" id="si-lvl" placeholder="1" min="1"/></div>
+            <div style="grid-column:1/-1;">
+              <div class="stitle">Requisitos de atributos (0 = sin requisito)</div>
+              <div class="g3" style="gap:8px;">
+                <div class="field" style="margin:0;"><label>Fuerza mín.</label><input type="number" id="si-rfue" value="0" min="0"/></div>
+                <div class="field" style="margin:0;"><label>Int. mín.</label><input type="number" id="si-rint" value="0" min="0"/></div>
+                <div class="field" style="margin:0;"><label>Agi. mín.</label><input type="number" id="si-ragi" value="0" min="0"/></div>
+                <div class="field" style="margin:0;"><label>Car. mín.</label><input type="number" id="si-rcar" value="0" min="0"/></div>
+                <div class="field" style="margin:0;"><label>Sab. mín.</label><input type="number" id="si-rsab" value="0" min="0"/></div>
+              </div>
+            </div>
+            <div style="grid-column:1/-1;">
+              <div class="stitle">Bonus de atributos al equipar (0 = sin bonus)</div>
+              <div class="g3" style="gap:8px;">
+                <div class="field" style="margin:0;"><label>+Fuerza</label><input type="number" id="si-bfue" value="0" min="0"/></div>
+                <div class="field" style="margin:0;"><label>+Int.</label><input type="number" id="si-bint" value="0" min="0"/></div>
+                <div class="field" style="margin:0;"><label>+Agi.</label><input type="number" id="si-bagi" value="0" min="0"/></div>
+                <div class="field" style="margin:0;"><label>+Car.</label><input type="number" id="si-bcar" value="0" min="0"/></div>
+                <div class="field" style="margin:0;"><label>+Sab.</label><input type="number" id="si-bsab" value="0" min="0"/></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
+            <button class="btn btn-gold" onclick="adminCreateItem()">+ Crear item</button>
+          </div>
+          <div id="admin-items-list" style="margin-top:1rem;"></div>
+        </div>
+      </div>
+      <div id="my-equipped"></div>
+      <div class="stitle">Items disponibles</div>
+      <div id="shop-grid-wrap"></div>
+    </div>
+
+    <!-- CALENDARIO -->
+    <div id="page-calendario" class="page">
+      <div class="cal-header">
+        <div class="cal-month" id="cal-month-label">Junio 2026</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="display:flex;gap:4px;">
+            <button class="btn btn-sm" id="cal-filter-all" onclick="setCalFilter('all',this)" style="font-size:11px;">Todos</button>
+            <button class="btn btn-sm" id="cal-filter-personal" onclick="setCalFilter('personal',this)" style="font-size:11px;">Personal</button>
+            <button class="btn btn-sm" id="cal-filter-team" onclick="setCalFilter('team',this)" style="font-size:11px;">Equipo</button>
+            <button class="btn btn-sm" id="cal-filter-mission" onclick="setCalFilter('mission',this)" style="font-size:11px;">Misiones</button>
+          </div>
+          <div class="cal-nav">
+            <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+            <button class="cal-nav-btn" onclick="calNav(0)" style="font-size:11px;width:auto;padding:0 8px;">Hoy</button>
+            <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+          </div>
+          <button class="btn btn-sm btn-p" onclick="openEventModal(null)" id="cal-add-btn">+ Evento</button>
+        </div>
+      </div>
+      <div class="cal-shell">
+        <div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+        <div class="cal-sidebar">
+          <div class="card">
+            <div class="stitle" id="cal-selected-label">Hoy</div>
+            <div class="event-list" id="cal-day-events">
+              <div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin eventos.</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="stitle">Próximos eventos</div>
+            <div class="event-list" id="cal-upcoming"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL EVENTO -->
+    <div class="cal-modal" id="cal-event-modal">
+      <div class="cal-modal-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+          <h3 style="font-size:15px;font-weight:500;" id="cal-modal-title">Nuevo evento</h3>
+          <button class="btn btn-sm" onclick="closeEventModal()">✕</button>
+        </div>
+        <div class="field"><label>Título</label><input type="text" id="ev-title" placeholder="Reunión de equipo"/></div>
+        <div class="g2">
+          <div class="field"><label>Fecha</label><input type="date" id="ev-date"/></div>
+          <div class="field"><label>Hora</label><input type="time" id="ev-time" value="09:00"/></div>
+        </div>
+        <div class="field"><label>Descripción</label><textarea id="ev-desc" placeholder="Detalles del evento..." style="min-height:60px;"></textarea></div>
+        <div class="g2">
+          <div class="field"><label>Tipo</label>
+            <select id="ev-type">
+              <option value="personal">Personal</option>
+              <option value="team">Equipo</option>
+            </select>
+          </div>
+          <div class="field"><label>Misión vinculada</label>
+            <select id="ev-mission">
+              <option value="">Sin vincular</option>
+            </select>
+          </div>
+        </div>
+        <div id="ev-delete-wrap" style="display:none;margin-bottom:.75rem;">
+          <button class="btn btn-sm" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);width:100%;" onclick="deleteEvent()">🗑️ Eliminar evento</button>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button class="btn" onclick="closeEventModal()">Cancelar</button>
+          <button class="btn btn-p" onclick="saveEvent()">Guardar</button>
+        </div>
+      </div>
+    </div>
+
+<!-- MODAL EDICIÓN -->
+<div id="modal-edit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;overflow-y:auto;padding:2rem 1rem;">
+  <div style="max-width:480px;margin:0 auto;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:1.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+      <h3 style="font-size:16px;font-weight:600;">Editar personaje</h3>
+      <button class="btn btn-sm" onclick="closeEdit()">✕</button>
+    </div>
+    <div class="field"><label>Nombre del personaje</label><input type="text" id="e-name"/></div>
+    <div class="field"><label>Color</label><div class="crow" id="e-colors"></div></div>
+    <div class="field"><label>Emblema</label><div id="e-emblems" style="display:flex;gap:8px;flex-wrap:wrap;"></div></div>
+    <div class="field"><label>Lore</label><textarea id="e-lore"></textarea></div>
+    <div class="field"><label>Frase de batalla</label><input type="text" id="e-quote"/></div>
+    <div id="adm-extras" style="display:none;">
+      <div style="background:rgba(228,164,40,.08);border:1px solid rgba(228,164,40,.2);border-radius:var(--rsm);padding:.75rem;margin-bottom:1rem;">
+        <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:8px;">OPCIONES ADMIN</div>
+        <div class="g2">
+          <div class="field" style="margin:0;"><label>XP</label><input type="number" id="e-xp"/></div>
+          <div class="field" style="margin:0;"><label>Oro</label><input type="number" id="e-gold"/></div>
+        </div>
+        <div class="field" style="margin-top:8px;"><label>Clase</label>
+          <select id="e-cls"><option>Mago</option><option>Paladín</option><option>Exploradora</option><option>Guerrero</option><option>Pícaro</option><option>Bardo</option></select>
+        </div>
+      </div>
+    </div>
+    <div id="adm-delete-wrap" style="display:none;margin-bottom:1rem;">
+      <button class="btn btn-sm" style="background:rgba(216,90,48,.15);color:#f08060;border-color:rgba(216,90,48,.3);width:100%;" onclick="deletePlayer()">🗑️ Eliminar personaje</button>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn" onclick="closeEdit()">Cancelar</button>
+      <button class="btn btn-p" onclick="saveEdit()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+
+
 </body>
 </html>
