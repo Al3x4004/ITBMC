@@ -397,11 +397,13 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 <script>
 /* ══ CONFIG ══ */
 const CFG={
-  MODE:'local',
+  MODE:'jsonbin',
   DATA_PATH:'Excel/data.json',
   GACHA_CARDS_PATH:'gacha/cards.json',
   GITHUB_RAW:'https://raw.githubusercontent.com/Al3x4004/ITBMC/main/',
   ADMIN_PW:'admin1234',
+  JSONBIN_ID:'6a3e5822da38895dfe021fb9',
+  JSONBIN_KEY:'$2a$10$A9vWP3gpUuOYk5tN6KzCs.mNO8lTtpKCG4gEkdJRi9eQCBoPVxnnG',
 };
 
 /* ══ DATOS ESTÁTICOS ══ */
@@ -468,8 +470,47 @@ let cpState={cls:null,color:COLORS[0],emblem:'⚔️',weapon:null,armor:null,acc
 let galleryHeroIdx=0;
 
 /* ══ CARGA ══ */
+/* ══ JSONBIN ══ */
+const JB_URL=`https://api.jsonbin.io/v3/b/${CFG.JSONBIN_ID}`;
+const JB_HDR={'Content-Type':'application/json','X-Master-Key':CFG.JSONBIN_KEY,'X-Bin-Versioning':'false'};
+
+async function loadFromJSONBin(){
+  try{
+    const r=await fetch(JB_URL+'/latest',{headers:{'X-Master-Key':CFG.JSONBIN_KEY}});
+    if(!r.ok)throw new Error('JSONBin '+r.status);
+    const d=await r.json();
+    return d.record||d;
+  }catch(e){console.error('JSONBin load:',e);return null;}
+}
+
+async function saveToJSONBin(){
+  try{
+    const r=await fetch(JB_URL,{method:'PUT',headers:JB_HDR,body:JSON.stringify({players,missions,arcs,gacha_cards:gachaCards})});
+    if(!r.ok)throw new Error('JSONBin save '+r.status);
+  }catch(e){console.error('JSONBin save:',e);toast('Error al guardar. Comprueba la conexión.');}
+}
+
 async function loadData(){
-  if(CFG.MODE==='local'){
+  // Cartas del gacha siempre desde GitHub
+  try{
+    const r=await fetch(CFG.GITHUB_RAW+CFG.GACHA_CARDS_PATH);
+    if(r.ok)gachaCards=await r.json();
+    else gachaCards=JSON.parse(JSON.stringify(DEMO.gacha_cards));
+  }catch{gachaCards=JSON.parse(JSON.stringify(DEMO.gacha_cards));}
+
+  if(CFG.MODE==='jsonbin'){
+    const d=await loadFromJSONBin();
+    if(d&&d.players){
+      players =d.players;
+      missions=d.missions||DEMO.missions;
+      arcs    =d.arcs    ||DEMO.arcs;
+    }else{
+      players =JSON.parse(JSON.stringify(DEMO.players));
+      missions=JSON.parse(JSON.stringify(DEMO.missions));
+      arcs    =JSON.parse(JSON.stringify(DEMO.arcs));
+      await saveToJSONBin();
+    }
+  }else{
     try{
       const r=await fetch(CFG.DATA_PATH);
       if(!r.ok)throw new Error();
@@ -477,20 +518,17 @@ async function loadData(){
       players =d.players  ||DEMO.players;
       missions=d.missions ||DEMO.missions;
       arcs    =d.arcs     ||DEMO.arcs;
-      gachaCards=d.gacha_cards||DEMO.gacha_cards;
     }catch{
       players =JSON.parse(JSON.stringify(DEMO.players));
       missions=JSON.parse(JSON.stringify(DEMO.missions));
       arcs    =JSON.parse(JSON.stringify(DEMO.arcs));
-      gachaCards=JSON.parse(JSON.stringify(DEMO.gacha_cards));
     }
-    // asegurar campos nuevos
-    players.forEach(p=>{
-      if(!p.gachaTokens)p.gachaTokens=0;
-      if(!p.gallery)p.gallery=[];
-      if(!p.lastDaily)p.lastDaily='';
-    });
   }
+  players.forEach(p=>{
+    if(!p.gachaTokens)p.gachaTokens=0;
+    if(!p.gallery)p.gallery=[];
+    if(!p.lastDaily)p.lastDaily='';
+  });
   checkDailyMissions();
 }
 
@@ -515,6 +553,12 @@ function checkDailyMissions(){
 }
 
 function exportJSON(){
+  if(CFG.MODE==='jsonbin'){
+    saveToJSONBin();
+    document.getElementById('umenu').style.display='none';
+    toast('✅ Guardado en la nube automáticamente');
+    return;
+  }
   const blob=new Blob([JSON.stringify({players,missions,arcs,gacha_cards:gachaCards},null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download='data.json';a.click();
@@ -625,6 +669,7 @@ function saveNewChar(){
   if(!cpState.cls){toast('Vuelve al paso 2 y elige una clase.');return;}
   const np={id:'pj'+Date.now(),realName:rn,name:pn,cls:cpState.cls.name,role:cpState.cls.role,emblem:cpState.emblem,color:cpState.color.hex,colorBg:cpState.color.bg,level:1,xp:0,xpNext:1000,gold:0,missions:0,weapon:cpState.weapon,armor:cpState.armor,accessory:cpState.accessory,lore:lore||'Historia por escribir...',quote:quote||'...',pin,attrs:{...cpState.cls.attrs},gachaTokens:0,gallery:[],lastDaily:''};
   players.push(np);checkDailyMissions();
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
   session={loggedIn:true,isAdmin:false,playerId:np.id};localStorage.setItem('cg_pid',np.id);
   toast('¡Personaje creado! Bienvenido, '+pn);setTimeout(()=>enterApp(),800);
 }
@@ -700,6 +745,7 @@ function completeMission(id){
     p.level=Math.floor(p.xp/1000)+1;
     showRewardPopup(m,p);
   }
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
   renderAll();
 }
 
@@ -854,6 +900,7 @@ function doPull(times){
       <div class="gacha-card-info"><div class="gacha-card-name">${c.name}</div><div class="gacha-card-rarity rarity-${c.rarity}">${RARITY_LABEL[c.rarity]}</div></div>`;
     reveal.appendChild(div);
   });
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
   renderGachaGold();renderMyGallery();renderGalleryTabs();renderAll();
   toast(`¡${times} carta${times>1?'s':''} obtenida${times>1?'s':''}!`);
 }
@@ -924,6 +971,7 @@ function saveEdit(){
     p.cls=document.getElementById('e-cls').value;p.level=Math.floor(p.xp/1000)+1;
     const cls=CLASSES.find(c=>c.name===p.cls);if(cls){p.role=cls.role;p.attrs={...cls.attrs};}
   }
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
   closeEdit();renderAll();toast('Personaje actualizado');
 }
 
