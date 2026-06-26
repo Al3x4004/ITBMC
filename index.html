@@ -255,6 +255,113 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 #modal-edit{background:rgba(0,0,0,0.4);}
 #modal-edit > div{background:var(--bg2);border:0.5px solid var(--border2);}
 
+
+/* ══ CREAR MISIONES/ARCOS ══ */
+.create-panel{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem;}
+.create-panel summary{font-size:13px;font-weight:500;cursor:pointer;color:var(--text);list-style:none;display:flex;align-items:center;gap:6px;}
+.create-panel summary::-webkit-details-marker{display:none;}
+.create-panel summary::before{content:'＋';font-size:14px;color:var(--accent);}
+.create-panel[open] summary::before{content:'－';}
+.create-form{margin-top:1rem;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.create-form .full{grid-column:1/-1;}
+.diff-select{display:flex;gap:6px;flex-wrap:wrap;}
+.diff-opt{padding:4px 12px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;cursor:pointer;font-size:12px;font-weight:500;color:var(--muted);transition:all .15s;font-family:inherit;}
+.diff-opt:hover{border-color:var(--border2);background:var(--bg3);}
+.diff-opt.sel-D{background:var(--bg3);color:var(--muted);border-color:var(--border2);}
+.diff-opt.sel-C{background:var(--teal-bg);color:var(--teal);border-color:var(--teal-border);}
+.diff-opt.sel-B{background:var(--gold-bg);color:var(--gold);border-color:var(--gold-border);}
+.diff-opt.sel-A{background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);}
+.diff-opt.sel-S{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-border);}
+.daily-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--gold-bg);color:var(--gold);border:0.5px solid var(--gold-border);margin-left:6px;}
+
+
+/* ══ CREAR MISIONES/ARCOS ══ */
+const DIFF_REWARDS={D:{xp:25,gold:10},C:{xp:75,gold:25},B:{xp:150,gold:50},A:{xp:300,gold:100},S:{xp:500,gold:200}};
+const DIFF_ATTRS={D:'Sabiduría',C:'Inteligencia',B:'Agilidad',A:'Fuerza',S:'Carisma'};
+const DIFF_ATTR_PTS={D:1,C:2,B:3,A:5,S:10};
+let selectedDiff='D';
+
+function selectDiff(btn,diff){
+  selectedDiff=diff;
+  document.querySelectorAll('.diff-opt').forEach(function(b){
+    var d=b.getAttribute('data-diff');
+    b.className='diff-opt'+(d===diff?' sel-'+d:'');
+  });
+}
+
+function toggleDailyFields(){
+  var type=document.getElementById('nm-type').value;
+  var diffWrap=document.getElementById('nm-diff-wrap');
+  if(diffWrap)diffWrap.style.display=type==='daily'?'none':'block';
+}
+
+function populateArcSelect(){
+  var sel=document.getElementById('nm-arc');
+  if(!sel)return;
+  sel.innerHTML='<option value="">Sin arco</option>'+arcs.map(function(a){
+    return '<option value="'+a.name+'">'+a.name+'</option>';
+  }).join('');
+}
+
+function createMission(){
+  var name=document.getElementById('nm-name').value.trim();
+  if(!name){toast('La misión necesita un nombre.');return;}
+  var type=document.getElementById('nm-type').value;
+  var isDaily=type==='daily';
+  var arc=document.getElementById('nm-arc').value;
+  var deadline=document.getElementById('nm-deadline').value;
+  var diff=isDaily?'D':selectedDiff;
+  var rewards=DIFF_REWARDS[diff];
+  var newM={
+    id:'m'+Date.now(),
+    name:name,
+    arc:arc||'General',
+    playerId:session.isAdmin?'':session.playerId,
+    status:'pending',
+    diff:diff,
+    xp:isDaily?25:rewards.xp,
+    gold:isDaily?10:rewards.gold,
+    attr:DIFF_ATTRS[diff],
+    attrPts:DIFF_ATTR_PTS[diff],
+    deadline:deadline||'',
+    daily:isDaily,
+    plannerId:'',
+    createdBy:session.playerId
+  };
+  // Check daily limit
+  if(isDaily){
+    var myDailies=missions.filter(function(m){return m.daily&&!m.id.includes('_');});
+    if(myDailies.length>=4){toast('Máximo 4 misiones diarias globales.');return;}
+  }
+  missions.push(newM);
+  if(isDaily)checkDailyMissions();
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  document.getElementById('nm-name').value='';
+  document.getElementById('nm-deadline').value='';
+  document.getElementById('panel-new-mission').removeAttribute('open');
+  renderAll();toast('Misión creada: '+name);
+}
+
+function createArc(){
+  var name=document.getElementById('na-name').value.trim();
+  if(!name){toast('El arco necesita un nombre.');return;}
+  var newArc={
+    id:'arc'+Date.now(),
+    name:name,
+    lore:document.getElementById('na-desc').value.trim()||'Un nuevo capítulo comienza.',
+    status:document.getElementById('na-status').value,
+    total:0,done:0,
+    createdBy:session.playerId
+  };
+  arcs.push(newArc);
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  populateArcSelect();
+  document.getElementById('na-name').value='';
+  document.getElementById('na-desc').value='';
+  document.getElementById('panel-new-arc').removeAttribute('open');
+  renderAll();populateArcSelect();toast('Arco creado: '+name);
+}
+
 /* ══ TOAST ══ */
 #toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);border-radius:var(--radius);padding:9px 18px;font-size:13px;display:none;z-index:999;}
 @media(max-width:600px){.g4{grid-template-columns:repeat(2,1fr);}.pbody{grid-template-columns:1fr;}.cgrid{grid-template-columns:repeat(2,1fr);}.nav{display:none;}}
@@ -484,6 +591,113 @@ function deleteEvent(){
 let calState={year:new Date().getFullYear(),month:new Date().getMonth(),selectedDate:null,filter:'all',editingEventId:null};
 
 
+
+/* ══ CREAR MISIONES/ARCOS ══ */
+.create-panel{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem;}
+.create-panel summary{font-size:13px;font-weight:500;cursor:pointer;color:var(--text);list-style:none;display:flex;align-items:center;gap:6px;}
+.create-panel summary::-webkit-details-marker{display:none;}
+.create-panel summary::before{content:'＋';font-size:14px;color:var(--accent);}
+.create-panel[open] summary::before{content:'－';}
+.create-form{margin-top:1rem;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.create-form .full{grid-column:1/-1;}
+.diff-select{display:flex;gap:6px;flex-wrap:wrap;}
+.diff-opt{padding:4px 12px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;cursor:pointer;font-size:12px;font-weight:500;color:var(--muted);transition:all .15s;font-family:inherit;}
+.diff-opt:hover{border-color:var(--border2);background:var(--bg3);}
+.diff-opt.sel-D{background:var(--bg3);color:var(--muted);border-color:var(--border2);}
+.diff-opt.sel-C{background:var(--teal-bg);color:var(--teal);border-color:var(--teal-border);}
+.diff-opt.sel-B{background:var(--gold-bg);color:var(--gold);border-color:var(--gold-border);}
+.diff-opt.sel-A{background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);}
+.diff-opt.sel-S{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-border);}
+.daily-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--gold-bg);color:var(--gold);border:0.5px solid var(--gold-border);margin-left:6px;}
+
+
+/* ══ CREAR MISIONES/ARCOS ══ */
+const DIFF_REWARDS={D:{xp:25,gold:10},C:{xp:75,gold:25},B:{xp:150,gold:50},A:{xp:300,gold:100},S:{xp:500,gold:200}};
+const DIFF_ATTRS={D:'Sabiduría',C:'Inteligencia',B:'Agilidad',A:'Fuerza',S:'Carisma'};
+const DIFF_ATTR_PTS={D:1,C:2,B:3,A:5,S:10};
+let selectedDiff='D';
+
+function selectDiff(btn,diff){
+  selectedDiff=diff;
+  document.querySelectorAll('.diff-opt').forEach(function(b){
+    var d=b.getAttribute('data-diff');
+    b.className='diff-opt'+(d===diff?' sel-'+d:'');
+  });
+}
+
+function toggleDailyFields(){
+  var type=document.getElementById('nm-type').value;
+  var diffWrap=document.getElementById('nm-diff-wrap');
+  if(diffWrap)diffWrap.style.display=type==='daily'?'none':'block';
+}
+
+function populateArcSelect(){
+  var sel=document.getElementById('nm-arc');
+  if(!sel)return;
+  sel.innerHTML='<option value="">Sin arco</option>'+arcs.map(function(a){
+    return '<option value="'+a.name+'">'+a.name+'</option>';
+  }).join('');
+}
+
+function createMission(){
+  var name=document.getElementById('nm-name').value.trim();
+  if(!name){toast('La misión necesita un nombre.');return;}
+  var type=document.getElementById('nm-type').value;
+  var isDaily=type==='daily';
+  var arc=document.getElementById('nm-arc').value;
+  var deadline=document.getElementById('nm-deadline').value;
+  var diff=isDaily?'D':selectedDiff;
+  var rewards=DIFF_REWARDS[diff];
+  var newM={
+    id:'m'+Date.now(),
+    name:name,
+    arc:arc||'General',
+    playerId:session.isAdmin?'':session.playerId,
+    status:'pending',
+    diff:diff,
+    xp:isDaily?25:rewards.xp,
+    gold:isDaily?10:rewards.gold,
+    attr:DIFF_ATTRS[diff],
+    attrPts:DIFF_ATTR_PTS[diff],
+    deadline:deadline||'',
+    daily:isDaily,
+    plannerId:'',
+    createdBy:session.playerId
+  };
+  // Check daily limit
+  if(isDaily){
+    var myDailies=missions.filter(function(m){return m.daily&&!m.id.includes('_');});
+    if(myDailies.length>=4){toast('Máximo 4 misiones diarias globales.');return;}
+  }
+  missions.push(newM);
+  if(isDaily)checkDailyMissions();
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  document.getElementById('nm-name').value='';
+  document.getElementById('nm-deadline').value='';
+  document.getElementById('panel-new-mission').removeAttribute('open');
+  renderAll();toast('Misión creada: '+name);
+}
+
+function createArc(){
+  var name=document.getElementById('na-name').value.trim();
+  if(!name){toast('El arco necesita un nombre.');return;}
+  var newArc={
+    id:'arc'+Date.now(),
+    name:name,
+    lore:document.getElementById('na-desc').value.trim()||'Un nuevo capítulo comienza.',
+    status:document.getElementById('na-status').value,
+    total:0,done:0,
+    createdBy:session.playerId
+  };
+  arcs.push(newArc);
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  populateArcSelect();
+  document.getElementById('na-name').value='';
+  document.getElementById('na-desc').value='';
+  document.getElementById('panel-new-arc').removeAttribute('open');
+  renderAll();populateArcSelect();toast('Arco creado: '+name);
+}
+
 </style>
 
 <body>
@@ -637,6 +851,51 @@ let calState={year:new Date().getFullYear(),month:new Date().getMonth(),selected
     <!-- MISIONES -->
     <div id="page-misiones" class="page active">
       <div class="g4" style="margin-bottom:1.5rem;" id="mstats"></div>
+
+      <!-- Crear misión -->
+      <details class="create-panel" id="panel-new-mission">
+        <summary>Nueva misión</summary>
+        <div class="create-form">
+          <div class="field full"><label>Nombre de la misión</label><input type="text" id="nm-name" placeholder="Ej: Revisar el backlog"/></div>
+          <div class="field"><label>Arco</label><select id="nm-arc"></select></div>
+          <div class="field"><label>Tipo</label>
+            <select id="nm-type" onchange="toggleDailyFields()">
+              <option value="normal">Misión normal</option>
+              <option value="daily">Misión diaria</option>
+            </select>
+          </div>
+          <div class="field full" id="nm-diff-wrap">
+            <label>Dificultad</label>
+            <div class="diff-select">
+              <button class="diff-opt sel-D" data-diff="D" onclick="selectDiff(this,'D')">D — 25 XP / 10 oro</button>
+              <button class="diff-opt" data-diff="C" onclick="selectDiff(this,'C')">C — 75 XP / 25 oro</button>
+              <button class="diff-opt" data-diff="B" onclick="selectDiff(this,'B')">B — 150 XP / 50 oro</button>
+              <button class="diff-opt" data-diff="A" onclick="selectDiff(this,'A')">A — 300 XP / 100 oro</button>
+              <button class="diff-opt" data-diff="S" onclick="selectDiff(this,'S')">S — 500 XP / 200 oro</button>
+            </div>
+          </div>
+          <div class="field"><label>Fecha límite (opcional)</label><input type="date" id="nm-deadline"/></div>
+          <div class="field full" style="display:flex;justify-content:flex-end;">
+            <button class="btn btn-p" onclick="createMission()">Crear misión</button>
+          </div>
+        </div>
+      </details>
+
+      <!-- Crear arco -->
+      <details class="create-panel" id="panel-new-arc">
+        <summary>Nuevo arco</summary>
+        <div class="create-form">
+          <div class="field"><label>Nombre del arco</label><input type="text" id="na-name" placeholder="Ej: La Conquista del Q3"/></div>
+          <div class="field"><label>Estado</label>
+            <select id="na-status"><option value="active">Activo</option><option value="blocked">Bloqueado</option></select>
+          </div>
+          <div class="field full"><label>Descripción</label><textarea id="na-desc" placeholder="El equipo se embarca en..." style="min-height:56px;"></textarea></div>
+          <div class="field full" style="display:flex;justify-content:flex-end;">
+            <button class="btn btn-p" onclick="createArc()">Crear arco</button>
+          </div>
+        </div>
+      </details>
+
       <div><div class="stitle">Diarias <span class="daily-rib">HOY</span></div><div id="m-daily"></div></div>
       <div style="margin-top:1.25rem;"><div class="stitle">En curso</div><div id="m-active"></div></div>
       <div style="margin-top:1.25rem;"><div class="stitle">Pendientes</div><div id="m-pending"></div></div>
@@ -902,9 +1161,9 @@ const RARITY_LABEL={comun:'Común',rara:'Rara',epica:'Épica',legendaria:'Legend
 
 const DEMO={
   players:[
-    {id:'pj001',realName:'',name:'Aldric el Arcano',   cls:'Mago',       role:'Dev / Técnico',       emblem:'🔮',color:'#7f77dd',colorBg:'rgba(127,119,221,0.15)',level:3,xp:2400,xpNext:3000,gold:580,missions:8,weapon:'Báculo arcano',  armor:'Túnica de seda',   accessory:'Cristal oráculo',   lore:'Estudioso de los lenguajes arcanos del código.',quote:'El código no falla, fallan los que no lo prueban.',pin:'',attrs:{fue:1,int:18,agi:10,car:4,sab:8},gachaTokens:0,gallery:[],lastDaily:''},
-    {id:'pj002',realName:'',name:'Brynn Escudohierro', cls:'Paladín',    role:'Gestión / Liderazgo', emblem:'🛡️',color:'#378add',colorBg:'rgba(55,138,221,0.15)', level:2,xp:1200,xpNext:2000,gold:310,missions:5,weapon:'Espada sagrada',armor:'Armadura completa',accessory:'Corona de estratega',lore:'Líder nato que guía al grupo con honor.',       quote:'Un equipo sin dirección es un ejército sin mapa.',pin:'',attrs:{fue:8,int:5,agi:4,car:16,sab:14},gachaTokens:0,gallery:[],lastDaily:''},
-    {id:'pj003',realName:'',name:'Seraphine Ojoagudo', cls:'Exploradora',role:'Data / Análisis',     emblem:'🏹',color:'#1d9e75',colorBg:'rgba(29,158,117,0.15)', level:2,xp:1050,xpNext:2000,gold:270,missions:4,weapon:'Arco largo',    armor:'Cuero ligero',     accessory:'Lente de análisis', lore:'Rastreadora de datos perdidos en el caos.',     quote:'Los datos no mienten. Las personas sí.',         pin:'',attrs:{fue:3,int:14,agi:16,car:6,sab:10},gachaTokens:0,gallery:[],lastDaily:''},
+    {id:'pj001',realName:'',name:'Aldric el Arcano',   cls:'Mago',       role:'Dev / Técnico',       emblem:'🔮',color:'#7f77dd',colorBg:'rgba(127,119,221,0.15)',level:3,xp:2400,xpNext:100,gold:580,missions:8,weapon:'Báculo arcano',  armor:'Túnica de seda',   accessory:'Cristal oráculo',   lore:'Estudioso de los lenguajes arcanos del código.',quote:'El código no falla, fallan los que no lo prueban.',pin:'',attrs:{fue:1,int:18,agi:10,car:4,sab:8},gachaTokens:0,gallery:[],lastDaily:''},
+    {id:'pj002',realName:'',name:'Brynn Escudohierro', cls:'Paladín',    role:'Gestión / Liderazgo', emblem:'🛡️',color:'#378add',colorBg:'rgba(55,138,221,0.15)', level:2,xp:1200,xpNext:100,gold:310,missions:5,weapon:'Espada sagrada',armor:'Armadura completa',accessory:'Corona de estratega',lore:'Líder nato que guía al grupo con honor.',       quote:'Un equipo sin dirección es un ejército sin mapa.',pin:'',attrs:{fue:8,int:5,agi:4,car:16,sab:14},gachaTokens:0,gallery:[],lastDaily:''},
+    {id:'pj003',realName:'',name:'Seraphine Ojoagudo', cls:'Exploradora',role:'Data / Análisis',     emblem:'🏹',color:'#1d9e75',colorBg:'rgba(29,158,117,0.15)', level:2,xp:1050,xpNext:100,gold:270,missions:4,weapon:'Arco largo',    armor:'Cuero ligero',     accessory:'Lente de análisis', lore:'Rastreadora de datos perdidos en el caos.',     quote:'Los datos no mienten. Las personas sí.',         pin:'',attrs:{fue:3,int:14,agi:16,car:6,sab:10},gachaTokens:0,gallery:[],lastDaily:''},
   ],
   missions:[
     {id:'m001',name:'El Gran Despliegue',arc:'El Despertar del Equipo',playerId:'pj001',status:'active',diff:'A',xp:600,gold:150,attr:'Fuerza',attrPts:5,deadline:'2026-07-01',daily:false,plannerId:''},
@@ -921,11 +1180,40 @@ const DEMO={
     {id:'ev003',title:'1on1 con manager',date:'2026-06-28',time:'11:00',desc:'Sesión individual.',type:'personal',missionId:'',ownerId:'pj001'},
   ],
   shop_items:[
-    {id:'item001',name:'Espada del Abismo',icon:'⚔️',desc:'Forjada en las sombras más profundas.',slot:'arma',cost:300,minLevel:2,minAttrs:{fue:5,int:0,agi:0,car:0,sab:0},bonus:{fue:3,int:0,agi:0,car:0,sab:0}},
-    {id:'item002',name:'Capa del Arcano',  icon:'🧥',desc:'Tejida con hilos de maná puro.',slot:'armadura',cost:250,minLevel:1,minAttrs:{fue:0,int:4,agi:0,car:0,sab:0},bonus:{fue:0,int:2,agi:1,car:0,sab:0}},
-    {id:'item003',name:'Anillo Veloz',     icon:'💍',desc:'Acelera los reflejos del portador.',slot:'accesorio',cost:200,minLevel:1,minAttrs:{fue:0,int:0,agi:3,car:0,sab:0},bonus:{fue:0,int:0,agi:3,car:0,sab:0}},
-    {id:'item004',name:'Corona del Orador',icon:'👑',desc:'Eleva la presencia y el carisma.',slot:'especial',cost:500,minLevel:3,minAttrs:{fue:0,int:0,agi:0,car:8,sab:0},bonus:{fue:0,int:0,agi:0,car:5,sab:2}},
-    {id:'item005',name:'Tomo del Sabio',   icon:'📖',desc:'Contiene el conocimiento de eras.',slot:'especial',cost:400,minLevel:2,minAttrs:{fue:0,int:5,agi:0,car:0,sab:3},bonus:{fue:0,int:3,agi:0,car:0,sab:4}},
+    // ── ARMAS ──
+    {id:'i001',name:'Daga de Hierro',      icon:'🗡️',desc:'Una daga básica pero efectiva.',                    slot:'arma',     cost:80,  minLevel:1, minAttrs:{fue:0,int:0,agi:2,car:0,sab:0},bonus:{fue:0,int:0,agi:2,car:0,sab:0}},
+    {id:'i002',name:'Espada Corta',         icon:'⚔️',desc:'Equilibrada y fácil de manejar.',                  slot:'arma',     cost:150, minLevel:2, minAttrs:{fue:3,int:0,agi:0,car:0,sab:0},bonus:{fue:2,int:0,agi:1,car:0,sab:0}},
+    {id:'i003',name:'Báculo Arcano',        icon:'🔮',desc:'Amplifica los hechizos del portador.',             slot:'arma',     cost:200, minLevel:2, minAttrs:{fue:0,int:5,agi:0,car:0,sab:0},bonus:{fue:0,int:4,agi:0,car:0,sab:1}},
+    {id:'i004',name:'Arco Élfico',          icon:'🏹',desc:'Tallado en madera de roble milenario.',            slot:'arma',     cost:220, minLevel:3, minAttrs:{fue:0,int:0,agi:6,car:0,sab:0},bonus:{fue:0,int:1,agi:4,car:0,sab:0}},
+    {id:'i005',name:'Hacha de Guerra',      icon:'🪓',desc:'Pura fuerza bruta en cada golpe.',                 slot:'arma',     cost:280, minLevel:3, minAttrs:{fue:7,int:0,agi:0,car:0,sab:0},bonus:{fue:5,int:0,agi:0,car:0,sab:0}},
+    {id:'i006',name:'Espada del Abismo',    icon:'⚡',desc:'Forjada en las sombras más profundas.',            slot:'arma',     cost:450, minLevel:5, minAttrs:{fue:10,int:0,agi:0,car:0,sab:0},bonus:{fue:7,int:0,agi:2,car:0,sab:0}},
+    {id:'i007',name:'Varita de Caos',       icon:'✨',desc:'Inestable pero devastadoramente poderosa.',        slot:'arma',     cost:500, minLevel:5, minAttrs:{fue:0,int:12,agi:0,car:0,sab:0},bonus:{fue:0,int:8,agi:0,car:0,sab:2}},
+    // ── ARMADURAS ──
+    {id:'i008',name:'Túnica de Tela',       icon:'👘',desc:'Ligera, cómoda y fácil de llevar.',                slot:'armadura', cost:60,  minLevel:1, minAttrs:{fue:0,int:0,agi:0,car:0,sab:0},bonus:{fue:0,int:1,agi:1,car:0,sab:0}},
+    {id:'i009',name:'Cuero Reforzado',      icon:'🥋',desc:'Protección ligera para el ágil explorador.',      slot:'armadura', cost:130, minLevel:2, minAttrs:{fue:0,int:0,agi:4,car:0,sab:0},bonus:{fue:1,int:0,agi:2,car:0,sab:0}},
+    {id:'i010',name:'Capa del Arcano',      icon:'🧥',desc:'Tejida con hilos de maná puro.',                  slot:'armadura', cost:180, minLevel:2, minAttrs:{fue:0,int:4,agi:0,car:0,sab:0},bonus:{fue:0,int:2,agi:1,car:0,sab:1}},
+    {id:'i011',name:'Cota de Malla',        icon:'🛡️',desc:'Protección estándar para el guerrero.',           slot:'armadura', cost:240, minLevel:3, minAttrs:{fue:5,int:0,agi:0,car:0,sab:0},bonus:{fue:2,int:0,agi:0,car:1,sab:0}},
+    {id:'i012',name:'Armadura de Placas',   icon:'⚙️',desc:'Máxima protección, mínima movilidad.',            slot:'armadura', cost:380, minLevel:5, minAttrs:{fue:9,int:0,agi:0,car:0,sab:0},bonus:{fue:4,int:0,agi:0,car:0,sab:1}},
+    {id:'i013',name:'Manto de Sombras',     icon:'🌑',desc:'Te hace casi invisible en la oscuridad.',          slot:'armadura', cost:350, minLevel:4, minAttrs:{fue:0,int:0,agi:8,car:0,sab:0},bonus:{fue:0,int:0,agi:5,car:0,sab:0}},
+    // ── ACCESORIOS ──
+    {id:'i014',name:'Amuleto de Maná',      icon:'💎',desc:'Aumenta el flujo de energía mágica.',             slot:'accesorio',cost:100, minLevel:1, minAttrs:{fue:0,int:3,agi:0,car:0,sab:0},bonus:{fue:0,int:2,agi:0,car:0,sab:1}},
+    {id:'i015',name:'Anillo Veloz',         icon:'💍',desc:'Acelera los reflejos del portador.',               slot:'accesorio',cost:120, minLevel:1, minAttrs:{fue:0,int:0,agi:3,car:0,sab:0},bonus:{fue:0,int:0,agi:3,car:0,sab:0}},
+    {id:'i016',name:'Colgante del Orador',  icon:'📿',desc:'Mejora la persuasión y presencia social.',        slot:'accesorio',cost:160, minLevel:2, minAttrs:{fue:0,int:0,agi:0,car:4,sab:0},bonus:{fue:0,int:0,agi:0,car:3,sab:1}},
+    {id:'i017',name:'Brazales de Fuerza',   icon:'💪',desc:'Refuerzan los músculos del portador.',             slot:'accesorio',cost:200, minLevel:2, minAttrs:{fue:5,int:0,agi:0,car:0,sab:0},bonus:{fue:4,int:0,agi:0,car:0,sab:0}},
+    {id:'i018',name:'Lente del Analista',   icon:'🔍',desc:'Revela patrones ocultos en los datos.',            slot:'accesorio',cost:250, minLevel:3, minAttrs:{fue:0,int:6,agi:0,car:0,sab:3},bonus:{fue:0,int:3,agi:0,car:0,sab:3}},
+    {id:'i019',name:'Botas de Viento',      icon:'👟',desc:'Tan rápidas como el viento del norte.',            slot:'accesorio',cost:280, minLevel:3, minAttrs:{fue:0,int:0,agi:7,car:0,sab:0},bonus:{fue:0,int:0,agi:5,car:0,sab:0}},
+    {id:'i020',name:'Sello del Líder',      icon:'🏅',desc:'Símbolo de autoridad reconocido en todo el reino.',slot:'accesorio',cost:400, minLevel:5, minAttrs:{fue:0,int:0,agi:0,car:10,sab:5},bonus:{fue:0,int:0,agi:0,car:6,sab:3}},
+    // ── ESPECIALES ──
+    {id:'i021',name:'Tomo del Novato',      icon:'📓',desc:'Primeros pasos en el camino del conocimiento.',   slot:'especial', cost:90,  minLevel:1, minAttrs:{fue:0,int:0,agi:0,car:0,sab:0},bonus:{fue:0,int:1,agi:0,car:0,sab:2}},
+    {id:'i022',name:'Insignia de Escudero', icon:'🎖️',desc:'Reconocimiento por completar el primer arco.',    slot:'especial', cost:150, minLevel:2, minAttrs:{fue:2,int:2,agi:2,car:2,sab:2},bonus:{fue:1,int:1,agi:1,car:1,sab:1}},
+    {id:'i023',name:'Cristal Arcano',       icon:'🔮',desc:'Fragmento de poder puro de las eras antiguas.',   slot:'especial', cost:300, minLevel:3, minAttrs:{fue:0,int:8,agi:0,car:0,sab:4},bonus:{fue:0,int:4,agi:0,car:0,sab:4}},
+    {id:'i024',name:'Corona del Orador',    icon:'👑',desc:'Solo los más carismáticos pueden portarla.',      slot:'especial', cost:420, minLevel:4, minAttrs:{fue:0,int:0,agi:0,car:10,sab:0},bonus:{fue:0,int:0,agi:0,car:6,sab:2}},
+    {id:'i025',name:'Máscara del Pícaro',   icon:'🎭',desc:'Oculta la identidad y aguza los sentidos.',       slot:'especial', cost:350, minLevel:4, minAttrs:{fue:0,int:3,agi:8,car:3,sab:0},bonus:{fue:0,int:2,agi:5,car:2,sab:0}},
+    {id:'i026',name:'Grimorio Ancestral',   icon:'📜',desc:'Contiene hechizos olvidados por siglos.',         slot:'especial', cost:480, minLevel:5, minAttrs:{fue:0,int:12,agi:0,car:0,sab:8},bonus:{fue:0,int:6,agi:0,car:0,sab:6}},
+    {id:'i027',name:'Capa del Campeón',     icon:'🦸',desc:'Otorgada solo a los héroes del reino.',           slot:'especial', cost:550, minLevel:6, minAttrs:{fue:8,int:5,agi:5,car:5,sab:5},bonus:{fue:3,int:2,agi:2,car:2,sab:2}},
+    {id:'i028',name:'Orbe de Sabiduría',    icon:'🌐',desc:'Concentra el conocimiento universal.',            slot:'especial', cost:500, minLevel:5, minAttrs:{fue:0,int:10,agi:0,car:0,sab:10},bonus:{fue:0,int:5,agi:0,car:0,sab:7}},
+    {id:'i029',name:'Talismán de Batalla',  icon:'⚔️',desc:'Bendecido por los dioses de la guerra.',          slot:'especial', cost:460, minLevel:5, minAttrs:{fue:12,int:0,agi:5,car:0,sab:0},bonus:{fue:6,int:0,agi:3,car:0,sab:0}},
+    {id:'i030',name:'Corona del DM',        icon:'🌟',desc:'El poder absoluto. Solo para el elegido.',        slot:'especial', cost:999, minLevel:10,minAttrs:{fue:15,int:15,agi:15,car:15,sab:15},bonus:{fue:10,int:10,agi:10,car:10,sab:10}},
   ],
   gacha_cards:[
     {id:'c001',name:'Escudo del Alba',    rarity:'comun',    image:'gacha/images/comun/carta_01.png',    description:'Un viejo escudo que aún brilla.'},
@@ -1031,18 +1319,19 @@ async function loadData(){
 /* ══ MISIONES DIARIAS ══ */
 function checkDailyMissions(){
   const today=new Date().toISOString().slice(0,10);
-  const dailyTemplates=missions.filter(m=>m.daily);
-  players.forEach(p=>{
+  const dailyTemplates=missions.filter(function(m){return m.daily;});
+  players.forEach(function(p){
     if(p.lastDaily===today)return;
-    // Eliminar misiones diarias completadas del día anterior para este jugador
-    missions=missions.filter(m=>!(m.daily&&m.playerId===p.id&&m.status==='done'));
-    // Asignar misiones diarias pendientes a este jugador si no las tiene
-    dailyTemplates.forEach(tpl=>{
-      const exists=missions.find(m=>m.daily&&m.id===tpl.id&&m.playerId===p.id&&m.status!=='done');
-      if(!exists){
-        const clone={...tpl,id:tpl.id+'_'+p.id,playerId:p.id,status:'pending'};
-        if(!missions.find(m=>m.id===clone.id)) missions.push(clone);
-      }
+    // Remove completed dailies from previous days
+    missions=missions.filter(function(m){return !(m.daily&&m.playerId===p.id&&m.status==='done');});
+    // Assign up to 4 daily missions
+    var myDailies=missions.filter(function(m){return m.daily&&m.playerId===p.id;});
+    var slots=4-myDailies.length;
+    var toAssign=dailyTemplates.filter(function(tpl){
+      return !missions.find(function(m){return m.daily&&m.id===tpl.id+'_'+p.id;});
+    }).slice(0,slots);
+    toAssign.forEach(function(tpl){
+      missions.push({...tpl,id:tpl.id+'_'+p.id,playerId:p.id,status:'pending',xp:25,gold:10});
     });
     p.lastDaily=today;
   });
@@ -1170,7 +1459,7 @@ function saveNewChar(){
   const rn=document.getElementById('cp-rn').value.trim(),pn=document.getElementById('cp-pn').value.trim(),pin=document.getElementById('cp-pin').value;
   const lore=document.getElementById('cp-lore').value.trim(),quote=document.getElementById('cp-quote').value.trim();
   if(!cpState.cls){toast('Vuelve al paso 2 y elige una clase.');return;}
-  const np={id:'pj'+Date.now(),realName:rn,name:pn,cls:cpState.cls.name,role:cpState.cls.role,emblem:cpState.emblem,color:cpState.color.hex,colorBg:cpState.color.bg,level:1,xp:0,xpNext:1000,gold:0,missions:0,weapon:cpState.weapon,armor:cpState.armor,accessory:cpState.accessory,lore:lore||'Historia por escribir...',quote:quote||'...',pin,attrs:{...cpState.cls.attrs},gachaTokens:0,gallery:[],lastDaily:''};
+  const np={id:'pj'+Date.now(),realName:rn,name:pn,cls:cpState.cls.name,role:cpState.cls.role,emblem:cpState.emblem,color:cpState.color.hex,colorBg:cpState.color.bg,level:1,xp:0,xpNext:100,gold:0,missions:0,weapon:cpState.weapon,armor:cpState.armor,accessory:cpState.accessory,lore:lore||'Historia por escribir...',quote:quote||'...',pin,attrs:{...cpState.cls.attrs},gachaTokens:0,gallery:[],lastDaily:''};
   players.push(np);checkDailyMissions();
   if(CFG.MODE==='jsonbin')saveToJSONBin();
   session={loggedIn:true,isAdmin:false,playerId:np.id};localStorage.setItem('cg_pid',np.id);
@@ -1187,6 +1476,7 @@ function showPage(name,btn){
   if(name==='heroe')renderHeroProfile(curHero);
   if(name==='gacha'){renderGachaGold();renderMyGallery();renderGalleryTabs();}
   if(name==='tienda')renderShop();
+  if(name==='misiones')populateArcSelect();
   if(name==='calendario')renderCalendar();
 }
 
@@ -1241,8 +1531,29 @@ function mCard(m){
       ${statusBadge}
       ${assignSel}
       ${completedBtn}
+      ${(session.isAdmin||m.createdBy===session.playerId)?`<button class="btn-complete" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);" onclick="deleteMission('${m.id}')">✕</button>`:''}
     </div>
   </div>`;
+}
+
+function updateArcCounts(){
+  arcs.forEach(function(a){
+    var arcMs=missions.filter(function(m){return m.arc===a.name&&!m.daily;});
+    a.total=arcMs.length;
+    a.done=arcMs.filter(function(m){return m.status==='done';}).length;
+  });
+}
+function deleteArc(id){
+  if(!confirm('¿Eliminar este arco?'))return;
+  arcs=arcs.filter(function(a){return a.id!==id;});
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  renderAll();toast('Arco eliminado');
+}
+function deleteMission(id){
+  if(!confirm('¿Eliminar esta misión?'))return;
+  missions=missions.filter(function(m){return m.id!==id;});
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  renderAll();toast('Misión eliminada');
 }
 
 function assignMission(missionId, playerId){
@@ -1259,13 +1570,13 @@ function completeMission(id){
   if(p){
     p.xp+=m.xp;p.gold+=m.gold;p.missions++;
     if(m.attrPts&&m.attr){const k=Object.keys(AN).find(k=>AN[k]===m.attr);if(k)p.attrs[k]=(p.attrs[k]||0)+m.attrPts;}
-    p.level=Math.floor(p.xp/1000)+1;
+    p.level=Math.floor(p.xp/100)+1;
     showRewardPopup(m,p);
   }
   // Bonus diarias
   if(m.daily&&p){
     const myDailies=missions.filter(mx=>mx.daily&&mx.playerId===p.id);
-    if(myDailies.length&&myDailies.every(mx=>mx.status==='done')){
+    if(myDailies.length>=1&&myDailies.length<=4&&myDailies.every(mx=>mx.status==='done')){
       const bx=myDailies.reduce((s,mx)=>s+mx.xp,0),bg=myDailies.reduce((s,mx)=>s+mx.gold,0);
       p.xp+=bx;p.gold+=bg;
       setTimeout(()=>showRewardPopup({name:'¡Bonus diario!',xp:bx,gold:bg,attr:null},p),600);
@@ -1287,6 +1598,7 @@ function completeMission(id){
   }
   // Level up
   checkLevelUp(p);
+  updateArcCounts();
   if(CFG.MODE==='jsonbin')saveToJSONBin();
   renderAll();
 }
@@ -1294,9 +1606,10 @@ function completeMission(id){
 /* ── level up ── */
 function checkLevelUp(p){
   if(!p)return;
-  const newLv=Math.floor(p.xp/1000)+1;
+  const newLv=Math.floor(p.xp/100)+1;
   if(newLv>p.level){
     const gained=(newLv-p.level)*3;
+    p.xpNext=(newLv+1)*100;
     p.level=newLv;p.pendingAttrPts=(p.pendingAttrPts||0)+gained;
     showLevelUpPopup(p);
   }
@@ -1370,7 +1683,7 @@ function getAdminProfile(){
   return {
     id:'admin_special',realName:'',name:'Dios',cls:'—',role:'Omnisciente',
     emblem:'👑',color:'#e4a428',colorBg:'rgba(228,164,40,0.15)',
-    level:99,xp:999999,xpNext:999999,gold:Infinity,missions:999,
+    level:99,xp:999999,xpNext:100,gold:Infinity,missions:999,
     weapon:'La Palabra',armor:'Armadura Divina',accessory:'Corona Eterna',
     lore:'Existía antes de que el primer personaje fuera creado. Su poder no tiene límites ni necesita demostración.',
     quote:'Yo soy el principio y el fin de este repo.',
@@ -1593,7 +1906,7 @@ function saveEdit(){
   if(session.isAdmin){
     p.xp=parseInt(document.getElementById('e-xp').value)||p.xp;
     p.gold=parseInt(document.getElementById('e-gold').value)||p.gold;
-    p.cls=document.getElementById('e-cls').value;p.level=Math.floor(p.xp/1000)+1;
+    p.cls=document.getElementById('e-cls').value;p.level=Math.floor(p.xp/100)+1;
     const cls=CLASSES.find(c=>c.name===p.cls);if(cls){p.role=cls.role;p.attrs={...cls.attrs};}
   }
   if(CFG.MODE==='jsonbin')saveToJSONBin();
@@ -1845,6 +2158,8 @@ function deleteEvent(){
   if(CFG.MODE==='jsonbin')saveToJSONBin();
   closeEventModal();renderCalendar();toast('Evento eliminado');
 }
+
+
 
 /* ══ TOAST ══ */
 let toastT;
