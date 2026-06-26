@@ -405,7 +405,14 @@ function createArc(){
 /* ══ CALENDARIO ══ */
 let calState={year:new Date().getFullYear(),month:new Date().getMonth(),selectedDate:null,filter:'all',editingEventId:null};
 
+function initCalFilterBtns(){
+  ['all','personal','team','mission'].forEach(function(k){
+    var b=document.getElementById('cal-filter-'+k);
+    if(b)b.classList.toggle('btn-p',k===calState.filter);
+  });
+}
 function renderCalendar(){
+  initCalFilterBtns();
   var yr=calState.year,mo=calState.month,selD=calState.selectedDate,fil=calState.filter;
   var today=new Date();
   var firstDay=new Date(yr,mo,1);
@@ -1113,9 +1120,14 @@ window.showScreen=function(id){
   });
   var t=document.getElementById(id);
   if(!t)return;
-  if(id==='screen-app')t.style.display='block';
-  else if(id==='screen-new'){t.style.display='block';}
-  else t.style.display='flex';
+  if(id==='screen-app'){
+    t.style.display='block';
+  } else if(id==='screen-new'){
+    t.style.display='block';
+    if(typeof buildCreatorCls==='function'){buildCreatorCls();buildCreatorColors('cp-colors');buildCreatorEmblems('cp-emblems');}
+  } else {
+    t.style.display='flex';
+  }
 };
 
 /* ══ CONFIG ══ */
@@ -1412,7 +1424,7 @@ document.addEventListener('click',e=>{
 
 /* ══ CREADOR ══ */
 function buildCreatorCls(){
-  const g=document.getElementById('cp-cgrid');if(g.children.length)return;
+  const g=document.getElementById('cp-cgrid');if(!g)return;g.innerHTML='';
   CLASSES.forEach(c=>{
     const d=document.createElement('button');d.className='copt';
     d.innerHTML=`<div class="icon">${c.icon}</div><div class="cname">${c.name}</div><div class="crole">${c.role}</div><div class="cbonus">${c.bonus}</div>`;
@@ -1467,7 +1479,7 @@ function saveNewChar(){
 }
 
 /* ══ RENDER ══ */
-function renderAll(){renderMStats();renderMissions();renderHeroTabs();renderArcs();renderRanking();renderGachaGold();renderShop();}
+function renderAll(){renderMStats();renderMissions();renderHeroTabs();renderArcs();renderRanking();renderGachaGold();renderShop();populateArcSelect();}
 function showPage(name,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
@@ -1477,7 +1489,7 @@ function showPage(name,btn){
   if(name==='gacha'){renderGachaGold();renderMyGallery();renderGalleryTabs();}
   if(name==='tienda')renderShop();
   if(name==='misiones')populateArcSelect();
-  if(name==='calendario')renderCalendar();
+  if(name==='calendario'){if(!calState.selectedDate)calState.selectedDate=new Date().toISOString().slice(0,10);renderCalendar();}
 }
 
 /* ── misiones stats ── */
@@ -1942,7 +1954,7 @@ function renderShop(){
   if(session.isAdmin)renderAdminItemsList();
   var eqWrap=document.getElementById('my-equipped');
   if(eqWrap){
-    if(!p){eqWrap.innerHTML='';return;}
+    if(!p){eqWrap.innerHTML=session.isAdmin?'<div class="stitle">Equipamiento (admin no tiene personaje)</div>':'';if(!session.isAdmin)return;}
     var slots=['arma','armadura','accesorio','especial'];
     var slotIcons={arma:'⚔️',armadura:'🛡️',accesorio:'💎',especial:'✨'};
     eqWrap.innerHTML='<div class="stitle">Equipado actualmente</div><div class="equipped-slots">'
