@@ -254,6 +254,204 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 /* ══ MODAL ══ */
 #modal-edit{background:rgba(0,0,0,0.4);}
 #modal-edit > div{background:var(--bg2);border:0.5px solid var(--border2);}
+
+/* ══ CALENDARIO ══ */
+.cal-shell{display:grid;grid-template-columns:1fr 300px;gap:1.25rem;}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
+.cal-month{font-size:16px;font-weight:500;color:var(--text);}
+.cal-nav{display:flex;gap:4px;}
+.cal-nav-btn{width:30px;height:30px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;cursor:pointer;color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.cal-nav-btn:hover{background:var(--bg3);color:var(--text);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cal-dow{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center;padding:6px 0;}
+.cal-day{min-height:80px;border-radius:var(--radius);border:0.5px solid transparent;padding:6px;cursor:pointer;transition:all .15s;position:relative;}
+.cal-day:hover{background:var(--bg3);border-color:var(--border);}
+.cal-day.today{border-color:var(--accent);background:var(--accent-bg);}
+.cal-day.other-month{opacity:.35;}
+.cal-day.selected{border-color:var(--accent);background:var(--accent-bg);}
+.cal-day-num{font-size:12px;font-weight:500;color:var(--text);margin-bottom:4px;}
+.cal-day.today .cal-day-num{color:var(--accent);font-weight:700;}
+.cal-event{font-size:10px;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+.cal-event.personal{background:var(--accent-bg);color:var(--accent);border:0.5px solid var(--accent-border);}
+.cal-event.team{background:var(--teal-bg);color:var(--teal);border:0.5px solid var(--teal-border);}
+.cal-event.mission{background:var(--gold-bg);color:var(--gold);border:0.5px solid var(--gold-border);}
+.cal-sidebar{display:flex;flex-direction:column;gap:1rem;}
+.event-list{display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;}
+.event-item{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:.75rem;cursor:pointer;transition:border-color .15s;}
+.event-item:hover{border-color:var(--border2);}
+.event-item.personal{border-left:2px solid var(--accent);}
+.event-item.team{border-left:2px solid var(--teal);}
+.event-item.mission{border-left:2px solid var(--gold);}
+.event-title{font-size:13px;font-weight:500;color:var(--text);}
+.event-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.event-tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:20px;margin-top:4px;}
+/* Event modal */
+.cal-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;align-items:center;justify-content:center;}
+.cal-modal.show{display:flex;}
+.cal-modal-box{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:420px;animation:popIn .2s ease;}
+
+
+/* ══ CALENDARIO ══ */
+let calState={year:new Date().getFullYear(),month:new Date().getMonth(),selectedDate:null,filter:'all',editingEventId:null};
+
+function renderCalendar(){
+  const {year,month,selectedDate,filter}=calState;
+  const today=new Date();
+  const firstDay=new Date(year,month,1);
+  const lastDay=new Date(year,month+1,0);
+  const startDow=(firstDay.getDay()+6)%7; // Mon=0
+  const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('cal-month-label').textContent=months[month]+' '+year;
+
+  // Build grid
+  const grid=document.getElementById('cal-grid');
+  if(!grid)return;
+  const dows=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  let html=dows.map(d=>'<div class="cal-dow">'+d+'</div>').join('');
+
+  // Prev month padding
+  const prevLast=new Date(year,month,0).getDate();
+  for(let i=startDow-1;i>=0;i--){
+    const d=prevLast-i;
+    html+='<div class="cal-day other-month"><div class="cal-day-num">'+d+'</div></div>';
+  }
+
+  // Current month days
+  for(let d=1;d<=lastDay.getDate();d++){
+    const dateStr=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const isToday=d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear();
+    const isSel=selectedDate===dateStr;
+    const dayEvs=getFilteredEvents(filter).filter(e=>e.date===dateStr);
+    const evDots=dayEvs.slice(0,3).map(e=>'<div class="cal-event '+e.type+'" onclick="event.stopPropagation();openEventModal(''+e.id+'')" title="'+e.title+'">'+e.title+'</div>').join('');
+    html+='<div class="cal-day'+(isToday?' today':'')+(isSel?' selected':'')+'" onclick="selectCalDay(''+dateStr+'')">'
+      +'<div class="cal-day-num">'+d+'</div>'+evDots+'</div>';
+  }
+
+  // Next month padding
+  const totalCells=startDow+lastDay.getDate();
+  const remainder=totalCells%7===0?0:7-(totalCells%7);
+  for(let d=1;d<=remainder;d++){
+    html+='<div class="cal-day other-month"><div class="cal-day-num">'+d+'</div></div>';
+  }
+  grid.innerHTML=html;
+
+  // Selected day panel
+  const selDate=selectedDate||formatDate(today);
+  renderDayEvents(selDate);
+  renderUpcoming();
+}
+
+function formatDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
+function getFilteredEvents(filter){
+  const pid=session.playerId;
+  return calEvents.filter(e=>{
+    if(filter==='personal')return e.type==='personal'&&(e.ownerId===pid||session.isAdmin);
+    if(filter==='team')return e.type==='team';
+    if(filter==='mission')return !!e.missionId;
+    return e.type==='team'||(e.type==='personal'&&(e.ownerId===pid||session.isAdmin));
+  });
+}
+
+function selectCalDay(dateStr){
+  calState.selectedDate=dateStr;
+  renderCalendar();
+}
+
+function renderDayEvents(dateStr){
+  const wrap=document.getElementById('cal-day-events');
+  const lbl=document.getElementById('cal-selected-label');
+  if(!wrap)return;
+  const d=new Date(dateStr+'T00:00:00');
+  const days=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const months=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  if(lbl)lbl.textContent=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()];
+  const evs=getFilteredEvents(calState.filter).filter(e=>e.date===dateStr);
+  if(!evs.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin eventos.</div>';return;}
+  wrap.innerHTML=evs.map(e=>eventItemHTML(e)).join('');
+}
+
+function renderUpcoming(){
+  const wrap=document.getElementById('cal-upcoming');
+  if(!wrap)return;
+  const today=formatDate(new Date());
+  const upcoming=getFilteredEvents(calState.filter).filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
+  if(!upcoming.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin eventos próximos.</div>';return;}
+  wrap.innerHTML=upcoming.map(e=>eventItemHTML(e)).join('');
+}
+
+function eventItemHTML(e){
+  const m=missions.find(mx=>mx.id===e.missionId);
+  const typeLabel={personal:'Personal',team:'Equipo',mission:'Misión'}[e.type]||e.type;
+  return '<div class="event-item '+e.type+'" onclick="openEventModal(''+e.id+'')">'
+    +'<div class="event-title">'+e.title+'</div>'
+    +'<div class="event-meta">'+e.date+(e.time?' · '+e.time:'')+(m?' · '+m.name:'')+'</div>'
+    +'<span class="event-tag badge '+(e.type==='team'?'b-teal':e.type==='mission'?'b-gold':'b-purple')+'">'+typeLabel+'</span>'
+    +'</div>';
+}
+
+function calNav(dir){
+  if(dir===0){calState.year=new Date().getFullYear();calState.month=new Date().getMonth();}
+  else{calState.month+=dir;if(calState.month>11){calState.month=0;calState.year++;}else if(calState.month<0){calState.month=11;calState.year--;}}
+  renderCalendar();
+}
+
+function setCalFilter(f,btn){
+  calState.filter=f;
+  ['all','personal','team','mission'].forEach(k=>{const b=document.getElementById('cal-filter-'+k);if(b)b.classList.toggle('btn-p',k===f);});
+  renderCalendar();
+}
+
+function openEventModal(eventId){
+  calState.editingEventId=eventId;
+  const modal=document.getElementById('cal-event-modal');
+  const e=eventId?calEvents.find(ev=>ev.id===eventId):null;
+  document.getElementById('cal-modal-title').textContent=e?'Editar evento':'Nuevo evento';
+  document.getElementById('ev-title').value=e?e.title:'';
+  document.getElementById('ev-date').value=e?e.date:(calState.selectedDate||formatDate(new Date()));
+  document.getElementById('ev-time').value=e?e.time:'09:00';
+  document.getElementById('ev-desc').value=e?e.desc:'';
+  document.getElementById('ev-type').value=e?e.type:'personal';
+  // Populate missions select
+  const msel=document.getElementById('ev-mission');
+  msel.innerHTML='<option value="">Sin vincular</option>'+missions.map(m=>'<option value="'+m.id+'"'+(e&&e.missionId===m.id?' selected':'')+'>'+m.name+'</option>').join('');
+  // Show delete only for owner or admin
+  const delWrap=document.getElementById('ev-delete-wrap');
+  if(delWrap)delWrap.style.display=(e&&(session.isAdmin||e.ownerId===session.playerId))?'block':'none';
+  modal.classList.add('show');
+}
+
+function closeEventModal(){document.getElementById('cal-event-modal').classList.remove('show');}
+
+function saveEvent(){
+  const title=document.getElementById('ev-title').value.trim();
+  if(!title){toast('El evento necesita un título.');return;}
+  const ev={
+    id:calState.editingEventId||('ev'+Date.now()),
+    title,
+    date:document.getElementById('ev-date').value,
+    time:document.getElementById('ev-time').value,
+    desc:document.getElementById('ev-desc').value.trim(),
+    type:document.getElementById('ev-type').value,
+    missionId:document.getElementById('ev-mission').value,
+    ownerId:calState.editingEventId?(calEvents.find(e=>e.id===calState.editingEventId)||{}).ownerId||session.playerId:session.playerId,
+  };
+  if(calState.editingEventId){
+    const idx=calEvents.findIndex(e=>e.id===calState.editingEventId);
+    if(idx>=0)calEvents[idx]=ev;else calEvents.push(ev);
+  }else{calEvents.push(ev);}
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  closeEventModal();renderCalendar();toast('Evento guardado');
+}
+
+function deleteEvent(){
+  if(!calState.editingEventId)return;
+  if(!confirm('¿Eliminar este evento?'))return;
+  calEvents=calEvents.filter(e=>e.id!==calState.editingEventId);
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  closeEventModal();renderCalendar();toast('Evento eliminado');
+}
+
 /* ══ TOAST ══ */
 #toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);border-radius:var(--radius);padding:9px 18px;font-size:13px;display:none;z-index:999;}
 @media(max-width:600px){.g4{grid-template-columns:repeat(2,1fr);}.pbody{grid-template-columns:1fr;}.cgrid{grid-template-columns:repeat(2,1fr);}.nav{display:none;}}
@@ -387,8 +585,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       <button class="nb" onclick="showPage('ranking',this)"><span class="nb-icon">🏆</span>Ranking</button>
       <button class="nb" onclick="showPage('gacha',this)"><span class="nb-icon">✨</span>Gacha</button>
       <button class="nb" onclick="showPage('tienda',this)"><span class="nb-icon">🛒</span>Tienda</button>
+      <button class="nb" onclick="showPage('calendario',this)"><span class="nb-icon">📅</span>Calendario</button>
     </nav>
     <div class="sidebar-bottom">
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar tema" style="width:100%;margin-bottom:.5rem;justify-content:flex-start;gap:8px;padding:7px 12px;border-radius:var(--radius);border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s;display:flex;align-items:center;">☀️ <span id="theme-label">Modo claro</span></button>
       <div id="umenu-inline" style="display:none;margin-bottom:.5rem;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius);padding:.5rem;">
         <div style="padding:6px 8px;font-size:12px;color:var(--muted);border-bottom:0.5px solid var(--border);margin-bottom:4px;" id="umname">—</div>
         <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="goToMyProfile()">👤 Mi perfil</button>
@@ -403,11 +603,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   </aside>
   <div class="app">
     <div id="mode-ban-wrap"></div>
-    <div class="topbar">
-      <div class="topbar-right">
-        <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar tema">☀️</button>
-      </div>
-    </div>
+    <div class="topbar"></div>
 
     <!-- MISIONES -->
     <div id="page-misiones" class="page active">
@@ -510,6 +706,80 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       <div id="shop-grid-wrap"></div>
     </div>
 
+    <!-- CALENDARIO -->
+    <div id="page-calendario" class="page">
+      <div class="cal-header">
+        <div class="cal-month" id="cal-month-label">Junio 2026</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="display:flex;gap:4px;">
+            <button class="btn btn-sm" id="cal-filter-all" onclick="setCalFilter('all',this)" style="font-size:11px;">Todos</button>
+            <button class="btn btn-sm" id="cal-filter-personal" onclick="setCalFilter('personal',this)" style="font-size:11px;">Personal</button>
+            <button class="btn btn-sm" id="cal-filter-team" onclick="setCalFilter('team',this)" style="font-size:11px;">Equipo</button>
+            <button class="btn btn-sm" id="cal-filter-mission" onclick="setCalFilter('mission',this)" style="font-size:11px;">Misiones</button>
+          </div>
+          <div class="cal-nav">
+            <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+            <button class="cal-nav-btn" onclick="calNav(0)" style="font-size:11px;width:auto;padding:0 8px;">Hoy</button>
+            <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+          </div>
+          <button class="btn btn-sm btn-p" onclick="openEventModal(null)" id="cal-add-btn">+ Evento</button>
+        </div>
+      </div>
+      <div class="cal-shell">
+        <div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+        <div class="cal-sidebar">
+          <div class="card">
+            <div class="stitle" id="cal-selected-label">Hoy</div>
+            <div class="event-list" id="cal-day-events">
+              <div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin eventos.</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="stitle">Próximos eventos</div>
+            <div class="event-list" id="cal-upcoming"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL EVENTO -->
+    <div class="cal-modal" id="cal-event-modal">
+      <div class="cal-modal-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+          <h3 style="font-size:15px;font-weight:500;" id="cal-modal-title">Nuevo evento</h3>
+          <button class="btn btn-sm" onclick="closeEventModal()">✕</button>
+        </div>
+        <div class="field"><label>Título</label><input type="text" id="ev-title" placeholder="Reunión de equipo"/></div>
+        <div class="g2">
+          <div class="field"><label>Fecha</label><input type="date" id="ev-date"/></div>
+          <div class="field"><label>Hora</label><input type="time" id="ev-time" value="09:00"/></div>
+        </div>
+        <div class="field"><label>Descripción</label><textarea id="ev-desc" placeholder="Detalles del evento..." style="min-height:60px;"></textarea></div>
+        <div class="g2">
+          <div class="field"><label>Tipo</label>
+            <select id="ev-type">
+              <option value="personal">Personal</option>
+              <option value="team">Equipo</option>
+            </select>
+          </div>
+          <div class="field"><label>Misión vinculada</label>
+            <select id="ev-mission">
+              <option value="">Sin vincular</option>
+            </select>
+          </div>
+        </div>
+        <div id="ev-delete-wrap" style="display:none;margin-bottom:.75rem;">
+          <button class="btn btn-sm" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);width:100%;" onclick="deleteEvent()">🗑️ Eliminar evento</button>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button class="btn" onclick="closeEventModal()">Cancelar</button>
+          <button class="btn btn-p" onclick="saveEvent()">Guardar</button>
+        </div>
+      </div>
+    </div>
+
 <!-- MODAL EDICIÓN -->
 <div id="modal-edit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;overflow-y:auto;padding:2rem 1rem;">
   <div style="max-width:480px;margin:0 auto;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:1.5rem;">
@@ -601,6 +871,11 @@ const DEMO={
     {id:'arc001',name:'El Despertar del Equipo',lore:'El equipo se embarca en su primera gran aventura corporativa.',status:'active',total:18,done:12},
     {id:'arc002',name:'La Forja del Producto',  lore:'Las pruebas más duras están por llegar.',status:'blocked',total:24,done:0},
   ],
+  cal_events:[
+    {id:'ev001',title:'Reunión de sprint',date:'2026-06-26',time:'10:00',desc:'Review del sprint actual.',type:'team',missionId:'',ownerId:'team'},
+    {id:'ev002',title:'Deploy producción',date:'2026-06-30',time:'15:00',desc:'Despliegue del arco completo.',type:'team',missionId:'m001',ownerId:'team'},
+    {id:'ev003',title:'1on1 con manager',date:'2026-06-28',time:'11:00',desc:'Sesión individual.',type:'personal',missionId:'',ownerId:'pj001'},
+  ],
   shop_items:[
     {id:'item001',name:'Espada del Abismo',icon:'⚔️',desc:'Forjada en las sombras más profundas.',slot:'arma',cost:300,minLevel:2,minAttrs:{fue:5,int:0,agi:0,car:0,sab:0},bonus:{fue:3,int:0,agi:0,car:0,sab:0}},
     {id:'item002',name:'Capa del Arcano',  icon:'🧥',desc:'Tejida con hilos de maná puro.',slot:'armadura',cost:250,minLevel:1,minAttrs:{fue:0,int:4,agi:0,car:0,sab:0},bonus:{fue:0,int:2,agi:1,car:0,sab:0}},
@@ -621,7 +896,7 @@ const DEMO={
 
 /* ══ ESTADO ══ */
 let session={loggedIn:false,isAdmin:false,playerId:null};
-let players=[],missions=[],arcs=[],gachaCards=[],shopItems=[];
+let players=[],missions=[],arcs=[],gachaCards=[],shopItems=[],calEvents=[];
 let luState={pid:null,pts:0};
 let curHero=0,editPid=null;
 let cpState={cls:null,color:COLORS[0],emblem:'⚔️',weapon:null,armor:null,accessory:null};
@@ -648,7 +923,7 @@ async function saveToJSONBin(){
     const r=await fetch(JB_URL,{
       method:'PUT',
       headers:{...JB_HDR,'X-Access-Key':CFG.JSONBIN_KEY},
-      body:JSON.stringify({players,missions,arcs,gacha_cards:gachaCards,shop_items:shopItems})
+      body:JSON.stringify({players,missions,arcs,gacha_cards:gachaCards,shop_items:shopItems,cal_events:calEvents})
     });
     if(!r.ok){
       const txt=await r.text();
@@ -672,6 +947,8 @@ async function loadData(){
       players =d.players;
       if(d.shop_items)shopItems=d.shop_items;
       else shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));
+      if(d.cal_events)calEvents=d.cal_events;
+      else calEvents=JSON.parse(JSON.stringify(DEMO.cal_events));
       missions=d.missions||DEMO.missions;
       arcs    =d.arcs    ||DEMO.arcs;
     }else{
@@ -679,6 +956,7 @@ async function loadData(){
       missions=JSON.parse(JSON.stringify(DEMO.missions));
       arcs    =JSON.parse(JSON.stringify(DEMO.arcs));
       shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));
+      calEvents=JSON.parse(JSON.stringify(DEMO.cal_events));
       await saveToJSONBin();
     }
   }else{
@@ -733,7 +1011,7 @@ function exportJSON(){
     toast('✅ Guardado en la nube automáticamente');
     return;
   }
-  const blob=new Blob([JSON.stringify({players,missions,arcs,gacha_cards:gachaCards,shop_items:shopItems},null,2)],{type:'application/json'});
+  const blob=new Blob([JSON.stringify({players,missions,arcs,gacha_cards:gachaCards,shop_items:shopItems,cal_events:calEvents},null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download='data.json';a.click();
   URL.revokeObjectURL(url);
@@ -865,6 +1143,7 @@ function showPage(name,btn){
   if(name==='heroe')renderHeroProfile(curHero);
   if(name==='gacha'){renderGachaGold();renderMyGallery();renderGalleryTabs();}
   if(name==='tienda')renderShop();
+  if(name==='calendario')renderCalendar();
 }
 
 /* ── misiones stats ── */
@@ -1420,6 +1699,204 @@ function renderAdminItemsList(){
     }).join('');
 }
 
+
+/* ══ CALENDARIO ══ */
+.cal-shell{display:grid;grid-template-columns:1fr 300px;gap:1.25rem;}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
+.cal-month{font-size:16px;font-weight:500;color:var(--text);}
+.cal-nav{display:flex;gap:4px;}
+.cal-nav-btn{width:30px;height:30px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;cursor:pointer;color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.cal-nav-btn:hover{background:var(--bg3);color:var(--text);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cal-dow{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center;padding:6px 0;}
+.cal-day{min-height:80px;border-radius:var(--radius);border:0.5px solid transparent;padding:6px;cursor:pointer;transition:all .15s;position:relative;}
+.cal-day:hover{background:var(--bg3);border-color:var(--border);}
+.cal-day.today{border-color:var(--accent);background:var(--accent-bg);}
+.cal-day.other-month{opacity:.35;}
+.cal-day.selected{border-color:var(--accent);background:var(--accent-bg);}
+.cal-day-num{font-size:12px;font-weight:500;color:var(--text);margin-bottom:4px;}
+.cal-day.today .cal-day-num{color:var(--accent);font-weight:700;}
+.cal-event{font-size:10px;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+.cal-event.personal{background:var(--accent-bg);color:var(--accent);border:0.5px solid var(--accent-border);}
+.cal-event.team{background:var(--teal-bg);color:var(--teal);border:0.5px solid var(--teal-border);}
+.cal-event.mission{background:var(--gold-bg);color:var(--gold);border:0.5px solid var(--gold-border);}
+.cal-sidebar{display:flex;flex-direction:column;gap:1rem;}
+.event-list{display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;}
+.event-item{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:.75rem;cursor:pointer;transition:border-color .15s;}
+.event-item:hover{border-color:var(--border2);}
+.event-item.personal{border-left:2px solid var(--accent);}
+.event-item.team{border-left:2px solid var(--teal);}
+.event-item.mission{border-left:2px solid var(--gold);}
+.event-title{font-size:13px;font-weight:500;color:var(--text);}
+.event-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.event-tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:20px;margin-top:4px;}
+/* Event modal */
+.cal-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;align-items:center;justify-content:center;}
+.cal-modal.show{display:flex;}
+.cal-modal-box{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:420px;animation:popIn .2s ease;}
+
+
+/* ══ CALENDARIO ══ */
+let calState={year:new Date().getFullYear(),month:new Date().getMonth(),selectedDate:null,filter:'all',editingEventId:null};
+
+function renderCalendar(){
+  const {year,month,selectedDate,filter}=calState;
+  const today=new Date();
+  const firstDay=new Date(year,month,1);
+  const lastDay=new Date(year,month+1,0);
+  const startDow=(firstDay.getDay()+6)%7; // Mon=0
+  const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('cal-month-label').textContent=months[month]+' '+year;
+
+  // Build grid
+  const grid=document.getElementById('cal-grid');
+  if(!grid)return;
+  const dows=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  let html=dows.map(d=>'<div class="cal-dow">'+d+'</div>').join('');
+
+  // Prev month padding
+  const prevLast=new Date(year,month,0).getDate();
+  for(let i=startDow-1;i>=0;i--){
+    const d=prevLast-i;
+    html+='<div class="cal-day other-month"><div class="cal-day-num">'+d+'</div></div>';
+  }
+
+  // Current month days
+  for(let d=1;d<=lastDay.getDate();d++){
+    const dateStr=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const isToday=d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear();
+    const isSel=selectedDate===dateStr;
+    const dayEvs=getFilteredEvents(filter).filter(e=>e.date===dateStr);
+    const evDots=dayEvs.slice(0,3).map(e=>'<div class="cal-event '+e.type+'" onclick="event.stopPropagation();openEventModal(''+e.id+'')" title="'+e.title+'">'+e.title+'</div>').join('');
+    html+='<div class="cal-day'+(isToday?' today':'')+(isSel?' selected':'')+'" onclick="selectCalDay(''+dateStr+'')">'
+      +'<div class="cal-day-num">'+d+'</div>'+evDots+'</div>';
+  }
+
+  // Next month padding
+  const totalCells=startDow+lastDay.getDate();
+  const remainder=totalCells%7===0?0:7-(totalCells%7);
+  for(let d=1;d<=remainder;d++){
+    html+='<div class="cal-day other-month"><div class="cal-day-num">'+d+'</div></div>';
+  }
+  grid.innerHTML=html;
+
+  // Selected day panel
+  const selDate=selectedDate||formatDate(today);
+  renderDayEvents(selDate);
+  renderUpcoming();
+}
+
+function formatDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
+function getFilteredEvents(filter){
+  const pid=session.playerId;
+  return calEvents.filter(e=>{
+    if(filter==='personal')return e.type==='personal'&&(e.ownerId===pid||session.isAdmin);
+    if(filter==='team')return e.type==='team';
+    if(filter==='mission')return !!e.missionId;
+    return e.type==='team'||(e.type==='personal'&&(e.ownerId===pid||session.isAdmin));
+  });
+}
+
+function selectCalDay(dateStr){
+  calState.selectedDate=dateStr;
+  renderCalendar();
+}
+
+function renderDayEvents(dateStr){
+  const wrap=document.getElementById('cal-day-events');
+  const lbl=document.getElementById('cal-selected-label');
+  if(!wrap)return;
+  const d=new Date(dateStr+'T00:00:00');
+  const days=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const months=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  if(lbl)lbl.textContent=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()];
+  const evs=getFilteredEvents(calState.filter).filter(e=>e.date===dateStr);
+  if(!evs.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin eventos.</div>';return;}
+  wrap.innerHTML=evs.map(e=>eventItemHTML(e)).join('');
+}
+
+function renderUpcoming(){
+  const wrap=document.getElementById('cal-upcoming');
+  if(!wrap)return;
+  const today=formatDate(new Date());
+  const upcoming=getFilteredEvents(calState.filter).filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
+  if(!upcoming.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin eventos próximos.</div>';return;}
+  wrap.innerHTML=upcoming.map(e=>eventItemHTML(e)).join('');
+}
+
+function eventItemHTML(e){
+  const m=missions.find(mx=>mx.id===e.missionId);
+  const typeLabel={personal:'Personal',team:'Equipo',mission:'Misión'}[e.type]||e.type;
+  return '<div class="event-item '+e.type+'" onclick="openEventModal(''+e.id+'')">'
+    +'<div class="event-title">'+e.title+'</div>'
+    +'<div class="event-meta">'+e.date+(e.time?' · '+e.time:'')+(m?' · '+m.name:'')+'</div>'
+    +'<span class="event-tag badge '+(e.type==='team'?'b-teal':e.type==='mission'?'b-gold':'b-purple')+'">'+typeLabel+'</span>'
+    +'</div>';
+}
+
+function calNav(dir){
+  if(dir===0){calState.year=new Date().getFullYear();calState.month=new Date().getMonth();}
+  else{calState.month+=dir;if(calState.month>11){calState.month=0;calState.year++;}else if(calState.month<0){calState.month=11;calState.year--;}}
+  renderCalendar();
+}
+
+function setCalFilter(f,btn){
+  calState.filter=f;
+  ['all','personal','team','mission'].forEach(k=>{const b=document.getElementById('cal-filter-'+k);if(b)b.classList.toggle('btn-p',k===f);});
+  renderCalendar();
+}
+
+function openEventModal(eventId){
+  calState.editingEventId=eventId;
+  const modal=document.getElementById('cal-event-modal');
+  const e=eventId?calEvents.find(ev=>ev.id===eventId):null;
+  document.getElementById('cal-modal-title').textContent=e?'Editar evento':'Nuevo evento';
+  document.getElementById('ev-title').value=e?e.title:'';
+  document.getElementById('ev-date').value=e?e.date:(calState.selectedDate||formatDate(new Date()));
+  document.getElementById('ev-time').value=e?e.time:'09:00';
+  document.getElementById('ev-desc').value=e?e.desc:'';
+  document.getElementById('ev-type').value=e?e.type:'personal';
+  // Populate missions select
+  const msel=document.getElementById('ev-mission');
+  msel.innerHTML='<option value="">Sin vincular</option>'+missions.map(m=>'<option value="'+m.id+'"'+(e&&e.missionId===m.id?' selected':'')+'>'+m.name+'</option>').join('');
+  // Show delete only for owner or admin
+  const delWrap=document.getElementById('ev-delete-wrap');
+  if(delWrap)delWrap.style.display=(e&&(session.isAdmin||e.ownerId===session.playerId))?'block':'none';
+  modal.classList.add('show');
+}
+
+function closeEventModal(){document.getElementById('cal-event-modal').classList.remove('show');}
+
+function saveEvent(){
+  const title=document.getElementById('ev-title').value.trim();
+  if(!title){toast('El evento necesita un título.');return;}
+  const ev={
+    id:calState.editingEventId||('ev'+Date.now()),
+    title,
+    date:document.getElementById('ev-date').value,
+    time:document.getElementById('ev-time').value,
+    desc:document.getElementById('ev-desc').value.trim(),
+    type:document.getElementById('ev-type').value,
+    missionId:document.getElementById('ev-mission').value,
+    ownerId:calState.editingEventId?(calEvents.find(e=>e.id===calState.editingEventId)||{}).ownerId||session.playerId:session.playerId,
+  };
+  if(calState.editingEventId){
+    const idx=calEvents.findIndex(e=>e.id===calState.editingEventId);
+    if(idx>=0)calEvents[idx]=ev;else calEvents.push(ev);
+  }else{calEvents.push(ev);}
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  closeEventModal();renderCalendar();toast('Evento guardado');
+}
+
+function deleteEvent(){
+  if(!calState.editingEventId)return;
+  if(!confirm('¿Eliminar este evento?'))return;
+  calEvents=calEvents.filter(e=>e.id!==calState.editingEventId);
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  closeEventModal();renderCalendar();toast('Evento eliminado');
+}
+
 /* ══ TOAST ══ */
 let toastT;
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',2500);}
@@ -1429,14 +1906,14 @@ function toggleTheme(){
   const html=document.documentElement;
   const isDark=html.getAttribute('data-theme')==='dark';
   html.setAttribute('data-theme',isDark?'light':'dark');
-  document.getElementById('theme-btn').textContent=isDark?'☀️':'🌙';
+  const _tb=document.getElementById('theme-btn');if(_tb){_tb.querySelector?_tb.querySelector('span#theme-label')&&(_tb.querySelector('span#theme-label').textContent=isDark?'Modo claro':'Modo oscuro'):null;_tb.childNodes[0].textContent=isDark?'☀️ ':'🌙 ';}
   localStorage.setItem('cg_theme',isDark?'light':'dark');
 }
 function initTheme(){
   const saved=localStorage.getItem('cg_theme')||'light';
   document.documentElement.setAttribute('data-theme',saved);
   const btn=document.getElementById('theme-btn');
-  if(btn)btn.textContent=saved==='dark'?'🌙':'☀️';
+  const _tbl=document.getElementById('theme-label');if(_tbl)_tbl.textContent=saved==='dark'?'Modo oscuro':'Modo claro';
 }
 
 /* ══ ARRANQUE ══ */
