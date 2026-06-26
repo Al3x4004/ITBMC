@@ -29,15 +29,21 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;transition:background .2s,color .2s;}
 /* ══ LAYOUT ══ */
-.app{max-width:980px;margin:0 auto;padding:0 1rem 4rem;}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:1rem 0 1.25rem;border-bottom:0.5px solid var(--border);margin-bottom:1.5rem;gap:8px;}
-.topbar-title{font-size:15px;font-weight:500;color:var(--text);flex-shrink:0;}
-.topbar-title span{color:var(--muted);font-weight:400;}
-.nav{display:flex;gap:2px;flex-wrap:wrap;}
-.nb{padding:5px 12px;border-radius:var(--radius);border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s;}
+.shell{display:flex;min-height:100vh;}
+.sidebar{width:210px;flex-shrink:0;background:var(--bg2);border-right:0.5px solid var(--border);display:flex;flex-direction:column;padding:1.25rem 0;position:fixed;top:0;left:0;height:100vh;z-index:50;}
+.sidebar-logo{padding:0 1.25rem 1.25rem;border-bottom:0.5px solid var(--border);margin-bottom:.75rem;}
+.sidebar-logo-mark{font-size:24px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1;}
+.sidebar-logo-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.nav{display:flex;flex-direction:column;gap:2px;padding:0 .75rem;flex:1;}
+.nb{padding:7px 12px;border-radius:var(--radius);border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s;text-align:left;display:flex;align-items:center;gap:8px;}
 .nb:hover{background:var(--bg3);color:var(--text);}
 .nb.active{background:var(--bg3);color:var(--text);font-weight:500;}
+.nb .nb-icon{font-size:14px;width:18px;text-align:center;}
+.sidebar-bottom{padding:.75rem;border-top:0.5px solid var(--border);margin-top:auto;}
 .topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.app{margin-left:210px;padding:1.5rem 2rem 4rem;max-width:none;}
+.topbar{display:flex;align-items:center;justify-content:flex-end;padding-bottom:1.25rem;border-bottom:0.5px solid var(--border);margin-bottom:1.5rem;gap:8px;}
+.topbar-title{display:none;}
 .theme-btn{width:32px;height:32px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:15px;transition:all .15s;}
 .theme-btn:hover{background:var(--bg3);color:var(--text);}
 .upill{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;padding:5px 10px;border-radius:var(--radius);border:0.5px solid var(--border2);transition:all .15s;background:var(--bg2);}
@@ -368,31 +374,39 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 
 <!-- APP -->
 <div id="screen-app" style="display:none;">
+  <div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">IT</div>
+      <div class="sidebar-logo-sub">Cuartel General</div>
+    </div>
+    <nav class="nav" role="navigation">
+      <button class="nb active" onclick="showPage('misiones',this)"><span class="nb-icon">⚔️</span>Misiones</button>
+      <button class="nb" onclick="showPage('heroe',this)"><span class="nb-icon">🧙</span>Héroe</button>
+      <button class="nb" onclick="showPage('arcos',this)"><span class="nb-icon">🗺️</span>Arcos</button>
+      <button class="nb" onclick="showPage('ranking',this)"><span class="nb-icon">🏆</span>Ranking</button>
+      <button class="nb" onclick="showPage('gacha',this)"><span class="nb-icon">✨</span>Gacha</button>
+      <button class="nb" onclick="showPage('tienda',this)"><span class="nb-icon">🛒</span>Tienda</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div id="umenu-inline" style="display:none;margin-bottom:.5rem;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius);padding:.5rem;">
+        <div style="padding:6px 8px;font-size:12px;color:var(--muted);border-bottom:0.5px solid var(--border);margin-bottom:4px;" id="umname">—</div>
+        <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="goToMyProfile()">👤 Mi perfil</button>
+        <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="openEditModal(session.playerId)">✏️ Editar personaje</button>
+        <button class="btn btn-sm btn-g" style="width:100%;text-align:left;margin-bottom:2px;" onclick="exportJSON()">⬇️ Exportar JSON</button>
+        <button class="btn btn-sm" style="width:100%;text-align:left;" onclick="doLogout()">← Cerrar sesión</button>
+      </div>
+      <div class="upill" onclick="toggleUMenu()" id="upill" style="width:100%;justify-content:flex-start;">
+        <span class="udot"></span><span id="ulabel">—</span>
+      </div>
+    </div>
+  </aside>
   <div class="app">
     <div id="mode-ban-wrap"></div>
     <div class="topbar">
-      <div class="topbar-title">🏰 <span>Cuartel</span> General</div>
-      <nav class="nav">
-        <button class="nb active" onclick="showPage('misiones',this)">Misiones</button>
-        <button class="nb" onclick="showPage('heroes',this)">Héroes</button>
-        <button class="nb" onclick="showPage('arcos',this)">Arcos</button>
-        <button class="nb" onclick="showPage('ranking',this)">Ranking</button>
-        <button class="nb" onclick="showPage('gacha',this)">Gacha</button>
-        <button class="nb" onclick="showPage('tienda',this)">Tienda</button>
-      </nav>
       <div class="topbar-right">
         <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar tema">☀️</button>
-        <div class="upill" onclick="toggleUMenu()" id="upill">
-          <span class="udot"></span><span id="ulabel">—</span>
-        </div>
       </div>
-    </div>
-    <div id="umenu" style="display:none;position:absolute;right:1rem;top:4rem;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:.5rem;z-index:100;min-width:190px;">
-      <div style="padding:8px 12px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);" id="umname">—</div>
-      <button class="btn btn-sm" style="width:100%;margin-top:6px;text-align:left;" onclick="goToMyProfile()">👤 Mi perfil</button>
-      <button class="btn btn-sm" style="width:100%;margin-top:4px;text-align:left;" onclick="openEditModal(session.playerId)">✏️ Editar personaje</button>
-      <button class="btn btn-sm btn-g" style="width:100%;margin-top:4px;text-align:left;" onclick="exportJSON()">⬇️ Exportar data.json</button>
-      <button class="btn btn-sm" style="width:100%;margin-top:4px;text-align:left;" onclick="doLogout()">← Cerrar sesión</button>
     </div>
 
     <!-- MISIONES -->
@@ -405,7 +419,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     </div>
 
     <!-- HÉROES -->
-    <div id="page-heroes" class="page">
+    <div id="page-heroe" class="page">
       <div class="htabs" id="htabs"></div>
       <div id="hprofile"></div>
     </div>
@@ -715,7 +729,7 @@ function checkDailyMissions(){
 function exportJSON(){
   if(CFG.MODE==='jsonbin'){
     saveToJSONBin();
-    document.getElementById('umenu').style.display='none';
+    const _uh=document.getElementById('umenu-inline');if(_uh)_uh.style.display='none';
     toast('✅ Guardado en la nube automáticamente');
     return;
   }
@@ -723,7 +737,7 @@ function exportJSON(){
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download='data.json';a.click();
   URL.revokeObjectURL(url);
-  document.getElementById('umenu').style.display='none';
+  const _uh=document.getElementById('umenu-inline');if(_uh)_uh.style.display='none';
   toast('data.json descargado — súbelo a GitHub en la carpeta Excel/');
 }
 
@@ -758,14 +772,14 @@ function doAdminLogin(){
 function doLogout(){
   session={loggedIn:false,isAdmin:false,playerId:null};
   localStorage.removeItem('cg_pid');
-  document.getElementById('umenu').style.display='none';
+  const _uh=document.getElementById('umenu-inline');if(_uh)_uh.style.display='none';
   showScreen('screen-welcome');
 }
 function enterApp(){
   showScreen('screen-app');
   const p=players.find(p=>p.id===session.playerId);
   document.getElementById('ulabel').textContent=session.isAdmin?'Dios 👑':(p?p.name.split(' ')[0]:'—');
-  document.getElementById('umname').textContent=session.isAdmin?'👑 Dios':(p?p.name:'—');
+  const _un=document.getElementById('umname');if(_un)_un.textContent=session.isAdmin?'👑 Dios':(p?p.name:'—');
   if(CFG.MODE==='local'){
     document.getElementById('mode-ban-wrap').innerHTML=`
       <div class="mode-ban">
@@ -775,8 +789,15 @@ function enterApp(){
   }
   renderAll();
 }
-function toggleUMenu(){const m=document.getElementById('umenu');m.style.display=m.style.display==='none'?'block':'none';}
-document.addEventListener('click',e=>{if(!e.target.closest('#umenu')&&!e.target.closest('#upill'))document.getElementById('umenu').style.display='none';});
+function toggleUMenu(){
+  const m=document.getElementById('umenu-inline');
+  if(m)m.style.display=m.style.display==='none'?'block':'none';
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#umenu-inline')&&!e.target.closest('#upill')){
+    const m=document.getElementById('umenu-inline');if(m)m.style.display='none';
+  }
+});
 
 /* ══ CREADOR ══ */
 function buildCreatorCls(){
@@ -841,7 +862,7 @@ function showPage(name,btn){
   document.getElementById('page-'+name).classList.add('active');
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  if(name==='heroes')renderHeroProfile(curHero);
+  if(name==='heroe')renderHeroProfile(curHero);
   if(name==='gacha'){renderGachaGold();renderMyGallery();renderGalleryTabs();}
   if(name==='tienda')renderShop();
 }
@@ -1016,7 +1037,7 @@ function renderHeroTabsOLD(){
 }//legacy
 function selectHero(i){curHero=i;renderHeroTabs();renderHeroProfile(i==='admin'?'admin':i);}
 function goToMyProfile(){
-  document.getElementById('umenu').style.display='none';
+  const _uh=document.getElementById('umenu-inline');if(_uh)_uh.style.display='none';
   const idx=players.findIndex(p=>p.id===session.playerId);
   if(idx>=0){curHero=idx;showPage('heroes',document.querySelector('.nb:nth-child(2)'));renderHeroProfile(idx);}
 }
