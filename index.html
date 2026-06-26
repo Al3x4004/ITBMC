@@ -27,9 +27,9 @@
   --coral:#d85a30;--coral-bg:rgba(216,90,48,0.12);--coral-border:rgba(216,90,48,0.28);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;transition:background .2s,color .2s;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;transition:background .2s,color .2s;}
 /* ══ LAYOUT ══ */
-.shell{display:flex;min-height:100vh;}
+.shell{display:flex;width:100%;}
 .sidebar{width:210px;flex-shrink:0;background:var(--bg2);border-right:0.5px solid var(--border);display:flex;flex-direction:column;padding:1.25rem 0;position:fixed;top:0;left:0;height:100vh;z-index:50;}
 .sidebar-logo{padding:0 1.25rem 1.25rem;border-bottom:0.5px solid var(--border);margin-bottom:.75rem;}
 .sidebar-logo-mark{font-size:24px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1;}
@@ -41,8 +41,14 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .nb .nb-icon{font-size:14px;width:18px;text-align:center;}
 .sidebar-bottom{padding:.75rem;border-top:0.5px solid var(--border);margin-top:auto;}
 .topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-.app{margin-left:210px;padding:1.5rem 2rem 4rem;max-width:none;}
-.topbar{display:flex;align-items:center;justify-content:flex-end;padding-bottom:1.25rem;border-bottom:0.5px solid var(--border);margin-bottom:1.5rem;gap:8px;}
+.app{
+  margin-left:210px;
+  padding:1.5rem 2rem 2rem;
+  width:calc(100% - 210px);
+  max-width:960px;
+  box-sizing:border-box;
+}
+.topbar{display:none;}
 .topbar-title{display:none;}
 .theme-btn{width:32px;height:32px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:15px;transition:all .15s;}
 .theme-btn:hover{background:var(--bg3);color:var(--text);}
@@ -229,7 +235,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .attr-pt-btn .aval{font-size:14px;font-weight:500;color:var(--text);}
 .pts-left{font-size:22px;font-weight:500;color:var(--gold);}
 /* ══ SHOP ══ */
-.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:1rem;}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:0;}
 .shop-item{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1rem;display:flex;flex-direction:column;gap:5px;transition:border-color .15s;}
 .shop-item:hover{border-color:var(--border2);}
 .shop-item.can-buy{border-color:var(--teal-border);}
@@ -273,437 +279,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .diff-opt.sel-A{background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);}
 .diff-opt.sel-S{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-border);}
 .daily-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--gold-bg);color:var(--gold);border:0.5px solid var(--gold-border);margin-left:6px;}
-
-
-/* ══ CREAR MISIONES/ARCOS ══ */
-const DIFF_REWARDS={D:{xp:25,gold:10},C:{xp:75,gold:25},B:{xp:150,gold:50},A:{xp:300,gold:100},S:{xp:500,gold:200}};
-const DIFF_ATTRS={D:'Sabiduría',C:'Inteligencia',B:'Agilidad',A:'Fuerza',S:'Carisma'};
-const DIFF_ATTR_PTS={D:1,C:2,B:3,A:5,S:10};
-let selectedDiff='D';
-
-function selectDiff(btn,diff){
-  selectedDiff=diff;
-  document.querySelectorAll('.diff-opt').forEach(function(b){
-    var d=b.getAttribute('data-diff');
-    b.className='diff-opt'+(d===diff?' sel-'+d:'');
-  });
-}
-
-function toggleDailyFields(){
-  var type=document.getElementById('nm-type').value;
-  var diffWrap=document.getElementById('nm-diff-wrap');
-  if(diffWrap)diffWrap.style.display=type==='daily'?'none':'block';
-}
-
-function populateArcSelect(){
-  var sel=document.getElementById('nm-arc');
-  if(!sel)return;
-  sel.innerHTML='<option value="">Sin arco</option>'+arcs.map(function(a){
-    return '<option value="'+a.name+'">'+a.name+'</option>';
-  }).join('');
-}
-
-function createMission(){
-  var name=document.getElementById('nm-name').value.trim();
-  if(!name){toast('La misión necesita un nombre.');return;}
-  var type=document.getElementById('nm-type').value;
-  var isDaily=type==='daily';
-  var arc=document.getElementById('nm-arc').value;
-  var deadline=document.getElementById('nm-deadline').value;
-  var diff=isDaily?'D':selectedDiff;
-  var rewards=DIFF_REWARDS[diff];
-  var newM={
-    id:'m'+Date.now(),
-    name:name,
-    arc:arc||'General',
-    playerId:session.isAdmin?'':session.playerId,
-    status:'pending',
-    diff:diff,
-    xp:isDaily?25:rewards.xp,
-    gold:isDaily?10:rewards.gold,
-    attr:DIFF_ATTRS[diff],
-    attrPts:DIFF_ATTR_PTS[diff],
-    deadline:deadline||'',
-    daily:isDaily,
-    plannerId:'',
-    createdBy:session.playerId
-  };
-  // Check daily limit
-  if(isDaily){
-    var myDailies=missions.filter(function(m){return m.daily&&!m.id.includes('_');});
-    if(myDailies.length>=4){toast('Máximo 4 misiones diarias globales.');return;}
-  }
-  missions.push(newM);
-  if(isDaily)checkDailyMissions();
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
-  document.getElementById('nm-name').value='';
-  document.getElementById('nm-deadline').value='';
-  document.getElementById('panel-new-mission').removeAttribute('open');
-  renderAll();toast('Misión creada: '+name);
-}
-
-function createArc(){
-  var name=document.getElementById('na-name').value.trim();
-  if(!name){toast('El arco necesita un nombre.');return;}
-  var newArc={
-    id:'arc'+Date.now(),
-    name:name,
-    lore:document.getElementById('na-desc').value.trim()||'Un nuevo capítulo comienza.',
-    status:document.getElementById('na-status').value,
-    total:0,done:0,
-    createdBy:session.playerId
-  };
-  arcs.push(newArc);
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
-  populateArcSelect();
-  document.getElementById('na-name').value='';
-  document.getElementById('na-desc').value='';
-  document.getElementById('panel-new-arc').removeAttribute('open');
-  renderAll();populateArcSelect();toast('Arco creado: '+name);
-}
-
-/* ══ TOAST ══ */
-#toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);border-radius:var(--radius);padding:9px 18px;font-size:13px;display:none;z-index:999;}
-@media(max-width:600px){.g4{grid-template-columns:repeat(2,1fr);}.pbody{grid-template-columns:1fr;}.cgrid{grid-template-columns:repeat(2,1fr);}.nav{display:none;}}
-
-/* ══ CALENDARIO ══ */
-.cal-shell{display:grid;grid-template-columns:1fr 300px;gap:1.25rem;}
-.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
-.cal-month{font-size:16px;font-weight:500;color:var(--text);}
-.cal-nav{display:flex;gap:4px;}
-.cal-nav-btn{width:30px;height:30px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;cursor:pointer;color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
-.cal-nav-btn:hover{background:var(--bg3);color:var(--text);}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
-.cal-dow{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center;padding:6px 0;}
-.cal-day{min-height:80px;border-radius:var(--radius);border:0.5px solid transparent;padding:6px;cursor:pointer;transition:all .15s;position:relative;}
-.cal-day:hover{background:var(--bg3);border-color:var(--border);}
-.cal-day.today{border-color:var(--accent);background:var(--accent-bg);}
-.cal-day.other-month{opacity:.35;}
-.cal-day.selected{border-color:var(--accent);background:var(--accent-bg);}
-.cal-day-num{font-size:12px;font-weight:500;color:var(--text);margin-bottom:4px;}
-.cal-day.today .cal-day-num{color:var(--accent);font-weight:700;}
-.cal-event{font-size:10px;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
-.cal-event.personal{background:var(--accent-bg);color:var(--accent);border:0.5px solid var(--accent-border);}
-.cal-event.team{background:var(--teal-bg);color:var(--teal);border:0.5px solid var(--teal-border);}
-.cal-event.mission{background:var(--gold-bg);color:var(--gold);border:0.5px solid var(--gold-border);}
-.cal-sidebar{display:flex;flex-direction:column;gap:1rem;}
-.event-list{display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;}
-.event-item{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:.75rem;cursor:pointer;transition:border-color .15s;}
-.event-item:hover{border-color:var(--border2);}
-.event-item.personal{border-left:2px solid var(--accent);}
-.event-item.team{border-left:2px solid var(--teal);}
-.event-item.mission{border-left:2px solid var(--gold);}
-.event-title{font-size:13px;font-weight:500;color:var(--text);}
-.event-meta{font-size:11px;color:var(--muted);margin-top:2px;}
-.event-tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:20px;margin-top:4px;}
-/* Event modal */
-.cal-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;align-items:center;justify-content:center;}
-.cal-modal.show{display:flex;}
-.cal-modal-box{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:420px;animation:popIn .2s ease;}
-
-
-/* ══ CALENDARIO ══ */
-let calState={year:new Date().getFullYear(),month:new Date().getMonth(),selectedDate:null,filter:'all',editingEventId:null};
-
-function initCalFilterBtns(){
-  ['all','personal','team','mission'].forEach(function(k){
-    var b=document.getElementById('cal-filter-'+k);
-    if(b)b.classList.toggle('btn-p',k===calState.filter);
-  });
-}
-function renderCalendar(){
-  initCalFilterBtns();
-  var yr=calState.year,mo=calState.month,selD=calState.selectedDate,fil=calState.filter;
-  var today=new Date();
-  var firstDay=new Date(yr,mo,1);
-  var lastDay=new Date(yr,mo+1,0);
-  var startDow=(firstDay.getDay()+6)%7;
-  var mnames=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  var lbl=document.getElementById('cal-month-label');
-  if(lbl)lbl.textContent=mnames[mo]+' '+yr;
-  var grid=document.getElementById('cal-grid');
-  if(!grid)return;
-  var dows=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-  var html=dows.map(function(d){return '<div class="cal-dow">'+d+'</div>';}).join('');
-  var prevLast=new Date(yr,mo,0).getDate();
-  for(var i=startDow-1;i>=0;i--){
-    html+='<div class="cal-day other-month"><div class="cal-day-num">'+(prevLast-i)+'</div></div>';
-  }
-  for(var day=1;day<=lastDay.getDate();day++){
-    var ds=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-    var isToday=day===today.getDate()&&mo===today.getMonth()&&yr===today.getFullYear();
-    var isSel=selD===ds;
-    var dayEvs=getFilteredEvents(fil).filter(function(e){return e.date===ds;});
-    var evDots=dayEvs.slice(0,3).map(function(ev){
-      return '<div class="cal-event '+ev.type+'" onclick="event.stopPropagation();openEventModal(\''+ev.id+'\')" title="'+ev.title+'">'+ev.title+'</div>';
-    }).join('');
-    var cls='cal-day'+(isToday?' today':'')+(isSel?' selected':'');
-    html+='<div class="'+cls+'" onclick="selectCalDay(\''+ds+'\')"><div class="cal-day-num">'+day+'</div>'+evDots+'</div>';
-  }
-  var rem=(startDow+lastDay.getDate())%7;
-  if(rem>0){for(var pd=1;pd<=7-rem;pd++)html+='<div class="cal-day other-month"><div class="cal-day-num">'+pd+'</div></div>';}
-  grid.innerHTML=html;
-  renderDayEvents(selD||formatDate(today));
-  renderUpcoming();
-}
-function formatDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-
-function getFilteredEvents(filter){
-  const pid=session.playerId;
-  return calEvents.filter(e=>{
-    if(filter==='personal')return e.type==='personal'&&(e.ownerId===pid||session.isAdmin);
-    if(filter==='team')return e.type==='team';
-    if(filter==='mission')return !!e.missionId;
-    return e.type==='team'||(e.type==='personal'&&(e.ownerId===pid||session.isAdmin));
-  });
-}
-
-function selectCalDay(dateStr){
-  calState.selectedDate=dateStr;
-  renderCalendar();
-}
-
-function renderDayEvents(dateStr){
-  const wrap=document.getElementById('cal-day-events');
-  const lbl=document.getElementById('cal-selected-label');
-  if(!wrap)return;
-  const d=new Date(dateStr+'T00:00:00');
-  const days=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  const months=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-  if(lbl)lbl.textContent=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()];
-  const evs=getFilteredEvents(calState.filter).filter(e=>e.date===dateStr);
-  if(!evs.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin eventos.</div>';return;}
-  wrap.innerHTML=evs.map(e=>eventItemHTML(e)).join('');
-}
-
-function renderUpcoming(){
-  const wrap=document.getElementById('cal-upcoming');
-  if(!wrap)return;
-  const today=formatDate(new Date());
-  const upcoming=getFilteredEvents(calState.filter).filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
-  if(!upcoming.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin eventos próximos.</div>';return;}
-  wrap.innerHTML=upcoming.map(e=>eventItemHTML(e)).join('');
-}
-
-function eventItemHTML(e){
-  var m=missions.find(function(mx){return mx.id===e.missionId;});
-  var typeLabel={personal:'Personal',team:'Equipo',mission:'Misión'}[e.type]||e.type;
-  var badgeCls=e.type==='team'?'b-teal':e.type==='mission'?'b-gold':'b-purple';
-  return '<div class="event-item '+e.type+'" onclick="openEventModal(\''+e.id+'\')">' 
-    +'<div class="event-title">'+e.title+'</div>'
-    +'<div class="event-meta">'+e.date+(e.time?' · '+e.time:'')+(m?' · '+m.name:'')+'</div>'
-    +'<span class="event-tag badge '+badgeCls+'">'+typeLabel+'</span>'
-    +'</div>';
-}
-function calNav(dir){
-  if(dir===0){calState.year=new Date().getFullYear();calState.month=new Date().getMonth();}
-  else{calState.month+=dir;if(calState.month>11){calState.month=0;calState.year++;}else if(calState.month<0){calState.month=11;calState.year--;}}
-  renderCalendar();
-}
-
-function setCalFilter(f,btn){
-  calState.filter=f;
-  ['all','personal','team','mission'].forEach(k=>{const b=document.getElementById('cal-filter-'+k);if(b)b.classList.toggle('btn-p',k===f);});
-  renderCalendar();
-}
-
-function openEventModal(eventId){
-  calState.editingEventId=eventId;
-  const modal=document.getElementById('cal-event-modal');
-  const e=eventId?calEvents.find(ev=>ev.id===eventId):null;
-  document.getElementById('cal-modal-title').textContent=e?'Editar evento':'Nuevo evento';
-  document.getElementById('ev-title').value=e?e.title:'';
-  document.getElementById('ev-date').value=e?e.date:(calState.selectedDate||formatDate(new Date()));
-  document.getElementById('ev-time').value=e?e.time:'09:00';
-  document.getElementById('ev-desc').value=e?e.desc:'';
-  document.getElementById('ev-type').value=e?e.type:'personal';
-  // Populate missions select
-  const msel=document.getElementById('ev-mission');
-  msel.innerHTML='<option value="">Sin vincular</option>'+missions.map(m=>'<option value="'+m.id+'"'+(e&&e.missionId===m.id?' selected':'')+'>'+m.name+'</option>').join('');
-  // Show delete only for owner or admin
-  const delWrap=document.getElementById('ev-delete-wrap');
-  if(delWrap)delWrap.style.display=(e&&(session.isAdmin||e.ownerId===session.playerId))?'block':'none';
-  modal.classList.add('show');
-}
-
-function closeEventModal(){document.getElementById('cal-event-modal').classList.remove('show');}
-
-function saveEvent(){
-  const title=document.getElementById('ev-title').value.trim();
-  if(!title){toast('El evento necesita un título.');return;}
-  const ev={
-    id:calState.editingEventId||('ev'+Date.now()),
-    title,
-    date:document.getElementById('ev-date').value,
-    time:document.getElementById('ev-time').value,
-    desc:document.getElementById('ev-desc').value.trim(),
-    type:document.getElementById('ev-type').value,
-    missionId:document.getElementById('ev-mission').value,
-    ownerId:calState.editingEventId?(calEvents.find(e=>e.id===calState.editingEventId)||{}).ownerId||session.playerId:session.playerId,
-  };
-  if(calState.editingEventId){
-    const idx=calEvents.findIndex(e=>e.id===calState.editingEventId);
-    if(idx>=0)calEvents[idx]=ev;else calEvents.push(ev);
-  }else{calEvents.push(ev);}
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
-  closeEventModal();renderCalendar();toast('Evento guardado');
-}
-
-function deleteEvent(){
-  if(!calState.editingEventId)return;
-  if(!confirm('¿Eliminar este evento?'))return;
-  calEvents=calEvents.filter(e=>e.id!==calState.editingEventId);
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
-  closeEventModal();renderCalendar();toast('Evento eliminado');
-}
-
-
-/* ══ CALENDARIO ══ */
-.cal-shell{display:grid;grid-template-columns:1fr 300px;gap:1.25rem;}
-.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
-.cal-month{font-size:16px;font-weight:500;color:var(--text);}
-.cal-nav{display:flex;gap:4px;}
-.cal-nav-btn{width:30px;height:30px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;cursor:pointer;color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
-.cal-nav-btn:hover{background:var(--bg3);color:var(--text);}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
-.cal-dow{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center;padding:6px 0;}
-.cal-day{min-height:80px;border-radius:var(--radius);border:0.5px solid transparent;padding:6px;cursor:pointer;transition:all .15s;position:relative;}
-.cal-day:hover{background:var(--bg3);border-color:var(--border);}
-.cal-day.today{border-color:var(--accent);background:var(--accent-bg);}
-.cal-day.other-month{opacity:.35;}
-.cal-day.selected{border-color:var(--accent);background:var(--accent-bg);}
-.cal-day-num{font-size:12px;font-weight:500;color:var(--text);margin-bottom:4px;}
-.cal-day.today .cal-day-num{color:var(--accent);font-weight:700;}
-.cal-event{font-size:10px;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
-.cal-event.personal{background:var(--accent-bg);color:var(--accent);border:0.5px solid var(--accent-border);}
-.cal-event.team{background:var(--teal-bg);color:var(--teal);border:0.5px solid var(--teal-border);}
-.cal-event.mission{background:var(--gold-bg);color:var(--gold);border:0.5px solid var(--gold-border);}
-.cal-sidebar{display:flex;flex-direction:column;gap:1rem;}
-.event-list{display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;}
-.event-item{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:.75rem;cursor:pointer;transition:border-color .15s;}
-.event-item:hover{border-color:var(--border2);}
-.event-item.personal{border-left:2px solid var(--accent);}
-.event-item.team{border-left:2px solid var(--teal);}
-.event-item.mission{border-left:2px solid var(--gold);}
-.event-title{font-size:13px;font-weight:500;color:var(--text);}
-.event-meta{font-size:11px;color:var(--muted);margin-top:2px;}
-.event-tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:20px;margin-top:4px;}
-/* Event modal */
-.cal-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;align-items:center;justify-content:center;}
-.cal-modal.show{display:flex;}
-.cal-modal-box{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:420px;animation:popIn .2s ease;}
-
-
-/* ══ CALENDARIO ══ */
-let calState={year:new Date().getFullYear(),month:new Date().getMonth(),selectedDate:null,filter:'all',editingEventId:null};
-
-
-
-/* ══ CREAR MISIONES/ARCOS ══ */
-.create-panel{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem;}
-.create-panel summary{font-size:13px;font-weight:500;cursor:pointer;color:var(--text);list-style:none;display:flex;align-items:center;gap:6px;}
-.create-panel summary::-webkit-details-marker{display:none;}
-.create-panel summary::before{content:'＋';font-size:14px;color:var(--accent);}
-.create-panel[open] summary::before{content:'－';}
-.create-form{margin-top:1rem;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.create-form .full{grid-column:1/-1;}
-.diff-select{display:flex;gap:6px;flex-wrap:wrap;}
-.diff-opt{padding:4px 12px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;cursor:pointer;font-size:12px;font-weight:500;color:var(--muted);transition:all .15s;font-family:inherit;}
-.diff-opt:hover{border-color:var(--border2);background:var(--bg3);}
-.diff-opt.sel-D{background:var(--bg3);color:var(--muted);border-color:var(--border2);}
-.diff-opt.sel-C{background:var(--teal-bg);color:var(--teal);border-color:var(--teal-border);}
-.diff-opt.sel-B{background:var(--gold-bg);color:var(--gold);border-color:var(--gold-border);}
-.diff-opt.sel-A{background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);}
-.diff-opt.sel-S{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-border);}
-.daily-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--gold-bg);color:var(--gold);border:0.5px solid var(--gold-border);margin-left:6px;}
-
-
-/* ══ CREAR MISIONES/ARCOS ══ */
-const DIFF_REWARDS={D:{xp:25,gold:10},C:{xp:75,gold:25},B:{xp:150,gold:50},A:{xp:300,gold:100},S:{xp:500,gold:200}};
-const DIFF_ATTRS={D:'Sabiduría',C:'Inteligencia',B:'Agilidad',A:'Fuerza',S:'Carisma'};
-const DIFF_ATTR_PTS={D:1,C:2,B:3,A:5,S:10};
-let selectedDiff='D';
-
-function selectDiff(btn,diff){
-  selectedDiff=diff;
-  document.querySelectorAll('.diff-opt').forEach(function(b){
-    var d=b.getAttribute('data-diff');
-    b.className='diff-opt'+(d===diff?' sel-'+d:'');
-  });
-}
-
-function toggleDailyFields(){
-  var type=document.getElementById('nm-type').value;
-  var diffWrap=document.getElementById('nm-diff-wrap');
-  if(diffWrap)diffWrap.style.display=type==='daily'?'none':'block';
-}
-
-function populateArcSelect(){
-  var sel=document.getElementById('nm-arc');
-  if(!sel)return;
-  sel.innerHTML='<option value="">Sin arco</option>'+arcs.map(function(a){
-    return '<option value="'+a.name+'">'+a.name+'</option>';
-  }).join('');
-}
-
-function createMission(){
-  var name=document.getElementById('nm-name').value.trim();
-  if(!name){toast('La misión necesita un nombre.');return;}
-  var type=document.getElementById('nm-type').value;
-  var isDaily=type==='daily';
-  var arc=document.getElementById('nm-arc').value;
-  var deadline=document.getElementById('nm-deadline').value;
-  var diff=isDaily?'D':selectedDiff;
-  var rewards=DIFF_REWARDS[diff];
-  var newM={
-    id:'m'+Date.now(),
-    name:name,
-    arc:arc||'General',
-    playerId:session.isAdmin?'':session.playerId,
-    status:'pending',
-    diff:diff,
-    xp:isDaily?25:rewards.xp,
-    gold:isDaily?10:rewards.gold,
-    attr:DIFF_ATTRS[diff],
-    attrPts:DIFF_ATTR_PTS[diff],
-    deadline:deadline||'',
-    daily:isDaily,
-    plannerId:'',
-    createdBy:session.playerId
-  };
-  // Check daily limit
-  if(isDaily){
-    var myDailies=missions.filter(function(m){return m.daily&&!m.id.includes('_');});
-    if(myDailies.length>=4){toast('Máximo 4 misiones diarias globales.');return;}
-  }
-  missions.push(newM);
-  if(isDaily)checkDailyMissions();
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
-  document.getElementById('nm-name').value='';
-  document.getElementById('nm-deadline').value='';
-  document.getElementById('panel-new-mission').removeAttribute('open');
-  renderAll();toast('Misión creada: '+name);
-}
-
-function createArc(){
-  var name=document.getElementById('na-name').value.trim();
-  if(!name){toast('El arco necesita un nombre.');return;}
-  var newArc={
-    id:'arc'+Date.now(),
-    name:name,
-    lore:document.getElementById('na-desc').value.trim()||'Un nuevo capítulo comienza.',
-    status:document.getElementById('na-status').value,
-    total:0,done:0,
-    createdBy:session.playerId
-  };
-  arcs.push(newArc);
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
-  populateArcSelect();
-  document.getElementById('na-name').value='';
-  document.getElementById('na-desc').value='';
-  document.getElementById('panel-new-arc').removeAttribute('open');
-  renderAll();populateArcSelect();toast('Arco creado: '+name);
-}
 
 </style>
 
@@ -836,6 +411,7 @@ function createArc(){
       <button class="nb" onclick="showPage('gacha',this)"><span class="nb-icon">✨</span>Gacha</button>
       <button class="nb" onclick="showPage('tienda',this)"><span class="nb-icon">🛒</span>Tienda</button>
       <button class="nb" onclick="showPage('calendario',this)"><span class="nb-icon">📅</span>Calendario</button>
+      <button class="nb" onclick="showPage('planner',this)"><span class="nb-icon">📋</span>Planner</button>
     </nav>
     <div class="sidebar-bottom">
       <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar tema" style="width:100%;margin-bottom:.5rem;justify-content:flex-start;gap:8px;padding:7px 12px;border-radius:var(--radius);border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s;display:flex;align-items:center;">☀️ <span id="theme-label">Modo claro</span></button>
@@ -853,7 +429,6 @@ function createArc(){
   </aside>
   <div class="app">
     <div id="mode-ban-wrap"></div>
-    <div class="topbar"></div>
 
     <!-- MISIONES -->
     <div id="page-misiones" class="page active">
@@ -868,19 +443,10 @@ function createArc(){
           <div class="field"><label>Tipo</label>
             <select id="nm-type" onchange="toggleDailyFields()">
               <option value="normal">Misión normal</option>
-              <option value="daily">Misión diaria</option>
+              <option value="daily">Misión diaria (se repite cada día automáticamente)</option>
             </select>
           </div>
-          <div class="field full" id="nm-diff-wrap">
-            <label>Dificultad</label>
-            <div class="diff-select">
-              <button class="diff-opt sel-D" data-diff="D" onclick="selectDiff(this,'D')">D — 25 XP / 10 oro</button>
-              <button class="diff-opt" data-diff="C" onclick="selectDiff(this,'C')">C — 75 XP / 25 oro</button>
-              <button class="diff-opt" data-diff="B" onclick="selectDiff(this,'B')">B — 150 XP / 50 oro</button>
-              <button class="diff-opt" data-diff="A" onclick="selectDiff(this,'A')">A — 300 XP / 100 oro</button>
-              <button class="diff-opt" data-diff="S" onclick="selectDiff(this,'S')">S — 500 XP / 200 oro</button>
-            </div>
-          </div>
+          <div class="field full" id="nm-diff-wrap" style="display:none;"></div>
           <div class="field"><label>Fecha límite (opcional)</label><input type="date" id="nm-deadline"/></div>
           <div class="field full" style="display:flex;justify-content:flex-end;">
             <button class="btn btn-p" onclick="createMission()">Crear misión</button>
@@ -1021,7 +587,7 @@ function createArc(){
         </div>
       </div>
       <div class="cal-shell">
-        <div>
+        <div class="cal-main">
           <div class="cal-grid" id="cal-grid"></div>
         </div>
         <div class="cal-sidebar">
@@ -1035,6 +601,93 @@ function createArc(){
             <div class="stitle">Próximos eventos</div>
             <div class="event-list" id="cal-upcoming"></div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLANNER IMPORT -->
+    <div id="page-planner" class="page">
+      <div style="margin-bottom:1.25rem;">
+        <div style="font-size:18px;font-weight:500;margin-bottom:4px;">Importar desde Planner</div>
+        <div style="font-size:13px;color:var(--muted);">Sube un archivo CSV o Excel exportado desde Microsoft Planner y las tareas se convertirán en misiones automáticamente.</div>
+      </div>
+
+      <!-- Instrucciones -->
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="stitle">Cómo exportar desde Planner</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+          <div style="background:var(--bg3);border-radius:var(--radius);padding:1rem;text-align:center;">
+            <div style="font-size:24px;margin-bottom:6px;">1️⃣</div>
+            <div style="font-size:12px;font-weight:500;margin-bottom:4px;">Abre tu Plan</div>
+            <div style="font-size:11px;color:var(--muted);">Ve a Microsoft Planner y abre el plan que quieres importar</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--radius);padding:1rem;text-align:center;">
+            <div style="font-size:24px;margin-bottom:6px;">2️⃣</div>
+            <div style="font-size:12px;font-weight:500;margin-bottom:4px;">Exportar a Excel</div>
+            <div style="font-size:11px;color:var(--muted);">Haz clic en ··· → "Exportar plan a Excel" o "Export to Excel"</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--radius);padding:1rem;text-align:center;">
+            <div style="font-size:24px;margin-bottom:6px;">3️⃣</div>
+            <div style="font-size:12px;font-weight:500;margin-bottom:4px;">Sube el archivo</div>
+            <div style="font-size:11px;color:var(--muted);">Arrastra o selecciona el archivo .xlsx o .csv aquí abajo</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload area -->
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="stitle">Subir archivo</div>
+        <div id="planner-drop" style="border:2px dashed var(--border2);border-radius:var(--radius);padding:2.5rem;text-align:center;cursor:pointer;transition:all .15s;" onclick="document.getElementById('planner-file').click()" ondragover="plannerDragOver(event)" ondrop="plannerDrop(event)">
+          <div style="font-size:32px;margin-bottom:8px;">📂</div>
+          <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px;">Arrastra tu archivo aquí</div>
+          <div style="font-size:12px;color:var(--muted);">o haz clic para seleccionar — .xlsx, .csv</div>
+          <input type="file" id="planner-file" accept=".csv,.xlsx,.xls" style="display:none;" onchange="plannerFileSelected(this)"/>
+        </div>
+      </div>
+
+      <!-- Preview / mapping -->
+      <div id="planner-preview" style="display:none;">
+        <div class="card" style="margin-bottom:1rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <div class="stitle" style="margin:0;" id="planner-preview-title">Vista previa</div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-sm" onclick="clearPlannerImport()">✕ Cancelar</button>
+              <button class="btn btn-sm btn-p" onclick="confirmPlannerImport()">✓ Importar misiones</button>
+            </div>
+          </div>
+          <!-- Column mapping -->
+          <div style="background:var(--bg3);border-radius:var(--radius);padding:.875rem;margin-bottom:1rem;">
+            <div style="font-size:12px;font-weight:500;margin-bottom:8px;">Mapeo de columnas</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+              <div class="field" style="margin:0;"><label>Columna "Título"</label><select id="map-title"></select></div>
+              <div class="field" style="margin:0;"><label>Columna "Asignado a"</label><select id="map-assignee"></select></div>
+              <div class="field" style="margin:0;"><label>Columna "Fecha límite"</label><select id="map-deadline"></select></div>
+              <div class="field" style="margin:0;"><label>Columna "Bucket/Categoría"</label><select id="map-bucket"></select></div>
+              <div class="field" style="margin:0;"><label>Columna "Estado"</label><select id="map-status"></select></div>
+              <div class="field" style="margin:0;"><label>Dificultad por defecto</label>
+                <select id="map-diff">
+                  <option value="D">D — 25 XP</option>
+                  <option value="C" selected>C — 75 XP</option>
+                  <option value="B">B — 150 XP</option>
+                  <option value="A">A — 300 XP</option>
+                  <option value="S">S — 500 XP</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <!-- Table preview -->
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;" id="planner-table">
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Imported missions list -->
+      <div id="planner-imported" style="display:none;">
+        <div class="card">
+          <div class="stitle">Misiones importadas desde Planner</div>
+          <div id="planner-missions-list"></div>
         </div>
       </div>
     </div>
@@ -1178,13 +831,14 @@ const DEMO={
     {id:'pj003',realName:'',name:'Seraphine Ojoagudo', cls:'Exploradora',role:'Data / Análisis',     emblem:'🏹',color:'#1d9e75',colorBg:'rgba(29,158,117,0.15)', level:2,xp:1050,xpNext:100,gold:270,missions:4,weapon:'Arco largo',    armor:'Cuero ligero',     accessory:'Lente de análisis', lore:'Rastreadora de datos perdidos en el caos.',     quote:'Los datos no mienten. Las personas sí.',         pin:'',attrs:{fue:3,int:14,agi:16,car:6,sab:10},gachaTokens:0,gallery:[],lastDaily:''},
   ],
   missions:[
-    {id:'m001',name:'El Gran Despliegue',arc:'El Despertar del Equipo',playerId:'pj001',status:'active',diff:'A',xp:600,gold:150,attr:'Fuerza',attrPts:5,deadline:'2026-07-01',daily:false,plannerId:''},
-    {id:'m002',name:'Revisión diaria del tablero',arc:'General',playerId:'',status:'pending',diff:'D',xp:50,gold:10,attr:'Sabiduría',attrPts:1,deadline:'',daily:true,plannerId:''},
-    {id:'m003',name:'Mapear el Territorio',arc:'El Despertar del Equipo',playerId:'pj002',status:'pending',diff:'C',xp:150,gold:30,attr:'Inteligencia',attrPts:2,deadline:'2026-06-30',daily:false,plannerId:''},
+    {id:'tut1_demo',name:'Explora tu ficha de héroe',arc:'Tutorial: Primeros Pasos',playerId:'pj001',status:'pending',diff:'D',xp:25,gold:10,attr:'Sabiduría',attrPts:1,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
+    {id:'tut2_demo',name:'Visita la Tienda y observa los items',arc:'Tutorial: Primeros Pasos',playerId:'pj001',status:'pending',diff:'C',xp:75,gold:25,attr:'Inteligencia',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
+    {id:'tut3_demo',name:'Haz tu primera invocación en el Gacha',arc:'Tutorial: Primeros Pasos',playerId:'pj001',status:'pending',diff:'C',xp:75,gold:25,attr:'Agilidad',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
+    {id:'tut4_demo',name:'Crea tu primera misión propia',arc:'Tutorial: Primeros Pasos',playerId:'pj001',status:'pending',diff:'C',xp:75,gold:25,attr:'Carisma',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
+    {id:'tut5_demo',name:'Añade un evento al Calendario',arc:'Tutorial: Primeros Pasos',playerId:'pj001',status:'pending',diff:'C',xp:75,gold:25,attr:'Sabiduría',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
   ],
   arcs:[
-    {id:'arc001',name:'El Despertar del Equipo',lore:'El equipo se embarca en su primera gran aventura corporativa.',status:'active',total:18,done:12},
-    {id:'arc002',name:'La Forja del Producto',  lore:'Las pruebas más duras están por llegar.',status:'blocked',total:24,done:0},
+    {id:'arc_tutorial_demo',name:'Tutorial: Primeros Pasos',lore:'Bienvenido al Cuartel General. Este arco te guiará por las funciones principales: crea misiones, explora la tienda, invoca en el gacha y añade eventos al calendario. ¡Completa las 5 misiones para recibir un bonus de XP y oro!',status:'active',total:5,done:0,createdBy:'system'},
   ],
   cal_events:[
     {id:'ev001',title:'Reunión de sprint',date:'2026-06-26',time:'10:00',desc:'Review del sprint actual.',type:'team',missionId:'',ownerId:'team'},
@@ -1293,6 +947,11 @@ async function loadData(){
       else shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));
       if(d.cal_events)calEvents=d.cal_events;
       else calEvents=JSON.parse(JSON.stringify(DEMO.cal_events));
+      // Ensure tutorial missions exist for each player
+      players.forEach(function(p){
+        var hasTutorial=missions&&missions.find(function(m){return m.arc==='Tutorial: Primeros Pasos'&&m.playerId===p.id;});
+        if(!hasTutorial)createTutorialForPlayer(p);
+      });
       missions=d.missions||DEMO.missions;
       arcs    =d.arcs    ||DEMO.arcs;
     }else{
@@ -1330,22 +989,35 @@ async function loadData(){
 
 /* ══ MISIONES DIARIAS ══ */
 function checkDailyMissions(){
-  const today=new Date().toISOString().slice(0,10);
-  const dailyTemplates=missions.filter(function(m){return m.daily;});
+  var today=new Date().toISOString().slice(0,10);
+  // For each player, find their personal daily templates and regenerate instances for today
   players.forEach(function(p){
-    if(p.lastDaily===today)return;
-    // Remove completed dailies from previous days
-    missions=missions.filter(function(m){return !(m.daily&&m.playerId===p.id&&m.status==='done');});
-    // Assign up to 4 daily missions
-    var myDailies=missions.filter(function(m){return m.daily&&m.playerId===p.id;});
-    var slots=4-myDailies.length;
-    var toAssign=dailyTemplates.filter(function(tpl){
-      return !missions.find(function(m){return m.daily&&m.id===tpl.id+'_'+p.id;});
-    }).slice(0,slots);
-    toAssign.forEach(function(tpl){
-      missions.push({...tpl,id:tpl.id+'_'+p.id,playerId:p.id,status:'pending',xp:25,gold:10});
+    // Personal templates: daily=true, isDaily_instance=false, owned by this player
+    var myTemplates=missions.filter(function(m){
+      return m.daily&&!m.isDaily_instance&&m.playerId===p.id;
     });
-    p.lastDaily=today;
+    if(!myTemplates.length)return;
+    // Remove completed instances from previous days
+    missions=missions.filter(function(m){
+      return !(m.isDaily_instance&&m.playerId===p.id&&m.status==='done'&&m.deadline!==today);
+    });
+    // Create today's instances for any template that doesn't have one yet
+    myTemplates.forEach(function(tpl){
+      var instanceId=tpl.id+'_'+today;
+      var exists=missions.find(function(m){return m.id===instanceId;});
+      if(!exists){
+        missions.push({
+          id:instanceId,
+          name:tpl.name,arc:tpl.arc||'General',
+          playerId:p.id,status:'pending',
+          diff:'D',xp:25,gold:10,
+          attr:'Sabiduría',attrPts:1,
+          deadline:today,daily:true,
+          isDaily_instance:true,templateId:tpl.id,
+          plannerId:'',createdBy:p.id
+        });
+      }
+    });
   });
 }
 
@@ -1490,6 +1162,7 @@ function showPage(name,btn){
   if(name==='tienda')renderShop();
   if(name==='misiones')populateArcSelect();
   if(name==='calendario'){if(!calState.selectedDate)calState.selectedDate=new Date().toISOString().slice(0,10);renderCalendar();}
+  if(name==='planner'){renderPlannerImported();}
 }
 
 /* ── misiones stats ── */
@@ -1508,10 +1181,10 @@ function renderMStats(){
 /* ── misiones ── */
 function renderMissions(){
   const today=new Date().toISOString().slice(0,10);
-  const daily   =missions.filter(m=>m.daily&&m.status!=='done');
+  const daily   =missions.filter(m=>m.daily&&m.isDaily_instance&&m.status!=='done'&&(session.isAdmin||m.playerId===session.playerId));
   const active  =missions.filter(m=>!m.daily&&m.status==='active');
   const pending =missions.filter(m=>!m.daily&&m.status==='pending');
-  const done    =missions.filter(m=>m.status==='done');
+  const done    =missions.filter(m=>m.status==='done'&&!m.isDaily_instance);
   document.getElementById('m-daily').innerHTML  =daily.length  ?daily.map(m=>mCard(m)).join('')  :`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones diarias.</div>`;
   document.getElementById('m-active').innerHTML =active.length ?active.map(m=>mCard(m)).join('') :`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones activas.</div>`;
   document.getElementById('m-pending').innerHTML=pending.length?pending.map(m=>mCard(m)).join(''):`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones pendientes.</div>`;
@@ -1522,7 +1195,7 @@ function mCard(m){
   const player=players.find(p=>p.id===m.playerId);
   const canComplete=session.isAdmin||(session.playerId===m.playerId&&m.status!=='done');
   const canEdit=session.isAdmin||session.playerId===m.playerId;
-  const dailyBadge=m.daily?`<span class="daily-rib">Diaria</span>`:'';
+  const dailyBadge=m.daily&&m.isDaily_instance?`<span class="daily-rib">Diaria</span>`:(m.daily&&!m.isDaily_instance?`<span class="daily-rib" style="background:var(--accent-bg);color:var(--accent);">📌 Diaria personal</span>`:'');
   const completedBtn=canComplete&&m.status!=='done'
     ?`<button class="btn-complete" onclick="completeMission('${m.id}')">✓ Completar</button>`:'';
   const statusBadge=m.status==='done'?`<span class="badge b-teal">Completada</span>`:m.status==='active'?`<span class="badge b-gold">En curso</span>`:`<span class="badge b-gray">Pendiente</span>`;
@@ -1611,6 +1284,7 @@ function completeMission(id){
   // Level up
   checkLevelUp(p);
   updateArcCounts();
+  cleanOldCompleted();
   if(CFG.MODE==='jsonbin')saveToJSONBin();
   renderAll();
 }
@@ -2173,6 +1847,258 @@ function deleteEvent(){
 
 
 
+
+/* ══ PLANNER IMPORT ══ */
+let plannerRows=[];
+let plannerHeaders=[];
+
+function showPage_planner(){
+  renderPlannerImported();
+}
+
+function plannerDragOver(e){
+  e.preventDefault();
+  document.getElementById('planner-drop').style.borderColor='var(--accent)';
+}
+
+function plannerDrop(e){
+  e.preventDefault();
+  document.getElementById('planner-drop').style.borderColor='var(--border2)';
+  var file=e.dataTransfer.files[0];
+  if(file)parsePlannerFile(file);
+}
+
+function plannerFileSelected(input){
+  var file=input.files[0];
+  if(file)parsePlannerFile(file);
+}
+
+function parsePlannerFile(file){
+  var name=file.name.toLowerCase();
+  if(name.endsWith('.csv')){
+    var reader=new FileReader();
+    reader.onload=function(e){parsePlannerCSV(e.target.result);};
+    reader.readAsText(file,'UTF-8');
+  } else if(name.endsWith('.xlsx')||name.endsWith('.xls')){
+    var reader=new FileReader();
+    reader.onload=function(e){parsePlannerExcel(e.target.result);};
+    reader.readAsArrayBuffer(file);
+  } else {
+    toast('Formato no soportado. Usa .csv o .xlsx');
+  }
+}
+
+function parsePlannerCSV(text){
+  var lines=text.split(/\r?\n/).filter(function(l){return l.trim();});
+  if(!lines.length){toast('El archivo está vacío.');return;}
+  // Detect separator
+  var sep=lines[0].includes('	')?'	':',';
+  plannerHeaders=lines[0].split(sep).map(function(h){return h.replace(/^"|"$/g,'').trim();});
+  plannerRows=lines.slice(1).map(function(line){
+    var cols=line.split(sep).map(function(v){return v.replace(/^"|"$/g,'').trim();});
+    var row={};
+    plannerHeaders.forEach(function(h,i){row[h]=cols[i]||'';});
+    return row;
+  }).filter(function(r){return Object.values(r).some(function(v){return v;});});
+  showPlannerPreview();
+}
+
+function parsePlannerExcel(buffer){
+  // Parse XLSX manually (simple version - read as text looking for shared strings)
+  // For full xlsx support we'd need a library, but Planner exports simple xlsx
+  // Try to convert to CSV-like by extracting text
+  try {
+    var arr=new Uint8Array(buffer);
+    var str=String.fromCharCode.apply(null,arr);
+    // Check if it's actually a CSV saved as xlsx
+    if(str.startsWith('Task Name')||str.startsWith('Nombre')){
+      parsePlannerCSV(str);return;
+    }
+    // Show message to save as CSV
+    toast('Por favor exporta el archivo como CSV desde Excel: Archivo → Guardar como → CSV');
+    document.getElementById('planner-drop').innerHTML='<div style="font-size:14px;color:var(--coral);">⚠️ Guarda el archivo como CSV (.csv) desde Excel y vuelve a subirlo.</div>';
+  } catch(e) {
+    toast('Error al leer el archivo. Guárdalo como CSV e inténtalo de nuevo.');
+  }
+}
+
+function showPlannerPreview(){
+  if(!plannerRows.length){toast('No se encontraron tareas en el archivo.');return;}
+  document.getElementById('planner-preview').style.display='block';
+  document.getElementById('planner-preview-title').textContent='Vista previa — '+plannerRows.length+' tareas encontradas';
+  
+  // Populate column selectors
+  var selects=['map-title','map-assignee','map-deadline','map-bucket','map-status'];
+  var defaults={
+    'map-title':['Task Name','Nombre de tarea','Title','Título','Name','Tarea'],
+    'map-assignee':['Assigned To','Asignado a','Assignee','Responsable'],
+    'map-deadline':['Due Date','Fecha de vencimiento','Deadline','Fecha límite'],
+    'map-bucket':['Bucket Name','Nombre de depósito','Bucket','Categoría'],
+    'map-status':['Progress','Progreso','State','Estado','Status']
+  };
+  selects.forEach(function(sid){
+    var sel=document.getElementById(sid);
+    if(!sel)return;
+    sel.innerHTML='<option value="">(ninguna)</option>'+plannerHeaders.map(function(h){
+      return '<option value="'+h+'">'+h+'</option>';
+    }).join('');
+    // Auto-select best match
+    var candidates=defaults[sid]||[];
+    for(var i=0;i<candidates.length;i++){
+      var match=plannerHeaders.find(function(h){return h.toLowerCase().includes(candidates[i].toLowerCase());});
+      if(match){sel.value=match;break;}
+    }
+  });
+  
+  // Build preview table
+  var titleCol=document.getElementById('map-title').value||plannerHeaders[0];
+  var table=document.getElementById('planner-table');
+  var cols=plannerHeaders.slice(0,6);
+  table.innerHTML='<thead><tr>'+cols.map(function(h){
+    return '<th style="text-align:left;padding:6px 8px;border-bottom:0.5px solid var(--border);font-size:11px;color:var(--muted);font-weight:500;">'+h+'</th>';
+  }).join('')+'</tr></thead><tbody>'+plannerRows.slice(0,8).map(function(row){
+    return '<tr>'+cols.map(function(h){
+      return '<td style="padding:6px 8px;border-bottom:0.5px solid var(--border);font-size:12px;color:var(--text);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+((row[h]||'')+'</td>');
+    }).join('')+'</tr>';
+  }).join('')+'</tbody>';
+}
+
+function confirmPlannerImport(){
+  var titleCol  =document.getElementById('map-title').value;
+  var assignCol =document.getElementById('map-assignee').value;
+  var deadlineCol=document.getElementById('map-deadline').value;
+  var bucketCol =document.getElementById('map-bucket').value;
+  var statusCol =document.getElementById('map-status').value;
+  var defaultDiff=document.getElementById('map-diff').value;
+  
+  if(!titleCol){toast('Selecciona al menos la columna de título.');return;}
+  
+  var DIFF_REWARDS={D:{xp:25,gold:10},C:{xp:75,gold:25},B:{xp:150,gold:50},A:{xp:300,gold:100},S:{xp:500,gold:200}};
+  var imported=0;
+  
+  plannerRows.forEach(function(row){
+    var title=(row[titleCol]||'').trim();
+    if(!title)return;
+    
+    // Skip if already imported (same plannerId)
+    var existingId='planner_'+title.replace(/\s+/g,'_').toLowerCase().slice(0,20);
+    if(missions.find(function(m){return m.plannerId===existingId;}))return;
+    
+    // Map status
+    var plannerStatus=(row[statusCol]||'').toLowerCase();
+    var status=plannerStatus.includes('complet')||plannerStatus.includes('done')?'done':
+               plannerStatus.includes('progres')||plannerStatus.includes('curso')?'active':'pending';
+    
+    // Map bucket to arc
+    var arc=(row[bucketCol]||'General').trim()||'General';
+    
+    // Find assignee
+    var assigneeName=(row[assignCol]||'').trim();
+    var assignedPlayer=players.find(function(p){
+      return p.realName&&assigneeName&&(
+        p.realName.toLowerCase().includes(assigneeName.toLowerCase().split(' ')[0])||
+        assigneeName.toLowerCase().includes(p.realName.toLowerCase().split(' ')[0])
+      );
+    });
+    
+    var rewards=DIFF_REWARDS[defaultDiff]||DIFF_REWARDS['C'];
+    
+    var newM={
+      id:'planner_'+Date.now()+'_'+imported,
+      name:title,
+      arc:arc,
+      playerId:assignedPlayer?assignedPlayer.id:'',
+      status:status,
+      diff:defaultDiff,
+      xp:rewards.xp,
+      gold:rewards.gold,
+      attr:'Inteligencia',attrPts:2,
+      deadline:row[deadlineCol]||'',
+      daily:false,isDaily_instance:false,
+      plannerId:existingId,
+      createdBy:session.playerId,
+      fromPlanner:true
+    };
+    missions.push(newM);
+    imported++;
+  });
+  
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  clearPlannerImport();
+  renderAll();
+  renderPlannerImported();
+  document.getElementById('planner-imported').style.display='block';
+  toast(imported+' misiones importadas desde Planner');
+}
+
+function clearPlannerImport(){
+  plannerRows=[];plannerHeaders=[];
+  document.getElementById('planner-preview').style.display='none';
+  document.getElementById('planner-file').value='';
+  var drop=document.getElementById('planner-drop');
+  if(drop)drop.innerHTML='<div style="font-size:32px;margin-bottom:8px;">📂</div><div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px;">Arrastra tu archivo aquí</div><div style="font-size:12px;color:var(--muted);">o haz clic para seleccionar — .xlsx, .csv</div><input type="file" id="planner-file" accept=".csv,.xlsx,.xls" style="display:none;" onchange="plannerFileSelected(this)"/>';
+}
+
+function renderPlannerImported(){
+  var wrap=document.getElementById('planner-missions-list');
+  if(!wrap)return;
+  var imported=missions.filter(function(m){return m.fromPlanner;});
+  if(!imported.length){
+    document.getElementById('planner-imported').style.display='none';
+    return;
+  }
+  document.getElementById('planner-imported').style.display='block';
+  wrap.innerHTML=imported.map(function(m){
+    var p=players.find(function(pl){return pl.id===m.playerId;});
+    return '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:0.5px solid var(--border);">'
+      +'<span class="badge d'+m.diff+'">'+m.diff+'</span>'
+      +'<div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+m.name+'</div>'
+      +'<div style="font-size:11px;color:var(--muted);">'+m.arc+(p?' · '+p.emblem+' '+p.name:'')+(m.deadline?' · '+m.deadline:'')+'</div></div>'
+      +'<span class="badge '+(m.status==='done'?'b-teal':m.status==='active'?'b-gold':'b-gray')+'">'+
+        (m.status==='done'?'Completada':m.status==='active'?'En curso':'Pendiente')+'</span>'
+      +'<button class="btn btn-sm" style="font-size:11px;" onclick="deleteMission(\''+m.id+'\')">✕</button>'
+      +'</div>';
+  }).join('');
+}
+
+
+/* ══ TUTORIAL ══ */
+function createTutorialForPlayer(p){
+  var arcName='Tutorial: Primeros Pasos';
+  arcs.push({id:'arc_tutorial_'+p.id,name:arcName,lore:'Tu primera aventura en el Cuartel General. Completa estas misiones para aprender cómo funciona el sistema.',status:'active',total:5,done:0,createdBy:'system'});
+  var tuts=[
+    {id:'tut1_'+p.id,name:'Explora tu ficha de héroe',arc:arcName,playerId:p.id,status:'pending',diff:'D',xp:25,gold:10,attr:'Sabiduría',attrPts:1,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
+    {id:'tut2_'+p.id,name:'Visita la Tienda y observa los items',arc:arcName,playerId:p.id,status:'pending',diff:'D',xp:25,gold:10,attr:'Inteligencia',attrPts:1,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
+    {id:'tut3_'+p.id,name:'Haz tu primera invocación en el Gacha',arc:arcName,playerId:p.id,status:'pending',diff:'C',xp:75,gold:25,attr:'Agilidad',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
+    {id:'tut4_'+p.id,name:'Crea tu primera misión propia',arc:arcName,playerId:p.id,status:'pending',diff:'C',xp:75,gold:25,attr:'Carisma',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
+    {id:'tut5_'+p.id,name:'Añade un evento al Calendario',arc:arcName,playerId:p.id,status:'pending',diff:'B',xp:150,gold:50,attr:'Sabiduría',attrPts:3,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
+  ];
+  tuts.forEach(function(m){missions.push(m);});
+  updateArcCounts();
+}
+
+
+/* ══ OPTIMIZACIÓN JSON ══ */
+function cleanOldCompleted(){
+  // Mantener solo las últimas 20 misiones completadas por jugador (no diarias)
+  players.forEach(function(p){
+    var done=missions.filter(function(m){
+      return m.status==='done'&&m.playerId===p.id&&!m.isDaily_instance;
+    });
+    if(done.length>20){
+      // Sort by id (timestamp-based) descending, keep newest 20
+      done.sort(function(a,b){return b.id.localeCompare(a.id);});
+      var toRemove=done.slice(20).map(function(m){return m.id;});
+      missions=missions.filter(function(m){return toRemove.indexOf(m.id)<0;});
+    }
+  });
+  // Remove daily instances older than today
+  var today=new Date().toISOString().slice(0,10);
+  missions=missions.filter(function(m){
+    return !(m.isDaily_instance&&m.status==='done'&&m.deadline<today);
+  });
+}
+
 /* ══ TOAST ══ */
 let toastT;
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',2500);}
@@ -2201,6 +2127,92 @@ function initTheme(){
   showScreen('screen-welcome');
 })();
 
+
+/* ══ CREAR MISIONES/ARCOS ══ */
+const DIFF_REWARDS={D:{xp:25,gold:10},C:{xp:75,gold:25},B:{xp:150,gold:50},A:{xp:300,gold:100},S:{xp:500,gold:200}};
+const DIFF_ATTRS={D:'Sabiduría',C:'Inteligencia',B:'Agilidad',A:'Fuerza',S:'Carisma'};
+const DIFF_ATTR_PTS={D:1,C:2,B:3,A:5,S:10};
+let selectedDiff='D';
+
+function selectDiff(btn,diff){
+  selectedDiff=diff;
+  document.querySelectorAll('.diff-opt').forEach(function(b){
+    var d=b.getAttribute('data-diff');
+    b.className='diff-opt'+(d===diff?' sel-'+d:'');
+  });
+}
+
+function toggleDailyFields(){
+  var type=document.getElementById('nm-type').value;
+  var diffWrap=document.getElementById('nm-diff-wrap');
+  if(diffWrap)diffWrap.style.display=type==='daily'?'none':'block';
+}
+
+function populateArcSelect(){
+  var sel=document.getElementById('nm-arc');
+  if(!sel)return;
+  sel.innerHTML='<option value="">Sin arco</option>'+arcs.map(function(a){
+    return '<option value="'+a.name+'">'+a.name+'</option>';
+  }).join('');
+}
+
+function createMission(){
+  var name=document.getElementById('nm-name').value.trim();
+  if(!name){toast('La misión necesita un nombre.');return;}
+  var type=document.getElementById('nm-type').value;
+  var isDaily=type==='daily';
+  var arc=document.getElementById('nm-arc').value;
+  var deadline=document.getElementById('nm-deadline').value;
+  var newM={
+    id:'m'+Date.now(),
+    name:name,
+    arc:arc||'General',
+    playerId:session.playerId,
+    status:'pending',
+    diff:isDaily?'D':'C',
+    xp:isDaily?25:75,
+    gold:isDaily?10:25,
+    attr:isDaily?'Sabiduría':'Inteligencia',
+    attrPts:isDaily?1:2,
+    deadline:isDaily?'':deadline||'',
+    daily:isDaily,
+    isDaily_instance:false,
+    plannerId:'',
+    createdBy:session.playerId
+  };
+  // Check daily limit
+  if(isDaily){
+    var myDailies=missions.filter(function(m){return m.daily&&!m.id.includes('_');});
+    if(myDailies.length>=4){toast('Máximo 4 misiones diarias globales.');return;}
+  }
+  missions.push(newM);
+  if(isDaily)checkDailyMissions();
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  document.getElementById('nm-name').value='';
+  document.getElementById('nm-deadline').value='';
+  document.getElementById('panel-new-mission').removeAttribute('open');
+  renderAll();toast('Misión creada: '+name);
+}
+
+function createArc(){
+  var name=document.getElementById('na-name').value.trim();
+  if(!name){toast('El arco necesita un nombre.');return;}
+  var newArc={
+    id:'arc'+Date.now(),
+    name:name,
+    lore:document.getElementById('na-desc').value.trim()||'Un nuevo capítulo comienza.',
+    status:document.getElementById('na-status').value,
+    total:0,done:0,
+    createdBy:session.playerId
+  };
+  arcs.push(newArc);
+  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  populateArcSelect();
+  document.getElementById('na-name').value='';
+  document.getElementById('na-desc').value='';
+  document.getElementById('panel-new-arc').removeAttribute('open');
+  renderAll();populateArcSelect();toast('Arco creado: '+name);
+}
 </script>
 </body>
 </html>
