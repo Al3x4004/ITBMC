@@ -280,6 +280,19 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .diff-opt.sel-S{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-border);}
 .daily-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--gold-bg);color:var(--gold);border:0.5px solid var(--gold-border);margin-left:6px;}
 
+
+/* ══ MODALS (hidden by default) ══ */
+.cal-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center;}
+.cal-modal.show{display:flex;}
+.cal-modal-box{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:420px;animation:popIn .2s ease;}
+.reward-pop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;}
+.reward-pop.show{display:flex;}
+.reward-box{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:2rem;text-align:center;max-width:320px;width:100%;animation:popIn .3s ease;}
+.levelup-pop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;align-items:center;justify-content:center;}
+.levelup-pop.show{display:flex;}
+.levelup-box{background:var(--bg2);border:1px solid var(--gold-border);border-radius:var(--radius-lg);padding:2rem;text-align:center;max-width:360px;width:100%;animation:popIn .3s ease;}
+#modal-edit{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;overflow-y:auto;padding:2rem 1rem;}
+@keyframes popIn{0%{transform:scale(.85);opacity:0;}100%{transform:scale(1);opacity:1;}}
 </style>
 
 <body>
