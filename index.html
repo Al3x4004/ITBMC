@@ -402,7 +402,7 @@ const CFG={
   GACHA_CARDS_PATH:'gacha/cards.json',
   GITHUB_RAW:'https://raw.githubusercontent.com/Al3x4004/ITBMC/main/',
   ADMIN_PW:'admin1234',
-  JSONBIN_ID:'6a3e5822da38895dfe021fb9',
+  JSONBIN_ID:'6a3e5aa6da38895dfe022a2b',
   JSONBIN_KEY:'$2a$10$A9vWP3gpUuOYk5tN6KzCs.mNO8lTtpKCG4gEkdJRi9eQCBoPVxnnG',
 };
 
@@ -476,7 +476,9 @@ const JB_HDR={'Content-Type':'application/json','X-Master-Key':CFG.JSONBIN_KEY,'
 
 async function loadFromJSONBin(){
   try{
-    const r=await fetch(JB_URL+'/latest',{headers:{'X-Master-Key':CFG.JSONBIN_KEY}});
+    const r=await fetch(JB_URL+'/latest',{
+      headers:{'X-Master-Key':CFG.JSONBIN_KEY,'X-Access-Key':CFG.JSONBIN_KEY}
+    });
     if(!r.ok)throw new Error('JSONBin '+r.status);
     const d=await r.json();
     return d.record||d;
@@ -485,9 +487,17 @@ async function loadFromJSONBin(){
 
 async function saveToJSONBin(){
   try{
-    const r=await fetch(JB_URL,{method:'PUT',headers:JB_HDR,body:JSON.stringify({players,missions,arcs,gacha_cards:gachaCards})});
-    if(!r.ok)throw new Error('JSONBin save '+r.status);
-  }catch(e){console.error('JSONBin save:',e);toast('Error al guardar. Comprueba la conexión.');}
+    const r=await fetch(JB_URL,{
+      method:'PUT',
+      headers:{...JB_HDR,'X-Access-Key':CFG.JSONBIN_KEY},
+      body:JSON.stringify({players,missions,arcs,gacha_cards:gachaCards})
+    });
+    if(!r.ok){
+      const txt=await r.text();
+      console.error('JSONBin save error:',r.status,txt);
+      throw new Error('JSONBin save '+r.status);
+    }
+  }catch(e){console.error('JSONBin save:',e);toast('Error al guardar: '+e.message);}
 }
 
 async function loadData(){
