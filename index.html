@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Cuartel General — ITBMC</title>
+<title>BMC Global — Cuartel General</title>
 <style>
+
 /* ══ TOKENS — light ══ */
 :root{
   --bg:#f9f9f8;--bg2:#ffffff;--bg3:#f1efeb;
@@ -45,8 +46,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   margin-left:210px;
   padding:1.5rem 2rem 2rem;
   width:calc(100% - 210px);
-  max-width:960px;
   box-sizing:border-box;
+  overflow-x:hidden;
 }
 .topbar{display:none;}
 .topbar-title{display:none;}
@@ -331,10 +332,12 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 /* ══ PLANNER ══ */
 .planner-drop{border:2px dashed var(--border2);border-radius:var(--radius);padding:2.5rem;text-align:center;cursor:pointer;transition:all .15s;}
 .planner-drop:hover{border-color:var(--accent);background:var(--accent-bg);}
-</style>
 
+</style>
+</head>
 <body>
 <div id="toast"></div>
+
 <div class="levelup-pop" id="levelup-pop">
   <div class="levelup-box">
     <div style="font-size:42px;margin-bottom:.5rem;">⬆️</div>
@@ -345,6 +348,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     <button class="btn btn-p" id="lu-confirm" onclick="confirmLevelUp()" style="margin-top:.5rem;width:100%;">Confirmar</button>
   </div>
 </div>
+
 <div class="reward-pop" id="reward-pop">
   <div class="reward-box">
     <div class="reward-emoji" id="rp-emoji">⚔️</div>
@@ -358,9 +362,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 <!-- BIENVENIDA -->
 <div id="screen-welcome" class="centered" style="padding:1rem;">
   <div class="lbox">
-    <div style="font-size:36px;margin-bottom:1rem;">🏰</div>
-    <h2>Cuartel General</h2>
-    <p>El tablero RPG del equipo ITBMC.</p>
+    <div style="margin-bottom:1.5rem;text-align:center;">
+      <img src="https://bmcglobal.net/wp-content/uploads/logo-bmcglobal.png" alt="BMC Global" style="max-width:180px;height:auto;"/>
+    </div>
     <div style="display:flex;flex-direction:column;gap:8px;">
       <button class="btn btn-p" onclick="showScreen('screen-new')">Crear mi personaje</button>
       <button class="btn" onclick="showScreen('screen-login')">Ya tengo personaje</button>
@@ -368,6 +372,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     </div>
   </div>
 </div>
+
 
 <!-- LOGIN -->
 <div id="screen-login" style="display:none;" class="centered">
@@ -451,8 +456,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   <div class="shell">
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="sidebar-logo-mark">IT</div>
-      <div class="sidebar-logo-sub">Cuartel General</div>
+      <img src="https://bmcglobal.net/wp-content/uploads/logo-bmcglobal.png" alt="BMC Global" style="max-width:140px;height:auto;display:block;"/>
     </div>
     <nav class="nav" role="navigation">
       <button class="nb active" onclick="showPage('misiones',this)"><span class="nb-icon">⚔️</span>Misiones</button>
@@ -569,10 +573,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
         <div id="team-gallery"></div>
       </div>
     </div>
-  </div>
-</div>
 
-<!-- TIENDA -->
+    <!-- TIENDA -->
     <div id="page-tienda" class="page">
       <div id="admin-shop-panel" style="display:none;">
         <div class="admin-panel-wrap">
@@ -656,11 +658,11 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       </div>
     </div>
 
-    <!-- PLANNER IMPORT -->
+    <!-- PLANNER -->
     <div id="page-planner" class="page">
       <div style="margin-bottom:1.25rem;">
         <div style="font-size:18px;font-weight:500;margin-bottom:4px;">Importar desde Planner</div>
-        <div style="font-size:13px;color:var(--muted);">Sube un archivo CSV o Excel exportado desde Microsoft Planner y las tareas se convertirán en misiones automáticamente.</div>
+        <div style="font-size:13px;color:var(--muted);">Sube un archivo CSV exportado desde Microsoft Planner y las tareas se convertirán en misiones automáticamente.</div>
       </div>
 
       <!-- Instrucciones -->
@@ -675,12 +677,12 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
           <div style="background:var(--bg3);border-radius:var(--radius);padding:1rem;text-align:center;">
             <div style="font-size:24px;margin-bottom:6px;">2️⃣</div>
             <div style="font-size:12px;font-weight:500;margin-bottom:4px;">Exportar a Excel</div>
-            <div style="font-size:11px;color:var(--muted);">Haz clic en ··· → "Exportar plan a Excel" o "Export to Excel"</div>
+            <div style="font-size:11px;color:var(--muted);">Haz clic en ··· → "Exportar plan a Excel" y ábrelo, luego guárdalo como CSV</div>
           </div>
           <div style="background:var(--bg3);border-radius:var(--radius);padding:1rem;text-align:center;">
             <div style="font-size:24px;margin-bottom:6px;">3️⃣</div>
-            <div style="font-size:12px;font-weight:500;margin-bottom:4px;">Sube el archivo</div>
-            <div style="font-size:11px;color:var(--muted);">Arrastra o selecciona el archivo .xlsx o .csv aquí abajo</div>
+            <div style="font-size:12px;font-weight:500;margin-bottom:4px;">Sube el CSV</div>
+            <div style="font-size:11px;color:var(--muted);">Arrastra o selecciona el archivo .csv aquí abajo</div>
           </div>
         </div>
       </div>
@@ -691,7 +693,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
         <div id="planner-drop" style="border:2px dashed var(--border2);border-radius:var(--radius);padding:2.5rem;text-align:center;cursor:pointer;transition:all .15s;" onclick="document.getElementById('planner-file').click()" ondragover="plannerDragOver(event)" ondrop="plannerDrop(event)">
           <div style="font-size:32px;margin-bottom:8px;">📂</div>
           <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px;">Arrastra tu archivo aquí</div>
-          <div style="font-size:12px;color:var(--muted);">o haz clic para seleccionar — .xlsx, .csv</div>
+          <div style="font-size:12px;color:var(--muted);">o haz clic para seleccionar — .csv</div>
           <input type="file" id="planner-file" accept=".csv,.xlsx,.xls" style="display:none;" onchange="plannerFileSelected(this)"/>
         </div>
       </div>
@@ -706,35 +708,29 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
               <button class="btn btn-sm btn-p" onclick="confirmPlannerImport()">✓ Importar misiones</button>
             </div>
           </div>
-          <!-- Column mapping -->
           <div style="background:var(--bg3);border-radius:var(--radius);padding:.875rem;margin-bottom:1rem;">
             <div style="font-size:12px;font-weight:500;margin-bottom:8px;">Mapeo de columnas</div>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
               <div class="field" style="margin:0;"><label>Columna "Título"</label><select id="map-title"></select></div>
               <div class="field" style="margin:0;"><label>Columna "Asignado a"</label><select id="map-assignee"></select></div>
               <div class="field" style="margin:0;"><label>Columna "Fecha límite"</label><select id="map-deadline"></select></div>
-              <div class="field" style="margin:0;"><label>Columna "Bucket/Categoría"</label><select id="map-bucket"></select></div>
+              <div class="field" style="margin:0;"><label>Columna "Bucket"</label><select id="map-bucket"></select></div>
               <div class="field" style="margin:0;"><label>Columna "Estado"</label><select id="map-status"></select></div>
               <div class="field" style="margin:0;"><label>Dificultad por defecto</label>
                 <select id="map-diff">
                   <option value="D">D — 25 XP</option>
                   <option value="C" selected>C — 75 XP</option>
-                  <option value="B">B — 150 XP</option>
-                  <option value="A">A — 300 XP</option>
-                  <option value="S">S — 500 XP</option>
                 </select>
               </div>
             </div>
           </div>
-          <!-- Table preview -->
           <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:12px;" id="planner-table">
-            </table>
+            <table style="width:100%;border-collapse:collapse;font-size:12px;" id="planner-table"></table>
           </div>
         </div>
       </div>
 
-      <!-- Imported missions list -->
+      <!-- Imported missions -->
       <div id="planner-imported" style="display:none;">
         <div class="card">
           <div class="stitle">Misiones importadas desde Planner</div>
@@ -743,41 +739,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       </div>
     </div>
 
-    <!-- MODAL EVENTO -->
-    <div class="cal-modal" id="cal-event-modal">
-      <div class="cal-modal-box">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
-          <h3 style="font-size:15px;font-weight:500;" id="cal-modal-title">Nuevo evento</h3>
-          <button class="btn btn-sm" onclick="closeEventModal()">✕</button>
-        </div>
-        <div class="field"><label>Título</label><input type="text" id="ev-title" placeholder="Reunión de equipo"/></div>
-        <div class="g2">
-          <div class="field"><label>Fecha</label><input type="date" id="ev-date"/></div>
-          <div class="field"><label>Hora</label><input type="time" id="ev-time" value="09:00"/></div>
-        </div>
-        <div class="field"><label>Descripción</label><textarea id="ev-desc" placeholder="Detalles del evento..." style="min-height:60px;"></textarea></div>
-        <div class="g2">
-          <div class="field"><label>Tipo</label>
-            <select id="ev-type">
-              <option value="personal">Personal</option>
-              <option value="team">Equipo</option>
-            </select>
-          </div>
-          <div class="field"><label>Misión vinculada</label>
-            <select id="ev-mission">
-              <option value="">Sin vincular</option>
-            </select>
-          </div>
-        </div>
-        <div id="ev-delete-wrap" style="display:none;margin-bottom:.75rem;">
-          <button class="btn btn-sm" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);width:100%;" onclick="deleteEvent()">🗑️ Eliminar evento</button>
-        </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <button class="btn" onclick="closeEventModal()">Cancelar</button>
-          <button class="btn btn-p" onclick="saveEvent()">Guardar</button>
-        </div>
-      </div>
-    </div>
+  </div>
+  </div>
+</div>
 
 <!-- MODAL EDICIÓN -->
 <div id="modal-edit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;overflow-y:auto;padding:2rem 1rem;">
@@ -813,8 +777,39 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   </div>
 </div>
 
-
-
+<!-- MODAL EVENTO CALENDARIO -->
+    <div class="cal-modal" id="cal-event-modal">
+      <div class="cal-modal-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+          <h3 style="font-size:15px;font-weight:500;" id="cal-modal-title">Nuevo evento</h3>
+          <button class="btn btn-sm" onclick="closeEventModal()">✕</button>
+        </div>
+        <div class="field"><label>Título</label><input type="text" id="ev-title" placeholder="Reunión de equipo"/></div>
+        <div class="g2">
+          <div class="field"><label>Fecha</label><input type="date" id="ev-date"/></div>
+          <div class="field"><label>Hora</label><input type="time" id="ev-time" value="09:00"/></div>
+        </div>
+        <div class="field"><label>Descripción</label><textarea id="ev-desc" placeholder="Detalles del evento..." style="min-height:60px;"></textarea></div>
+        <div class="g2">
+          <div class="field"><label>Tipo</label>
+            <select id="ev-type">
+              <option value="personal">Personal</option>
+              <option value="team">Equipo</option>
+            </select>
+          </div>
+          <div class="field"><label>Misión vinculada</label>
+            <select id="ev-mission"><option value="">Sin vincular</option></select>
+          </div>
+        </div>
+        <div id="ev-delete-wrap" style="display:none;margin-bottom:.75rem;">
+          <button class="btn btn-sm" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);width:100%;" onclick="deleteEvent()">🗑️ Eliminar evento</button>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button class="btn" onclick="closeEventModal()">Cancelar</button>
+          <button class="btn btn-p" onclick="saveEvent()">Guardar</button>
+        </div>
+      </div>
+    </div>
 
 <script>
 /* EARLY BINDINGS */
@@ -1547,14 +1542,14 @@ function doPull(times){
     p.gold-=cost;
   }
   const cards=Array.from({length:times},()=>pullCard());
-  cards.forEach(c=>{if(!p.gallery)p.gallery=[];p.gallery.push({cardId:c.id,obtainedAt:new Date().toISOString()});});
+  cards.forEach(c=>{if(!p.gallery)p.gallery=[];p.gallery.push({cardId:c.id,obtainedAt:new Date().toISOString(),imageUrl:CFG.GITHUB_RAW+c.image,name:c.name,rarity:c.rarity});});
   const reveal=document.getElementById('card-reveal');
   reveal.innerHTML='';reveal.classList.add('show');
   cards.forEach((c,i)=>{
     const div=document.createElement('div');div.className='gacha-card pull-anim';
     div.style.animationDelay=`${i*0.08}s`;
     const imgUrl=CFG.GITHUB_RAW+c.image;
-    div.innerHTML=`<img src="${imgUrl}" alt="${c.name}" onerror="this.style.background='var(--bg3)';this.style.height='160px';">
+    div.innerHTML=`<img src="${imgUrl}" alt="${c.name}" onerror="this.style.background='var(--bg3)';this.style.minHeight='160px';">
       <div class="gacha-card-info"><div class="gacha-card-name">${c.name}</div><div class="gacha-card-rarity rarity-${c.rarity}">${RARITY_LABEL[c.rarity]}</div></div>`;
     reveal.appendChild(div);
   });
@@ -1572,12 +1567,14 @@ function renderGalleryCards(galleryEntries,mode){
   });
   return `<div class="gallery-grid">${sorted.map(e=>{
     const c=gachaCards.find(c=>c.id===e.cardId);if(!c)return'';
-    const imgUrl=CFG.GITHUB_RAW+c.image;
+    const imgUrl=e.imageUrl||(c?(c.imageUrl||CFG.GITHUB_RAW+c.image):'');
+    const cardName=e.name||(c?c.name:'Carta desconocida');
+    const cardRarity=e.rarity||(c?c.rarity:'comun');
     return `<div class="gallery-card">
-      <img src="${imgUrl}" alt="${c.name}" onerror="this.style.display='none'">
+      <img src="${imgUrl}" alt="${cardName}" onerror="this.style.background='var(--bg3)';this.style.minHeight='120px';">
       <div class="gallery-card-label">
-        <div class="gname">${c.name}</div>
-        <div class="grarity rarity-${c.rarity}">${RARITY_LABEL[c.rarity]}</div>
+        <div class="gname">${cardName}</div>
+        <div class="grarity rarity-${cardRarity}">${RARITY_LABEL[cardRarity]||cardRarity}</div>
       </div>
     </div>`;
   }).join('')}</div>`;
@@ -1794,6 +1791,58 @@ function renderAdminItemsList(){
 }
 
 
+
+/* ══ CALENDARIO ══ */
+var calState={year:new Date().getFullYear(),month:new Date().getMonth(),selectedDate:null,filter:'all',editingEventId:null};
+
+function initCalFilterBtns(){
+  ['all','personal','team','mission'].forEach(function(k){
+    var b=document.getElementById('cal-filter-'+k);
+    if(b)b.classList.toggle('btn-p',k===calState.filter);
+  });
+}
+
+function renderCalendar(){
+  initCalFilterBtns();
+  var yr=calState.year,mo=calState.month,selD=calState.selectedDate,fil=calState.filter;
+  var today=new Date();
+  var todayStr=formatDate(today);
+  var firstDay=new Date(yr,mo,1);
+  var lastDay=new Date(yr,mo+1,0);
+  var startDow=(firstDay.getDay()+6)%7;
+  var mnames=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var lbl=document.getElementById('cal-month-label');
+  if(lbl)lbl.textContent=mnames[mo]+' '+yr;
+  var grid=document.getElementById('cal-grid');
+  if(!grid)return;
+  var dows=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  var html=dows.map(function(d){return '<div class="cal-dow">'+d+'</div>';}).join('');
+  var prevLast=new Date(yr,mo,0).getDate();
+  for(var i=startDow-1;i>=0;i--){
+    html+='<div class="cal-day other-month"><div class="cal-day-num">'+(prevLast-i)+'</div></div>';
+  }
+  for(var day=1;day<=lastDay.getDate();day++){
+    var ds=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    var isToday=ds===todayStr;
+    var isSel=ds===selD;
+    var dayEvs=getFilteredEvents(fil).filter(function(e){return e.date===ds;});
+    var evHtml=dayEvs.slice(0,3).map(function(ev){
+      return '<div class="cal-event '+ev.type+'" onclick="event.stopPropagation();openEventModal(\"'+ev.id+'\")" title="'+ev.title+'">'+ev.title+'</div>';
+    }).join('')+(dayEvs.length>3?'<div class="cal-more">+'+(dayEvs.length-3)+' más</div>':'');
+    var cls='cal-day'+(isToday?' today':'')+(isSel?' selected':'');
+    var numHtml=isToday?'<span style="background:var(--accent);color:#fff;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;">'+day+'</span>':day;
+    html+='<div class="'+cls+'" onclick="selectCalDay(\"'+ds+'\")">'
+      +'<div class="cal-day-num">'+numHtml+'</div>'+evHtml+'</div>';
+  }
+  var total=startDow+lastDay.getDate();
+  var rem=total%7===0?0:7-(total%7);
+  for(var pd=1;pd<=rem;pd++){
+    html+='<div class="cal-day other-month"><div class="cal-day-num">'+pd+'</div></div>';
+  }
+  grid.innerHTML=html;
+  renderDayEvents(selD||todayStr);
+  renderUpcoming();
+}
 
 function formatDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 
@@ -2170,15 +2219,6 @@ function initTheme(){
 }
 
 /* ══ ARRANQUE ══ */
-(async()=>{
-  initTheme();
-  await loadData();
-  const sid=localStorage.getItem('cg_pid');
-  if(sid){const p=players.find(p=>p.id===sid);if(p){session={loggedIn:true,isAdmin:false,playerId:sid};enterApp();return;}}
-  showScreen('screen-welcome');
-})();
-
-
 /* ══ CREAR MISIONES/ARCOS ══ */
 const DIFF_REWARDS={D:{xp:25,gold:10},C:{xp:75,gold:25},B:{xp:150,gold:50},A:{xp:300,gold:100},S:{xp:500,gold:200}};
 const DIFF_ATTRS={D:'Sabiduría',C:'Inteligencia',B:'Agilidad',A:'Fuerza',S:'Carisma'};
@@ -2264,9 +2304,7 @@ function createArc(){
   document.getElementById('panel-new-arc').removeAttribute('open');
   renderAll();populateArcSelect();toast('Arco creado: '+name);
 }
-</script>
-</body>
-</html>
+
 </script>
 </body>
 </html>
