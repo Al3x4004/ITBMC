@@ -195,8 +195,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .gacha-cost{font-size:13px;color:var(--muted);margin-bottom:1rem;}
 .gacha-cost span{color:var(--gold);font-weight:500;}
 .gacha-btn-wrap{display:flex;gap:10px;justify-content:center;margin-bottom:1.5rem;flex-wrap:wrap;}
-.card-reveal{display:none;flex-direction:column;align-items:center;gap:1rem;margin:1rem 0;}
+.card-reveal{display:none;flex-wrap:wrap;justify-content:center;gap:.75rem;margin:1rem 0;}
 .card-reveal.show{display:flex;}
+.card-reveal .gacha-card{width:calc(20% - .75rem);min-width:120px;max-width:150px;}
 .gacha-card{width:140px;border-radius:var(--radius-lg);overflow:hidden;border:0.5px solid var(--border2);background:var(--bg3);}
 .gacha-card img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;}
 .gacha-card-info{padding:8px 10px;}
@@ -1042,17 +1043,10 @@ async function saveToSupabase(){
 async function loadData(){
   // Cartas del gacha siempre desde GitHub
   try{
-    const r=await fetch(CFG.GITHUB_RAW+CFG.GACHA_CARDS_PATH+'?v='+Date.now());
-    if(r.ok){
-      const _cards=await r.json();
-      gachaCards=(Array.isArray(_cards)&&_cards.length>0)?_cards:JSON.parse(JSON.stringify(DEMO.gacha_cards));
-    }else{
-      gachaCards=JSON.parse(JSON.stringify(DEMO.gacha_cards));
-    }
-  }catch(e){
-    console.error('gacha load error',e);
-    gachaCards=JSON.parse(JSON.stringify(DEMO.gacha_cards));
-  }
+    const r=await fetch(CFG.GITHUB_RAW+CFG.GACHA_CARDS_PATH);
+    if(r.ok)gachaCards=await r.json();
+    else gachaCards=JSON.parse(JSON.stringify(DEMO.gacha_cards));
+  }catch{gachaCards=JSON.parse(JSON.stringify(DEMO.gacha_cards));}
 
   if(CFG.MODE==='supabase'){
     const d=await loadFromSupabase();
@@ -1652,10 +1646,8 @@ function doPull(times){
     if(!p||p.gold<cost){toast(`Necesitas ${cost} oro para invocar.`);return;}
     p.gold-=cost;
   }
-  // Fallback to DEMO cards if none loaded
-  if(!gachaCards.length)gachaCards=JSON.parse(JSON.stringify(DEMO.gacha_cards));
   const results=Array.from({length:times},()=>pullResult()).filter(r=>r!==null);
-  if(!results.length){toast('Sin cartas disponibles.');return;}
+if(!results.length){toast('No hay cartas disponibles. Revisa el cards.json en GitHub.');return;}
   if(!p.gallery)p.gallery=[];
   if(!p.inventory)p.inventory=[];
   results.forEach(r=>{
