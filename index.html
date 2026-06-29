@@ -888,7 +888,8 @@ const CFG={
   GITHUB_RAW:'https://raw.githubusercontent.com/Al3x4004/ITBMC/main/',
   ADMIN_PW:'admin1234',
   SUPABASE_URL:'https://ksmxclenaeglnahinkvm.supabase.co',
-SUPABASE_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzbXhjbGVuYWVnbG5haGlua3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MjY0MzQsImV4cCI6MjA5ODMwMjQzNH0.pBaUUXSDGjXPLbAjIOAdtM0nvAgfxul7BUzfcQaWqNc',};
+  SUPABASE_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzbXhjbGVuYWVnbG5haGlua3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MjY0MzQsImV4cCI6MjA5ODMwMjQzNH0.pBaUUXSDGjXPLbAjIOAdtM0nvAgfxul7BUzfcQaWqNc',
+};
 
 /* ══ DATOS ESTÁTICOS ══ */
 const CLASSES=[
@@ -978,20 +979,27 @@ const DEMO={
     {id:'i030',name:'Corona del DM',        icon:'🌟',desc:'El poder absoluto. Solo para el elegido.',        slot:'especial', cost:999, minLevel:10,minAttrs:{fue:15,int:15,agi:15,car:15,sab:15},bonus:{fue:10,int:10,agi:10,car:10,sab:10}},
   ],
   gacha_cards:[
-    {id:'c001',name:'Escudo del Alba',    rarity:'comun',    image:'gacha/images/comun/carta_01.png',    description:'Un viejo escudo que aún brilla.'},
-    {id:'c002',name:'Daga Susurrante',    rarity:'comun',    image:'gacha/images/comun/carta_02.png',    description:'Silenciosa como la noche.'},
-    {id:'c003',name:'Espada Rúnica',      rarity:'rara',     image:'gacha/images/rara/carta_01.png',     description:'Inscrita con hechizos olvidados.'},
-    {id:'c004',name:'Capa del Viajero',   rarity:'rara',     image:'gacha/images/rara/carta_02.png',     description:'Ha recorrido mil reinos.'},
-    {id:'c005',name:'Armadura del Dragón',rarity:'epica',    image:'gacha/images/epica/carta_01.png',    description:'Forjada con escamas de dragón.'},
-    {id:'c006',name:'Báculo del Caos',    rarity:'epica',    image:'gacha/images/epica/carta_02.png',    description:'Canaliza energías inestables.'},
-    {id:'c007',name:'Corona del DM',      rarity:'legendaria',image:'gacha/images/legendaria/carta_01.png',description:'Solo los más valientes la portan.'},
+    {id:'c001',name:'Escudo del Alba',    rarity:'comun',    imageUrl:'https://picsum.photos/seed/c001/200/280',description:'Un viejo escudo que aún brilla.'},
+    {id:'c002',name:'Daga Susurrante',    rarity:'comun',    imageUrl:'https://picsum.photos/seed/c002/200/280',description:'Silenciosa como la noche.'},
+    {id:'c003',name:'Manto del Viajero',  rarity:'comun',    imageUrl:'https://picsum.photos/seed/c003/200/280',description:'Ha recorrido mil reinos.'},
+    {id:'c004',name:'Amuleto de Piedra',  rarity:'comun',    imageUrl:'https://picsum.photos/seed/c004/200/280',description:'Trae suerte al portador.'},
+    {id:'c005',name:'Espada Rúnica',      rarity:'rara',     imageUrl:'https://picsum.photos/seed/c005/200/280',description:'Inscrita con hechizos olvidados.'},
+    {id:'c006',name:'Orbe de Tormenta',   rarity:'rara',     imageUrl:'https://picsum.photos/seed/c006/200/280',description:'Contiene una tormenta en su interior.'},
+    {id:'c007',name:'Capa del Arcano',    rarity:'rara',     imageUrl:'https://picsum.photos/seed/c007/200/280',description:'Tejida con hilos de maná puro.'},
+    {id:'c008',name:'Yelmo del Guardián', rarity:'rara',     imageUrl:'https://picsum.photos/seed/c008/200/280',description:'Protege la mente del portador.'},
+    {id:'c009',name:'Armadura del Dragón',rarity:'epica',    imageUrl:'https://picsum.photos/seed/c009/200/280',description:'Forjada con escamas de dragón anciano.'},
+    {id:'c010',name:'Báculo del Caos',    rarity:'epica',    imageUrl:'https://picsum.photos/seed/c010/200/280',description:'Canaliza energías inestables.'},
+    {id:'c011',name:'Sello del Titán',    rarity:'epica',    imageUrl:'https://picsum.photos/seed/c011/200/280',description:'Solo los titanes pueden portarlo.'},
+    {id:'c012',name:'Corona del DM',      rarity:'legendaria',imageUrl:'https://picsum.photos/seed/c012/200/280',description:'El poder absoluto en una corona.'},
+    {id:'c013',name:'Espada Dragontooth', rarity:'legendaria',imageUrl:'https://picsum.photos/seed/c013/200/280',description:'Tallada en el colmillo de un dragón.'},
+    {id:'c014',name:'Arco Estelar',       rarity:'legendaria',imageUrl:'https://picsum.photos/seed/c014/200/280',description:'Dispara flechas de luz pura.'},
   ]
 };
 
 /* ══ ESTADO ══ */
 let session={loggedIn:false,isAdmin:false,playerId:null};
 let players=[],missions=[],arcs=[],gachaCards=[],shopItems=[],calEvents=[];
-let luState={pid:null,pts:0};
+let luState={pid:null,pts:0,spent:{}};
 let curHero=0,editPid=null;
 let cpState={cls:null,color:COLORS[0],emblem:'⚔️',weapon:null,armor:null,accessory:null};
 let galleryHeroIdx=0;
@@ -1419,33 +1427,32 @@ function checkLevelUp(p){
   }
 }
 function showLevelUpPopup(p){
-  luState={pid:p.id,pts:p.pendingAttrPts};
+  luState={pid:p.id,pts:p.pendingAttrPts,spent:{}};
   document.getElementById('lu-level').textContent='Nivel '+p.level;
   document.getElementById('lu-pts').textContent=luState.pts;
   const emojis={fue:'💪',int:'🧠',agi:'⚡',car:'✨',sab:'📖'};
   document.getElementById('lu-attrs').innerHTML=Object.entries(AN).map(([k,name])=>
-    '<div class="attr-pt-btn" onclick="addAttrPt(\''+k+'\')">'
-    +'<div class="aicon">'+emojis[k]+'</div>'
-    +'<div class="aname">'+name+'</div>'
-    +'<div class="aval" id="lu-'+k+'">'+p.attrs[k]+'</div>'
-    +'</div>').join('');
+    '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg3);border-radius:var(--radius);padding:8px 4px;">'    +'<div style="font-size:16px;">'+emojis[k]+'</div>'    +'<div style="font-size:9px;color:var(--muted);">'+name+'</div>'    +'<div style="font-size:14px;font-weight:600;" id="lu-'+k+'">'+p.attrs[k]+'</div>'    +'<button class="btn btn-sm btn-p" style="padding:1px 10px;width:100%;" onclick="addAttrPt(\''+k+'\',1)">+</button>'    +'<button class="btn btn-sm" style="padding:1px 10px;width:100%;" onclick="addAttrPt(\''+k+'\',-1)">−</button>'    +'</div>').join('');
   document.getElementById('levelup-pop').classList.add('show');
 }
-function addAttrPt(attr){
-  if(luState.pts<=0)return;
-  luState.pts--;
-  const p=players.find(p=>p.id===luState.pid);
-  if(p){p.attrs[attr]++;document.getElementById('lu-'+attr).textContent=p.attrs[attr];}
+function addAttrPt(attr,delta){
+  const p=players.find(p=>p.id===luState.pid);if(!p)return;
+  if(delta>0){
+    if(luState.pts<=0)return;
+    luState.pts--;luState.spent[attr]=(luState.spent[attr]||0)+1;p.attrs[attr]++;
+  }else{
+    if((luState.spent[attr]||0)<=0)return;
+    luState.pts++;luState.spent[attr]--;p.attrs[attr]--;
+  }
+  document.getElementById('lu-'+attr).textContent=p.attrs[attr];
   document.getElementById('lu-pts').textContent=luState.pts;
-  if(luState.pts===0)document.getElementById('lu-confirm').style.background='var(--teal)';
 }
 function confirmLevelUp(){
-  if(luState.pts>0){toast('Aún tienes '+luState.pts+' puntos sin repartir.');return;}
   const p=players.find(p=>p.id===luState.pid);
-  if(p)p.pendingAttrPts=0;
+  if(p)p.pendingAttrPts=luState.pts;
   document.getElementById('levelup-pop').classList.remove('show');
   if(CFG.MODE==='supabase')saveToSupabase();
-  renderAll();toast('¡Atributos actualizados!');
+  renderAll();
 }
 
 /* ── reward popup ── */
@@ -1636,7 +1643,6 @@ function doPull(times){
     if(!p||p.gold<cost){toast(`Necesitas ${cost} oro para invocar.`);return;}
     p.gold-=cost;
   }
-  if(!gachaCards.length){toast('Configura el cards.json en GitHub para usar el Gacha.');return;}
   const results=Array.from({length:times},()=>pullResult());
   if(!p.gallery)p.gallery=[];
   if(!p.inventory)p.inventory=[];
