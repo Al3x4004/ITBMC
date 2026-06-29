@@ -1628,12 +1628,14 @@ function pullCard(){
 }
 
 function pullResult(){
-  // 30% chance of item, 70% chance of card
   const gachaItems=shopItems.filter(i=>i.via==='gacha'||i.via==='ambas');
   if(gachaItems.length&&Math.random()<0.3){
     return {type:'item',data:gachaItems[Math.floor(Math.random()*gachaItems.length)]};
   }
-  return {type:'card',data:pullCard()};
+  if(!gachaCards.length)return null;
+  const card=pullCard();
+  if(!card)return null;
+  return {type:'card',data:card};
 }
 function doPull(times){
   const p=players.find(pl=>pl.id===session.playerId);
@@ -1643,7 +1645,8 @@ function doPull(times){
     if(!p||p.gold<cost){toast(`Necesitas ${cost} oro para invocar.`);return;}
     p.gold-=cost;
   }
-  const results=Array.from({length:times},()=>pullResult());
+  const results=Array.from({length:times},()=>pullResult()).filter(r=>r!==null);
+if(!results.length){toast('No hay cartas disponibles. Revisa el cards.json en GitHub.');return;}
   if(!p.gallery)p.gallery=[];
   if(!p.inventory)p.inventory=[];
   results.forEach(r=>{
