@@ -888,8 +888,7 @@ const CFG={
   GITHUB_RAW:'https://raw.githubusercontent.com/Al3x4004/ITBMC/main/',
   ADMIN_PW:'admin1234',
   SUPABASE_URL:'https://ksmxclenaeglnahinkvm.supabase.co',
-  SUPABASE_KEY:'sb_publishable__lu2fGNGR9j3NEjoDgFZpQ_SPvs_jhV',
-};
+SUPABASE_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzbXhjbGVuYWVnbG5haGlua3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MjY0MzQsImV4cCI6MjA5ODMwMjQzNH0.pBaUUXSDGjXPLbAjIOAdtM0nvAgfxul7BUzfcQaWqNc',};
 
 /* ══ DATOS ESTÁTICOS ══ */
 const CLASSES=[
@@ -1044,7 +1043,13 @@ async function loadData(){
     const d=await loadFromSupabase();
     if(d&&d.players){
       players =d.players;
-      shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));
+      try{
+        const _eq=await fetch(CFG.SUPABASE_URL+'/rest/v1/equipamiento?activo=eq.true&order=tipo',{
+          headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
+        });
+        const _eqd=await _eq.json();
+        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',desc:r.descripcion||'',slot:r.tipo,cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0}})):JSON.parse(JSON.stringify(DEMO.shop_items));
+      }catch{shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));}
       if(d.cal_events)calEvents=d.cal_events;
       else calEvents=JSON.parse(JSON.stringify(DEMO.cal_events));
       // Ensure tutorial missions exist for each player
@@ -1058,7 +1063,13 @@ async function loadData(){
       players =JSON.parse(JSON.stringify(DEMO.players));
       missions=JSON.parse(JSON.stringify(DEMO.missions));
       arcs    =JSON.parse(JSON.stringify(DEMO.arcs));
-      shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));
+      try{
+        const _eq=await fetch(CFG.SUPABASE_URL+'/rest/v1/equipamiento?activo=eq.true&order=tipo',{
+          headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
+        });
+        const _eqd=await _eq.json();
+        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',desc:r.descripcion||'',slot:r.tipo,cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0}})):JSON.parse(JSON.stringify(DEMO.shop_items));
+      }catch{shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));}
       calEvents=JSON.parse(JSON.stringify(DEMO.cal_events));
       await saveToSupabase();
     }
@@ -1625,6 +1636,7 @@ function doPull(times){
     if(!p||p.gold<cost){toast(`Necesitas ${cost} oro para invocar.`);return;}
     p.gold-=cost;
   }
+  if(!gachaCards.length){toast('Configura el cards.json en GitHub para usar el Gacha.');return;}
   const results=Array.from({length:times},()=>pullResult());
   if(!p.gallery)p.gallery=[];
   if(!p.inventory)p.inventory=[];
