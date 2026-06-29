@@ -334,141 +334,30 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .planner-drop:hover{border-color:var(--accent);background:var(--accent-bg);}
 
 
-/* ══ PENTAGON CHART ══ */
-.pentagon-wrap{display:flex;justify-content:center;margin-bottom:1rem;}
-.pentagon-svg{overflow:visible;}
+/* ══ PENTAGON ══ */
+.pentagon-wrap{display:flex;justify-content:center;margin:1rem 0;}
 .penta-bg{fill:none;stroke:var(--border);stroke-width:1;}
-.penta-fill{fill:var(--accent-bg);stroke:var(--accent);stroke-width:2;opacity:.85;}
-.penta-label{font-size:11px;fill:var(--muted);font-family:inherit;}
-.penta-value{font-size:10px;fill:var(--text);font-weight:600;font-family:inherit;}
-
+.penta-fill{fill-opacity:.15;stroke-width:2;}
+.penta-label{font-size:10px;fill:var(--muted);font-family:inherit;}
+.penta-value{font-size:10px;font-weight:600;font-family:inherit;}
 /* ══ INVENTARIO ══ */
-.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:1rem;}
+.inv-slots{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:1.25rem;}
+.inv-slot{background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius);padding:.75rem;text-align:center;cursor:pointer;transition:all .15s;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;}
+.inv-slot.filled{border-color:var(--gold-border);background:var(--gold-bg);}
+.inv-slot:hover{border-color:var(--border3);}
+.inv-slot-icon{font-size:22px;}
+.inv-slot-name{font-size:10px;font-weight:500;color:var(--text);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.inv-slot-label{font-size:10px;color:var(--muted);}
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px;}
 .inv-item{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:.875rem;display:flex;flex-direction:column;gap:5px;transition:border-color .15s;}
 .inv-item:hover{border-color:var(--border2);}
 .inv-item.equipped{border-color:var(--gold-border);background:var(--gold-bg);}
-.inv-slots{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:1.25rem;}
-.inv-slot{background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius);padding:.75rem;text-align:center;cursor:pointer;transition:all .15s;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;}
-.inv-slot.filled{border-color:var(--gold-border);background:var(--gold-bg);}
-.inv-slot:hover{border-color:var(--border3);}
-.inv-slot-icon{font-size:24px;}
-.inv-slot-name{font-size:10px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
-.inv-slot-label{font-size:10px;color:var(--muted);}
-
-/* ══ HERO SHOWCASE ══ */
-.hero-showcase{display:flex;gap:8px;margin-top:.75rem;}
-.showcase-img{width:100px;height:140px;border-radius:var(--radius);border:0.5px solid var(--border);object-fit:cover;background:var(--bg3);cursor:pointer;transition:border-color .15s;}
+/* ══ SHOWCASE ══ */
+.hero-showcase{display:flex;gap:8px;margin-top:.75rem;flex-wrap:wrap;}
+.showcase-img{width:95px;height:133px;border-radius:var(--radius);border:0.5px solid var(--border);object-fit:cover;background:var(--bg3);cursor:pointer;transition:border-color .15s;}
 .showcase-img:hover{border-color:var(--accent);}
-.showcase-empty{width:100px;height:140px;border-radius:var(--radius);border:2px dashed var(--border2);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:border-color .15s;background:var(--bg3);}
+.showcase-empty{width:95px;height:133px;border-radius:var(--radius);border:2px dashed var(--border2);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:border-color .15s;background:var(--bg3);}
 .showcase-empty:hover{border-color:var(--accent);}
-
-
-/* ══ PENTAGON CHART ══ */
-function buildPentagon(attrs,color){
-  var keys=['fue','int','agi','car','sab'];
-  var labels=['Fuerza','Intel.','Agilidad','Carisma','Sabiduría'];
-  var cx=110,cy=110,r=85,n=5;
-  var pts=keys.map(function(k,i){
-    var angle=(Math.PI*2/n)*i - Math.PI/2;
-    var val=Math.min(100,(attrs[k]||0));
-    var ratio=val/100;
-    return {x:cx+r*ratio*Math.cos(angle),y:cy+r*ratio*Math.sin(angle),lx:cx+(r+22)*Math.cos(angle),ly:cy+(r+22)*Math.sin(angle),label:labels[i],val:val};
-  });
-  var bgLevels=[0.25,0.5,0.75,1.0];
-  var bgPolygons=bgLevels.map(function(level){
-    var bpts=keys.map(function(k,i){
-      var angle=(Math.PI*2/n)*i - Math.PI/2;
-      return (cx+r*level*Math.cos(angle)).toFixed(1)+','+(cy+r*level*Math.sin(angle)).toFixed(1);
-    }).join(' ');
-    return '<polygon class="penta-bg" points="'+bpts+'"/>';
-  }).join('');
-  var axes=keys.map(function(k,i){
-    var angle=(Math.PI*2/n)*i - Math.PI/2;
-    return '<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+r*Math.cos(angle)).toFixed(1)+'" y2="'+(cy+r*Math.sin(angle)).toFixed(1)+'" stroke="var(--border)" stroke-width="1"/>';
-  }).join('');
-  var fillPts=pts.map(function(p){return p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');
-  var labels_svg=pts.map(function(p){
-    return '<text class="penta-label" x="'+p.lx.toFixed(1)+'" y="'+p.ly.toFixed(1)+'" text-anchor="middle" dominant-baseline="middle">'+p.label+'</text>'
-      +'<text class="penta-value" x="'+(p.x+((p.lx-p.x)*0.4)).toFixed(1)+'" y="'+(p.y+((p.ly-p.y)*0.4)).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle">'+p.val+'</text>';
-  }).join('');
-  return '<svg class="pentagon-svg" width="220" height="220" viewBox="0 0 220 220">'+bgPolygons+axes+'<polygon class="penta-fill" points="'+fillPts+'" style="fill:'+color+'22;stroke:'+color+';"/>'+labels_svg+'</svg>';
-}
-
-/* ══ INVENTARIO ══ */
-function renderInventario(){
-  const p=players.find(pl=>pl.id===session.playerId);
-  const slotsWrap=document.getElementById('inv-slots');
-  const gridWrap=document.getElementById('inv-grid');
-  if(!slotsWrap||!gridWrap)return;
-  if(!p){slotsWrap.innerHTML='<div style="font-size:13px;color:var(--muted);">Inicia sesión para ver tu inventario.</div>';gridWrap.innerHTML='';return;}
-  if(!p.equipped)p.equipped={arma:null,armadura:null,accesorio:null,casco:null,botas:null};
-  const slotDefs=[
-    {key:'arma',label:'Arma',icon:'⚔️'},
-    {key:'armadura',label:'Armadura',icon:'🛡️'},
-    {key:'accesorio',label:'Accesorio',icon:'💎'},
-    {key:'casco',label:'Casco',icon:'⛑️'},
-    {key:'botas',label:'Botas',icon:'👟'}
-  ];
-  slotsWrap.innerHTML=slotDefs.map(function(sl){
-    const itemId=p.equipped[sl.key];
-    const item=shopItems.find(function(i){return i.id===itemId;});
-    return '<div class="inv-slot '+(item?'filled':'')+'" onclick="openSlotSelector(''+sl.key+'')" title="Clic para cambiar '+sl.label+'">'
-      +'<div class="inv-slot-icon">'+(item?item.icon:sl.icon)+'</div>'
-      +'<div class="inv-slot-name">'+(item?item.name:'Vacío')+'</div>'
-      +'<div class="inv-slot-label">'+sl.label+'</div>'
-      +(item?'<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;margin-top:4px;" onclick="event.stopPropagation();unequipItem(''+itemId+'');renderInventario();">✕</button>':'')
-      +'</div>';
-  }).join('');
-  const inv=p.inventory||[];
-  if(!inv.length){gridWrap.innerHTML='<div style="font-size:13px;color:var(--muted);">No tienes items aún. Compra en la Tienda o consíguelos en el Gacha.</div>';return;}
-  gridWrap.innerHTML=inv.map(function(itemId){
-    const item=shopItems.find(function(i){return i.id===itemId;});
-    if(!item)return '';
-    const equipped=p.equipped&&Object.values(p.equipped).indexOf(itemId)>=0;
-    const bonusStr=Object.entries(item.bonus||{}).filter(function(e){return e[1]>0;}).map(function(e){return '+'+e[1]+' '+AN[e[0]];}).join(' · ');
-    return '<div class="inv-item '+(equipped?'equipped':'')+'">'
-      +'<div style="font-size:26px;text-align:center;">'+item.icon+'</div>'
-      +'<div style="font-size:13px;font-weight:500;">'+item.name+'</div>'
-      +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">'+item.slot+'</div>'
-      +(bonusStr?'<div style="font-size:11px;color:var(--accent);">⬆️ '+bonusStr+'</div>':'')
-      +'<div style="margin-top:auto;padding-top:8px;">'
-      +(equipped
-        ?'<button class="btn btn-sm" style="width:100%;" onclick="unequipItem(''+itemId+'');renderInventario();">Desequipar</button>'
-        :'<button class="btn btn-sm btn-p" style="width:100%;" onclick="equipItem(''+itemId+'');renderInventario();">Equipar</button>')
-      +'</div></div>';
-  }).join('');
-}
-
-function openSlotSelector(slot){
-  const p=players.find(pl=>pl.id===session.playerId);
-  if(!p)return;
-  const compatible=(p.inventory||[]).filter(function(id){
-    const item=shopItems.find(function(i){return i.id===id;});
-    return item&&item.slot===slot;
-  });
-  if(!compatible.length){toast('No tienes items para el slot: '+slot);return;}
-  // Equip first available or show selection
-  const current=p.equipped?p.equipped[slot]:null;
-  const next=compatible.find(function(id){return id!==current;})||compatible[0];
-  equipItem(next);renderInventario();
-}
-
-/* ══ SHOWCASE SELECTOR ══ */
-function openShowcaseSelector(idx){
-  const p=players.find(pl=>pl.id===session.playerId);
-  if(!p||!p.gallery||!p.gallery.length){toast('No tienes cartas en tu galería.');return;}
-  if(!p.showcase)p.showcase=[null,null,null];
-  const current=p.showcase[idx];
-  // Simple cycling through gallery cards
-  const cards=p.gallery.filter(function(id){return !p.showcase.includes(id)||id===current;});
-  if(!cards.length){toast('No hay más cartas disponibles.');return;}
-  const ci=cards.indexOf(current);
-  p.showcase[idx]=cards[(ci+1)%cards.length];
-  if(CFG.MODE==='supabase')saveToSupabase();
-  renderHeroProfile(curHero);
-  toast('Carta actualizada en el showcase');
-}
-
 </style>
 </head>
 <body>
@@ -677,11 +566,11 @@ function openShowcaseSelector(idx){
     <div id="page-inventario" class="page">
       <div style="margin-bottom:1.25rem;">
         <div style="font-size:18px;font-weight:500;margin-bottom:4px;">Inventario</div>
-        <div style="font-size:13px;color:var(--muted);">Equipa los items que has comprado o conseguido en el Gacha.</div>
+        <div style="font-size:13px;color:var(--muted);">Equipa los items que has comprado o conseguido.</div>
       </div>
       <div class="stitle">Slots de equipamiento</div>
       <div class="inv-slots" id="inv-slots"></div>
-      <div class="stitle">Items en el inventario</div>
+      <div class="stitle" style="margin-top:1.25rem;">Items disponibles</div>
       <div class="inv-grid" id="inv-grid"></div>
     </div>
 
@@ -1141,7 +1030,7 @@ async function loadData(){
     else gachaCards=JSON.parse(JSON.stringify(DEMO.gacha_cards));
   }catch{gachaCards=JSON.parse(JSON.stringify(DEMO.gacha_cards));}
 
-  if(CFG.MODE==='jsonbin'){
+  if(CFG.MODE==='supabase'){
     const d=await loadFromSupabase();
     if(d&&d.players){
       players =d.players;
@@ -1182,7 +1071,7 @@ async function loadData(){
     if(!p.gallery)p.gallery=[];
     if(!p.lastDaily)p.lastDaily='';
     if(!p.inventory)p.inventory=[];
-    if(!p.equipped)p.equipped={arma:null,armadura:null,accesorio:null,especial:null};
+    if(!p.equipped)p.equipped={arma:null,armadura:null,accesorio:null,casco:null,botas:null};
     if(!p.pendingAttrPts)p.pendingAttrPts=0;
   });
   checkDailyMissions();
@@ -1223,7 +1112,7 @@ function checkDailyMissions(){
 }
 
 function exportJSON(){
-  if(CFG.MODE==='jsonbin'){
+  if(CFG.MODE==='supabase'){
     saveToSupabase();
     (function(){var _x=document.getElementById('umenu-inline');if(_x)_x.style.display='none';})();
     toast('✅ Guardado en la nube automáticamente');
@@ -1274,7 +1163,7 @@ function doLogout(){
 function enterApp(){
   showScreen('screen-app');
   const p=players.find(p=>p.id===session.playerId);
-  if(p){const idx=players.findIndex(pl=>pl.id===session.playerId);if(idx>=0)curHero=idx;}
+  if(p){const _idx=players.findIndex(function(pl){return pl.id===session.playerId;});if(_idx>=0)curHero=_idx;}
   document.getElementById('ulabel').textContent=session.isAdmin?'Dios 👑':(p?p.name.split(' ')[0]:'—');
   (function(){var _x=document.getElementById('umname');if(_x)_x.textContent=session.isAdmin?'👑 Dios':(p?p.name:'—');})();
   if(CFG.MODE==='local'){
@@ -1346,9 +1235,13 @@ function saveNewChar(){
   const lore=document.getElementById('cp-lore').value.trim(),quote=document.getElementById('cp-quote').value.trim();
   if(!cpState.cls){toast('Vuelve al paso 2 y elige una clase.');return;}
   const np={id:'pj'+Date.now(),realName:rn,name:pn,cls:cpState.cls.name,role:cpState.cls.role,emblem:cpState.emblem,color:cpState.color.hex,colorBg:cpState.color.bg,level:1,xp:0,xpNext:100,gold:0,missions:0,weapon:cpState.weapon,armor:cpState.armor,accessory:cpState.accessory,lore:lore||'Historia por escribir...',quote:quote||'...',pin,attrs:{...cpState.cls.attrs},gachaTokens:0,gallery:[],lastDaily:''};
-  players.push(np);checkDailyMissions();
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  players.push(np);
+  createWelcomeArc(np);
+  createTutorialForPlayer(np);
+  checkDailyMissions();
+  if(CFG.MODE==='supabase')saveToSupabase();
   session={loggedIn:true,isAdmin:false,playerId:np.id};localStorage.setItem('cg_pid',np.id);
+  const idx=players.findIndex(function(pl){return pl.id===np.id;});if(idx>=0)curHero=idx;
   setTimeout(()=>enterApp(),300);
 }
 
@@ -1434,20 +1327,20 @@ function updateArcCounts(){
 function deleteArc(id){
   if(!confirm('¿Eliminar este arco?'))return;
   arcs=arcs.filter(function(a){return a.id!==id;});
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   renderAll();toast('Arco eliminado');
 }
 function deleteMission(id){
   if(!confirm('¿Eliminar esta misión?'))return;
   missions=missions.filter(function(m){return m.id!==id;});
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   renderAll();toast('Misión eliminada');
 }
 
 function assignMission(missionId, playerId){
   const m=missions.find(m=>m.id===missionId);if(!m)return;
   m.playerId=playerId;
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   renderAll();toast('Misión asignada');
 }
 
@@ -1488,7 +1381,7 @@ function completeMission(id){
   checkLevelUp(p);
   updateArcCounts();
   cleanOldCompleted();
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   renderAll();
 }
 
@@ -1529,7 +1422,7 @@ function confirmLevelUp(){
   const p=players.find(p=>p.id===luState.pid);
   if(p)p.pendingAttrPts=0;
   document.getElementById('levelup-pop').classList.remove('show');
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   renderAll();toast('¡Atributos actualizados!');
 }
 
@@ -1616,6 +1509,7 @@ function renderHeroProfile(i){
           <div>
             <div class="stitle">Atributos</div>
             ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl">'+AN[k]+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(ev/20*100)+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
+            <div class="pentagon-wrap" style="margin-top:1rem;">${buildPentagon(getEffectiveAttrs(p),p.color)}</div>
             <div class="stitle" style="margin-top:1rem;">Equipamiento</div>
             <div class="erow"><span class="epill">⚔️ ${p.weapon}</span><span class="epill">🛡️ ${p.armor}</span><span class="epill">💎 ${p.accessory}</span></div>
             ${(function(){var eq=Object.values(p.equipped||{}).filter(Boolean);if(!eq.length)return '';var items=eq.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);return '<div class="stitle" style="margin-top:.75rem;">Items equipados</div><div class="erow">'+items.map(function(i){return '<span class="epill" style="border-color:var(--gold);color:var(--gold);">'+i.icon+' '+i.name+'</span>';}).join('')+'</div>';})()}
@@ -1624,17 +1518,7 @@ function renderHeroProfile(i){
             <div class="stitle">Historia</div>
             <p class="plore" style="margin-bottom:1rem;">${p.lore}</p>
             <div class="stitle">Showcase</div>
-            <div class="hero-showcase">
-              ${(function(){if(!p.showcase)p.showcase=[null,null,null];return p.showcase.map(function(cardId,si){
-                var card=cardId?gachaCards.find(function(c){return c.id===cardId;}):null;
-                var imgUrl=card?(card.imageUrl||CFG.GITHUB_RAW+card.image):'';
-                var canEdit=session.playerId===p.id;
-                var errStyle='this.style.background=\'var(--bg3)\'';
-                if(card&&imgUrl)return '<div style="position:relative;">'+(canEdit?'<img class="showcase-img" src="'+imgUrl+'" alt="'+card.name+'" title="Clic para cambiar" onclick="openShowcaseSelector('+si+')" onerror="'+errStyle+'" />':'<img class="showcase-img" src="'+imgUrl+'" alt="'+card.name+'" />')+'</div>';
-                if(canEdit)return '<div class="showcase-empty" onclick="openShowcaseSelector('+si+')" title="Añadir carta">＋</div>';
-                return '<div class="showcase-empty" style="cursor:default;">✦</div>';
-              }).join('')})()}
-            </div>
+            <div class="hero-showcase">${(function(){if(!p.showcase)p.showcase=[null,null,null];return p.showcase.map(function(cid,si){var card=cid?gachaCards.find(function(x){return x.id===cid;}):null;var url=card?(card.imageUrl||CFG.GITHUB_RAW+card.image):'';var canEdit=session.playerId===p.id;if(card&&url)return '<img class="showcase-img" src="'+url+'" alt="'+card.name+'"'+(canEdit?' onclick="openShowcaseSelector('+si+')" title="Clic para cambiar"':'')+' onerror="this.style.opacity=0"/>';return canEdit?'<div class="showcase-empty" onclick="openShowcaseSelector('+si+')" title="Añadir carta del gacha">＋</div>':'<div class="showcase-empty" style="cursor:default;opacity:.4;">✦</div>';}).join('');})()}</div>
             ${recent.length?`<div class="stitle">Últimas misiones</div>`+recent.map(m=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:12px;color:var(--text);">${m.name}</span><span class="badge b-teal">+${m.xp} XP</span></div>`).join(''):''}
           </div>
         </div>
@@ -1734,7 +1618,7 @@ function doPull(times){
       <div class="gacha-card-info"><div class="gacha-card-name">${c.name}</div><div class="gacha-card-rarity rarity-${c.rarity}">${RARITY_LABEL[c.rarity]}</div></div>`;
     reveal.appendChild(div);
   });
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   renderGachaGold();renderMyGallery();renderGalleryTabs();renderAll();
   toast(`¡${times} carta${times>1?'s':''} obtenida${times>1?'s':''}!`);
 }
@@ -1806,7 +1690,7 @@ function deletePlayer(){
   if(!confirm('¿Seguro que quieres eliminar a '+p.name+'? Esta acción no se puede deshacer.'))return;
   players=players.filter(p=>p.id!==editPid);
   missions=missions.map(m=>m.playerId===editPid?{...m,playerId:''}:m);
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   closeEdit();renderAll();
   if(curHero>=players.length)curHero=0;
   toast('Personaje eliminado');
@@ -1822,7 +1706,7 @@ function saveEdit(){
     p.cls=document.getElementById('e-cls').value;p.level=Math.floor(p.xp/100)+1;
     const cls=CLASSES.find(c=>c.name===p.cls);if(cls){p.role=cls.role;p.attrs={...cls.attrs};}
   }
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   closeEdit();renderAll();toast('Personaje actualizado');
 }
 
@@ -1856,8 +1740,8 @@ function renderShop(){
   var eqWrap=document.getElementById('my-equipped');
   if(eqWrap){
     if(!p){eqWrap.innerHTML=session.isAdmin?'<div class="stitle">Equipamiento (admin no tiene personaje)</div>':'';if(!session.isAdmin)return;}
-    var slots=['arma','armadura','accesorio','especial'];
-    var slotIcons={arma:'⚔️',armadura:'🛡️',accesorio:'💎',especial:'✨'};
+    var slots=['arma','armadura','accesorio','casco','botas'];
+    var slotIcons={arma:'⚔️',armadura:'🛡️',accesorio:'💎',casco:'⛑️',botas:'👟'};
     eqWrap.innerHTML='<div class="stitle">Equipado actualmente</div><div class="equipped-slots">'
       +slots.map(function(slot){
         var itemId=p.equipped?p.equipped[slot]:null;
@@ -1905,7 +1789,7 @@ function buyItem(itemId){
   p.gold-=item.cost;
   if(!p.inventory)p.inventory=[];
   p.inventory.push(itemId);
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   renderShop();renderAll();
   toast('¡'+item.icon+' '+item.name+' comprado!');
 }
@@ -1913,9 +1797,9 @@ function equipItem(itemId){
   var p=players.find(function(pl){return pl.id===session.playerId;});
   var item=shopItems.find(function(i){return i.id===itemId;});
   if(!p||!item)return;
-  if(!p.equipped)p.equipped={arma:null,armadura:null,accesorio:null,especial:null};
+  if(!p.equipped)p.equipped={arma:null,armadura:null,accesorio:null,casco:null,botas:null};
   p.equipped[item.slot]=itemId;
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   renderShop();renderHeroProfile(curHero);
   toast('¡'+item.icon+' '+item.name+' equipado!');
 }
@@ -1924,7 +1808,7 @@ function unequipItem(itemId){
   var item=shopItems.find(function(i){return i.id===itemId;});
   if(!p||!item||!p.equipped)return;
   p.equipped[item.slot]=null;
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   renderShop();renderHeroProfile(curHero);
   toast(item.name+' desequipado.');
 }
@@ -1940,7 +1824,7 @@ function adminCreateItem(){
     minAttrs:{fue:parseInt(document.getElementById('si-rfue').value)||0,int:parseInt(document.getElementById('si-rint').value)||0,agi:parseInt(document.getElementById('si-ragi').value)||0,car:parseInt(document.getElementById('si-rcar').value)||0,sab:parseInt(document.getElementById('si-rsab').value)||0},
     bonus:{fue:parseInt(document.getElementById('si-bfue').value)||0,int:parseInt(document.getElementById('si-bint').value)||0,agi:parseInt(document.getElementById('si-bagi').value)||0,car:parseInt(document.getElementById('si-bcar').value)||0,sab:parseInt(document.getElementById('si-bsab').value)||0}
   });
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   ['si-name','si-icon','si-desc','si-cost','si-lvl'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   ['si-rfue','si-rint','si-ragi','si-rcar','si-rsab','si-bfue','si-bint','si-bagi','si-bcar','si-bsab'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='0';});
   renderShop();toast('Item creado: '+icon+' '+name);
@@ -1952,7 +1836,7 @@ function adminDeleteItem(itemId){
     if(p.inventory)p.inventory=p.inventory.filter(function(id){return id!==itemId;});
     if(p.equipped)Object.keys(p.equipped).forEach(function(k){if(p.equipped[k]===itemId)p.equipped[k]=null;});
   });
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   renderShop();toast('Item eliminado.');
 }
 function renderAdminItemsList(){
@@ -2112,7 +1996,7 @@ function saveEvent(){
     const idx=calEvents.findIndex(e=>e.id===calState.editingEventId);
     if(idx>=0)calEvents[idx]=ev;else calEvents.push(ev);
   }else{calEvents.push(ev);}
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   closeEventModal();renderCalendar();toast('Evento guardado');
 }
 
@@ -2120,7 +2004,7 @@ function deleteEvent(){
   if(!calState.editingEventId)return;
   if(!confirm('¿Eliminar este evento?'))return;
   calEvents=calEvents.filter(e=>e.id!==calState.editingEventId);
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   closeEventModal();renderCalendar();toast('Evento eliminado');
 }
 
@@ -2302,7 +2186,7 @@ function confirmPlannerImport(){
     imported++;
   });
   
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   clearPlannerImport();
   renderAll();
   renderPlannerImported();
@@ -2342,6 +2226,13 @@ function renderPlannerImported(){
 
 
 /* ══ TUTORIAL ══ */
+function createWelcomeArc(p){
+  var arcName='Bienvenida al Cuartel General';
+  arcs.push({id:'arc_welcome_'+p.id,name:arcName,lore:'¡Bienvenido al equipo! Completa estas dos misiones para arrancar tu aventura con buen pie.',status:'active',total:2,done:0,createdBy:'system'});
+  missions.push({id:'wlc1_'+p.id,name:'Preséntate al equipo',arc:arcName,playerId:p.id,status:'pending',diff:'C',xp:100,gold:450,attr:'Carisma',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'});
+  missions.push({id:'wlc2_'+p.id,name:'Configura tu primer objetivo',arc:arcName,playerId:p.id,status:'pending',diff:'C',xp:0,gold:450,attr:'Sabiduría',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'});
+  updateArcCounts();
+}
 function createTutorialForPlayer(p){
   var arcName='Tutorial: Primeros Pasos';
   arcs.push({id:'arc_tutorial_'+p.id,name:arcName,lore:'Tu primera aventura en el Cuartel General. Completa estas misiones para aprender cómo funciona el sistema.',status:'active',total:5,done:0,createdBy:'system'});
@@ -2378,6 +2269,93 @@ function cleanOldCompleted(){
   });
 }
 
+
+/* ══ PENTAGON ══ */
+function buildPentagon(attrs,color){
+  var keys=['fue','int','agi','car','sab'];
+  var labels=['Fuerza','Intel.','Agilidad','Carisma','Sabiduría'];
+  var cx=100,cy=100,r=75,n=5;
+  var bgLvls=[0.25,0.5,0.75,1.0];
+  var bgSvg=bgLvls.map(function(lv){
+    var pts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;return (cx+r*lv*Math.cos(a)).toFixed(1)+','+(cy+r*lv*Math.sin(a)).toFixed(1);}).join(' ');
+    return '<polygon class="penta-bg" points="'+pts+'"/>';
+  }).join('');
+  var axes=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;return '<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+r*Math.cos(a)).toFixed(1)+'" y2="'+(cy+r*Math.sin(a)).toFixed(1)+'" stroke="var(--border)" stroke-width="1"/>';}).join('');
+  var dataPts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;var v=Math.min(100,attrs[k]||0)/100;return {x:cx+r*v*Math.cos(a),y:cy+r*v*Math.sin(a),lx:cx+(r+20)*Math.cos(a),ly:cy+(r+20)*Math.sin(a),label:labels[i],val:attrs[k]||0};});
+  var fillPts=dataPts.map(function(p){return p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');
+  var lblSvg=dataPts.map(function(p){return '<text class="penta-label" x="'+p.lx.toFixed(1)+'" y="'+p.ly.toFixed(1)+'" text-anchor="middle" dominant-baseline="middle">'+p.label+'</text><text class="penta-value" x="'+(p.x+(p.lx-p.x)*0.45).toFixed(1)+'" y="'+(p.y+(p.ly-p.y)*0.45).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" fill="'+color+'">'+p.val+'</text>';}).join('');
+  return '<svg width="200" height="200" viewBox="0 0 200 200" style="overflow:visible">'+bgSvg+axes+'<polygon class="penta-fill" points="'+fillPts+'" fill="'+color+'" stroke="'+color+'"/>'+lblSvg+'</svg>';
+}
+
+/* ══ INVENTARIO ══ */
+function renderInventario(){
+  var p=players.find(function(pl){return pl.id===session.playerId;});
+  var sw=document.getElementById('inv-slots'),gw=document.getElementById('inv-grid');
+  if(!sw||!gw)return;
+  if(!p){sw.innerHTML='<div style="color:var(--muted);font-size:13px;">Inicia sesión.</div>';gw.innerHTML='';return;}
+  if(!p.equipped)p.equipped={arma:null,armadura:null,accesorio:null,casco:null,botas:null};
+  var slotDefs=[
+    {key:'arma',label:'Arma',icon:'⚔️'},
+    {key:'armadura',label:'Armadura',icon:'🛡️'},
+    {key:'accesorio',label:'Accesorio',icon:'💎'},
+    {key:'casco',label:'Casco',icon:'⛑️'},
+    {key:'botas',label:'Botas',icon:'👟'}
+  ];
+  sw.innerHTML=slotDefs.map(function(sl){
+    var iid=p.equipped[sl.key];
+    var item=shopItems.find(function(i){return i.id===iid;});
+    var html='<div class="inv-slot '+(item?'filled':'')+'" onclick="invEquipSlot(\"'+sl.key+'\")">';
+    html+='<div class="inv-slot-icon">'+(item?item.icon:sl.icon)+'</div>';
+    html+='<div class="inv-slot-name">'+(item?item.name:'Vacío')+'</div>';
+    html+='<div class="inv-slot-label">'+sl.label+'</div>';
+    if(item)html+='<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;" onclick="event.stopPropagation();unequipItem(\"'+iid+'\");renderInventario();">✕</button>';
+    html+='</div>';
+    return html;
+  }).join('');
+  var inv=p.inventory||[];
+  if(!inv.length){gw.innerHTML='<div style="font-size:13px;color:var(--muted);">Sin items. Compra en la Tienda o consíguelos en el Gacha.</div>';return;}
+  gw.innerHTML=inv.map(function(iid){
+    var item=shopItems.find(function(i){return i.id===iid;});
+    if(!item)return '';
+    var eq=p.equipped&&Object.values(p.equipped).indexOf(iid)>=0;
+    var bonusStr=Object.entries(item.bonus||{}).filter(function(e){return e[1]>0;}).map(function(e){return '+'+e[1]+' '+AN[e[0]];}).join(' · ');
+    var html='<div class="inv-item '+(eq?'equipped':'')+'">';
+    html+='<div style="font-size:24px;text-align:center;">'+item.icon+'</div>';
+    html+='<div style="font-size:13px;font-weight:500;">'+item.name+'</div>';
+    html+='<div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">'+item.slot+'</div>';
+    if(bonusStr)html+='<div style="font-size:11px;color:var(--accent);">⬆️ '+bonusStr+'</div>';
+    html+='<div style="margin-top:auto;padding-top:6px;">';
+    if(eq){
+      html+='<button class="btn btn-sm" style="width:100%;" onclick="unequipItem(\"'+iid+'\");renderInventario();">Desequipar</button>';
+    }else{
+      html+='<button class="btn btn-sm btn-p" style="width:100%;" onclick="equipItem(\"'+iid+'\");renderInventario();">Equipar</button>';
+    }
+    html+='</div></div>';
+    return html;
+  }).join('');
+}
+function invEquipSlot(slot){
+  var p=players.find(function(pl){return pl.id===session.playerId;});if(!p)return;
+  var compatible=(p.inventory||[]).filter(function(id){var item=shopItems.find(function(i){return i.id===id;});return item&&item.slot===slot;});
+  if(!compatible.length){toast('No tienes items para el slot: '+slot);return;}
+  var current=p.equipped?p.equipped[slot]:null;
+  var next=compatible.find(function(id){return id!==current;})||compatible[0];
+  equipItem(next);renderInventario();
+}
+
+/* ══ SHOWCASE ══ */
+function openShowcaseSelector(idx){
+  var p=players.find(function(pl){return pl.id===session.playerId;});
+  if(!p||!(p.gallery||[]).length){toast('No tienes cartas en tu galería aún.');return;}
+  if(!p.showcase)p.showcase=[null,null,null];
+  var allIds=typeof p.gallery[0]==='string'?p.gallery:p.gallery.map(function(e){return e.cardId||e;});
+  var available=allIds.filter(function(id){return !p.showcase.includes(id)||id===p.showcase[idx];});
+  if(!available.length){toast('No hay más cartas disponibles.');return;}
+  var ci=available.indexOf(p.showcase[idx]);
+  p.showcase[idx]=available[(ci+1)%available.length];
+  if(CFG.MODE==='supabase')saveToSupabase();
+  renderHeroProfile(curHero);toast('Carta actualizada');
+}
 
 /* ══ TOAST ══ */
 let toastT;
@@ -2458,7 +2436,7 @@ function createMission(){
   }
   missions.push(newM);
   if(isDaily)checkDailyMissions();
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   document.getElementById('nm-name').value='';
   document.getElementById('nm-deadline').value='';
   document.getElementById('panel-new-mission').removeAttribute('open');
@@ -2477,7 +2455,7 @@ function createArc(){
     createdBy:session.playerId
   };
   arcs.push(newArc);
-  if(CFG.MODE==='jsonbin')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase();
   populateArcSelect();
   document.getElementById('na-name').value='';
   document.getElementById('na-desc').value='';
