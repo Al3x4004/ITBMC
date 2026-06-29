@@ -831,13 +831,13 @@ window.showScreen=function(id){
 
 /* ══ CONFIG ══ */
 const CFG={
-  MODE:'jsonbin',
+  MODE:'supabase',
   DATA_PATH:'Excel/data.json',
   GACHA_CARDS_PATH:'gacha/cards.json',
   GITHUB_RAW:'https://raw.githubusercontent.com/Al3x4004/ITBMC/main/',
   ADMIN_PW:'admin1234',
-  JSONBIN_ID:'6a3e5aa6da38895dfe022a2b',
-  JSONBIN_KEY:'$2a$10$s.R/zR01SGJ/jtzVC/ZQzueztCywZoZxvrnOPvDuZLrFWExunw1EO',
+  SUPABASE_URL:'https://ksmxclenaeglnahinkvm.supabase.co',
+  SUPABASE_KEY:'sb_publishable__lu2fGNGR9j3NEjoDgFZpQ_SPvs_jhV',
 };
 
 /* ══ DATOS ESTÁTICOS ══ */
@@ -951,30 +951,25 @@ let galleryHeroIdx=0;
 const JB_URL=`https://api.jsonbin.io/v3/b/${CFG.JSONBIN_ID}`;
 const JB_HDR={'Content-Type':'application/json','X-Master-Key':CFG.JSONBIN_KEY,'X-Bin-Versioning':'false'};
 
-async function loadFromJSONBin(){
+async function loadFromSupabase(){
   try{
-    const r=await fetch(JB_URL+'/latest',{
-      headers:{'X-Master-Key':CFG.JSONBIN_KEY,'X-Access-Key':CFG.JSONBIN_KEY}
+    const r=await fetch(`${CFG.SUPABASE_URL}/rest/v1/game_data?id=eq.main&select=data`,{
+      headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
     });
-    if(!r.ok)throw new Error('JSONBin '+r.status);
-    const d=await r.json();
-    return d.record||d;
-  }catch(e){console.error('JSONBin load:',e);return null;}
+    const rows=await r.json();
+    return rows&&rows.length?rows[0].data:null;
+  }catch(e){console.error('Supabase load error',e);return null;}
 }
 
-async function saveToJSONBin(){
+
+async function saveToSupabase(){
   try{
-    const r=await fetch(JB_URL,{
-      method:'PUT',
-      headers:{...JB_HDR,'X-Access-Key':CFG.JSONBIN_KEY},
-      body:JSON.stringify({players,missions,arcs,gacha_cards:gachaCards,cal_events:calEvents})
+    await fetch(`${CFG.SUPABASE_URL}/rest/v1/game_data`,{
+      method:'POST',
+      headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({id:'main',data:{players,missions,arcs,gacha_cards:gachaCards,cal_events:calEvents}})
     });
-    if(!r.ok){
-      const txt=await r.text();
-      console.error('JSONBin save error:',r.status,txt);
-      throw new Error('JSONBin save '+r.status);
-    }
-  }catch(e){console.error('JSONBin save:',e);toast('Error al guardar: '+e.message);}
+  }catch(e){console.error('Supabase save error',e);}
 }
 
 async function loadData(){
@@ -986,7 +981,7 @@ async function loadData(){
   }catch{gachaCards=JSON.parse(JSON.stringify(DEMO.gacha_cards));}
 
   if(CFG.MODE==='jsonbin'){
-    const d=await loadFromJSONBin();
+    const d=await loadFromSupabase();
     if(d&&d.players){
       players =d.players;
       shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));
@@ -1005,7 +1000,7 @@ async function loadData(){
       arcs    =JSON.parse(JSON.stringify(DEMO.arcs));
       shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));
       calEvents=JSON.parse(JSON.stringify(DEMO.cal_events));
-      await saveToJSONBin();
+      await saveToSupabase();
     }
   }else{
     try{
@@ -1068,7 +1063,7 @@ function checkDailyMissions(){
 
 function exportJSON(){
   if(CFG.MODE==='jsonbin'){
-    saveToJSONBin();
+    saveToSupabase();
     (function(){var _x=document.getElementById('umenu-inline');if(_x)_x.style.display='none';})();
     toast('✅ Guardado en la nube automáticamente');
     return;
@@ -1190,7 +1185,7 @@ function saveNewChar(){
   if(!cpState.cls){toast('Vuelve al paso 2 y elige una clase.');return;}
   const np={id:'pj'+Date.now(),realName:rn,name:pn,cls:cpState.cls.name,role:cpState.cls.role,emblem:cpState.emblem,color:cpState.color.hex,colorBg:cpState.color.bg,level:1,xp:0,xpNext:100,gold:0,missions:0,weapon:cpState.weapon,armor:cpState.armor,accessory:cpState.accessory,lore:lore||'Historia por escribir...',quote:quote||'...',pin,attrs:{...cpState.cls.attrs},gachaTokens:0,gallery:[],lastDaily:''};
   players.push(np);checkDailyMissions();
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   session={loggedIn:true,isAdmin:false,playerId:np.id};localStorage.setItem('cg_pid',np.id);
   toast('¡Personaje creado! Bienvenido, '+pn);setTimeout(()=>enterApp(),800);
 }
@@ -1276,20 +1271,20 @@ function updateArcCounts(){
 function deleteArc(id){
   if(!confirm('¿Eliminar este arco?'))return;
   arcs=arcs.filter(function(a){return a.id!==id;});
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   renderAll();toast('Arco eliminado');
 }
 function deleteMission(id){
   if(!confirm('¿Eliminar esta misión?'))return;
   missions=missions.filter(function(m){return m.id!==id;});
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   renderAll();toast('Misión eliminada');
 }
 
 function assignMission(missionId, playerId){
   const m=missions.find(m=>m.id===missionId);if(!m)return;
   m.playerId=playerId;
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   renderAll();toast('Misión asignada');
 }
 
@@ -1330,7 +1325,7 @@ function completeMission(id){
   checkLevelUp(p);
   updateArcCounts();
   cleanOldCompleted();
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   renderAll();
 }
 
@@ -1371,7 +1366,7 @@ function confirmLevelUp(){
   const p=players.find(p=>p.id===luState.pid);
   if(p)p.pendingAttrPts=0;
   document.getElementById('levelup-pop').classList.remove('show');
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   renderAll();toast('¡Atributos actualizados!');
 }
 
@@ -1552,7 +1547,7 @@ function doPull(times){
       <div class="gacha-card-info"><div class="gacha-card-name">${c.name}</div><div class="gacha-card-rarity rarity-${c.rarity}">${RARITY_LABEL[c.rarity]}</div></div>`;
     reveal.appendChild(div);
   });
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   renderGachaGold();renderMyGallery();renderGalleryTabs();renderAll();
   toast(`¡${times} carta${times>1?'s':''} obtenida${times>1?'s':''}!`);
 }
@@ -1624,7 +1619,7 @@ function deletePlayer(){
   if(!confirm('¿Seguro que quieres eliminar a '+p.name+'? Esta acción no se puede deshacer.'))return;
   players=players.filter(p=>p.id!==editPid);
   missions=missions.map(m=>m.playerId===editPid?{...m,playerId:''}:m);
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   closeEdit();renderAll();
   if(curHero>=players.length)curHero=0;
   toast('Personaje eliminado');
@@ -1640,7 +1635,7 @@ function saveEdit(){
     p.cls=document.getElementById('e-cls').value;p.level=Math.floor(p.xp/100)+1;
     const cls=CLASSES.find(c=>c.name===p.cls);if(cls){p.role=cls.role;p.attrs={...cls.attrs};}
   }
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   closeEdit();renderAll();toast('Personaje actualizado');
 }
 
@@ -1723,7 +1718,7 @@ function buyItem(itemId){
   p.gold-=item.cost;
   if(!p.inventory)p.inventory=[];
   p.inventory.push(itemId);
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   renderShop();renderAll();
   toast('¡'+item.icon+' '+item.name+' comprado!');
 }
@@ -1733,7 +1728,7 @@ function equipItem(itemId){
   if(!p||!item)return;
   if(!p.equipped)p.equipped={arma:null,armadura:null,accesorio:null,especial:null};
   p.equipped[item.slot]=itemId;
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   renderShop();renderHeroProfile(curHero);
   toast('¡'+item.icon+' '+item.name+' equipado!');
 }
@@ -1742,7 +1737,7 @@ function unequipItem(itemId){
   var item=shopItems.find(function(i){return i.id===itemId;});
   if(!p||!item||!p.equipped)return;
   p.equipped[item.slot]=null;
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   renderShop();renderHeroProfile(curHero);
   toast(item.name+' desequipado.');
 }
@@ -1758,7 +1753,7 @@ function adminCreateItem(){
     minAttrs:{fue:parseInt(document.getElementById('si-rfue').value)||0,int:parseInt(document.getElementById('si-rint').value)||0,agi:parseInt(document.getElementById('si-ragi').value)||0,car:parseInt(document.getElementById('si-rcar').value)||0,sab:parseInt(document.getElementById('si-rsab').value)||0},
     bonus:{fue:parseInt(document.getElementById('si-bfue').value)||0,int:parseInt(document.getElementById('si-bint').value)||0,agi:parseInt(document.getElementById('si-bagi').value)||0,car:parseInt(document.getElementById('si-bcar').value)||0,sab:parseInt(document.getElementById('si-bsab').value)||0}
   });
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   ['si-name','si-icon','si-desc','si-cost','si-lvl'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   ['si-rfue','si-rint','si-ragi','si-rcar','si-rsab','si-bfue','si-bint','si-bagi','si-bcar','si-bsab'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='0';});
   renderShop();toast('Item creado: '+icon+' '+name);
@@ -1770,7 +1765,7 @@ function adminDeleteItem(itemId){
     if(p.inventory)p.inventory=p.inventory.filter(function(id){return id!==itemId;});
     if(p.equipped)Object.keys(p.equipped).forEach(function(k){if(p.equipped[k]===itemId)p.equipped[k]=null;});
   });
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   renderShop();toast('Item eliminado.');
 }
 function renderAdminItemsList(){
@@ -1930,7 +1925,7 @@ function saveEvent(){
     const idx=calEvents.findIndex(e=>e.id===calState.editingEventId);
     if(idx>=0)calEvents[idx]=ev;else calEvents.push(ev);
   }else{calEvents.push(ev);}
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   closeEventModal();renderCalendar();toast('Evento guardado');
 }
 
@@ -1938,7 +1933,7 @@ function deleteEvent(){
   if(!calState.editingEventId)return;
   if(!confirm('¿Eliminar este evento?'))return;
   calEvents=calEvents.filter(e=>e.id!==calState.editingEventId);
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   closeEventModal();renderCalendar();toast('Evento eliminado');
 }
 
@@ -2120,7 +2115,7 @@ function confirmPlannerImport(){
     imported++;
   });
   
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   clearPlannerImport();
   renderAll();
   renderPlannerImported();
@@ -2275,7 +2270,7 @@ function createMission(){
   }
   missions.push(newM);
   if(isDaily)checkDailyMissions();
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   document.getElementById('nm-name').value='';
   document.getElementById('nm-deadline').value='';
   document.getElementById('panel-new-mission').removeAttribute('open');
@@ -2294,7 +2289,7 @@ function createArc(){
     createdBy:session.playerId
   };
   arcs.push(newArc);
-  if(CFG.MODE==='jsonbin')saveToJSONBin();
+  if(CFG.MODE==='jsonbin')saveToSupabase();
   populateArcSelect();
   document.getElementById('na-name').value='';
   document.getElementById('na-desc').value='';
