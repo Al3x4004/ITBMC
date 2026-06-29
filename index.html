@@ -967,7 +967,7 @@ async function saveToJSONBin(){
     const r=await fetch(JB_URL,{
       method:'PUT',
       headers:{...JB_HDR,'X-Access-Key':CFG.JSONBIN_KEY},
-      body:JSON.stringify({players,missions,arcs,gacha_cards:gachaCards,shop_items:shopItems,cal_events:calEvents})
+      body:JSON.stringify({players,missions,arcs,gacha_cards:gachaCards,cal_events:calEvents})
     });
     if(!r.ok){
       const txt=await r.text();
@@ -989,8 +989,7 @@ async function loadData(){
     const d=await loadFromJSONBin();
     if(d&&d.players){
       players =d.players;
-      if(d.shop_items)shopItems=d.shop_items;
-      else shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));
+      shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));
       if(d.cal_events)calEvents=d.cal_events;
       else calEvents=JSON.parse(JSON.stringify(DEMO.cal_events));
       // Ensure tutorial missions exist for each player
@@ -1074,7 +1073,7 @@ function exportJSON(){
     toast('✅ Guardado en la nube automáticamente');
     return;
   }
-  const blob=new Blob([JSON.stringify({players,missions,arcs,gacha_cards:gachaCards,shop_items:shopItems,cal_events:calEvents},null,2)],{type:'application/json'});
+  const blob=new Blob([JSON.stringify({players,missions,arcs,gacha_cards:gachaCards,cal_events:calEvents},null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download='data.json';a.click();
   URL.revokeObjectURL(url);
@@ -1542,7 +1541,7 @@ function doPull(times){
     p.gold-=cost;
   }
   const cards=Array.from({length:times},()=>pullCard());
-  cards.forEach(c=>{if(!p.gallery)p.gallery=[];p.gallery.push({cardId:c.id,obtainedAt:new Date().toISOString(),imageUrl:CFG.GITHUB_RAW+c.image,name:c.name,rarity:c.rarity});});
+  cards.forEach(c=>{if(!p.gallery)p.gallery=[];p.gallery.push(c.id);});
   const reveal=document.getElementById('card-reveal');
   reveal.innerHTML='';reveal.classList.add('show');
   cards.forEach((c,i)=>{
@@ -1561,20 +1560,18 @@ function doPull(times){
 function renderGalleryCards(galleryEntries,mode){
   if(!galleryEntries||!galleryEntries.length)return`<div class="gallery-empty">Sin cartas aún. ¡Ve al Gacha a invocar!</div>`;
   // agrupar por rareza
-  const sorted=[...galleryEntries].sort((a,b)=>{
-    const ca=gachaCards.find(c=>c.id===a.cardId),cb=gachaCards.find(c=>c.id===b.cardId);
+  const sorted=[...galleryEntries].map(e=>typeof e==='string'?e:e.cardId||e).sort((a,b)=>{
+    const ca=gachaCards.find(x=>x.id===a),cb=gachaCards.find(x=>x.id===b);
     return RARITY_ORDER.indexOf(ca?.rarity||'comun')-RARITY_ORDER.indexOf(cb?.rarity||'comun');
   });
   return `<div class="gallery-grid">${sorted.map(e=>{
-    const c=gachaCards.find(c=>c.id===e.cardId);if(!c)return'';
-    const imgUrl=e.imageUrl||(c?(c.imageUrl||CFG.GITHUB_RAW+c.image):'');
-    const cardName=e.name||(c?c.name:'Carta desconocida');
-    const cardRarity=e.rarity||(c?c.rarity:'comun');
+    const c=gachaCards.find(x=>x.id===e);if(!c)return'';
+    const imgUrl=c?(c.imageUrl||CFG.GITHUB_RAW+c.image):'';
     return `<div class="gallery-card">
-      <img src="${imgUrl}" alt="${cardName}" onerror="this.style.background='var(--bg3)';this.style.minHeight='120px';">
+      <img src="${imgUrl}" alt="${c?c.name:''}" onerror="this.style.background='var(--bg3)';this.style.minHeight='120px';">
       <div class="gallery-card-label">
-        <div class="gname">${cardName}</div>
-        <div class="grarity rarity-${cardRarity}">${RARITY_LABEL[cardRarity]||cardRarity}</div>
+        <div class="gname">${c?c.name:'Carta desconocida'}</div>
+        <div class="grarity rarity-${c?c.rarity:'comun'}">${c?RARITY_LABEL[c.rarity]:''}</div>
       </div>
     </div>`;
   }).join('')}</div>`;
