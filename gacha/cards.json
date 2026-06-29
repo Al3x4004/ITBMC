@@ -1,0 +1,16 @@
+[
+  {"id":"c001","name":"Escudo del Alba","rarity":"comun","imageUrl":"https://picsum.photos/seed/c001/200/280","description":"Un viejo escudo que aún brilla."},
+  {"id":"c002","name":"Daga Susurrante","rarity":"comun","imageUrl":"https://picsum.photos/seed/c002/200/280","description":"Silenciosa como la noche."},
+  {"id":"c003","name":"Manto del Viajero","rarity":"comun","imageUrl":"https://picsum.photos/seed/c003/200/280","description":"Ha recorrido mil reinos."},
+  {"id":"c004","name":"Amuleto de Piedra","rarity":"comun","imageUrl":"https://picsum.photos/seed/c004/200/280","description":"Trae suerte al portador."},
+  {"id":"c005","name":"Espada Rúnica","rarity":"rara","imageUrl":"https://picsum.photos/seed/c005/200/280","description":"Inscrita con hechizos olvidados."},
+  {"id":"c006","name":"Orbe de Tormenta","rarity":"rara","imageUrl":"https://picsum.photos/seed/c006/200/280","description":"Contiene una tormenta en su interior."},
+  {"id":"c007","name":"Capa del Arcano","rarity":"rara","imageUrl":"https://picsum.photos/seed/c007/200/280","description":"Tejida con hilos de maná puro."},
+  {"id":"c008","name":"Yelmo del Guardián","rarity":"rara","imageUrl":"https://picsum.photos/seed/c008/200/280","description":"Protege la mente del portador."},
+  {"id":"c009","name":"Armadura del Dragón","rarity":"epica","imageUrl":"https://picsum.photos/seed/c009/200/280","description":"Forjada con escamas de dragón anciano."},
+  {"id":"c010","name":"Báculo del Caos","rarity":"epica","imageUrl":"https://picsum.photos/seed/c010/200/280","description":"Canaliza energías inestables."},
+  {"id":"c011","name":"Sello del Titán","rarity":"epica","imageUrl":"https://picsum.photos/seed/c011/200/280","description":"Solo los titanes pueden portarlo."},
+  {"id":"c012","name":"Corona del DM","rarity":"legendaria","imageUrl":"https://picsum.photos/seed/c012/200/280","description":"El poder absoluto en una corona."},
+  {"id":"c013","name":"Espada Dragontooth","rarity":"legendaria","imageUrl":"https://picsum.photos/seed/c013/200/280","description":"Tallada en el colmillo de un dragón."},
+  {"id":"c014","name":"Arco Estelar","rarity":"legendaria","imageUrl":"https://picsum.photos/seed/c014/200/280","description":"Dispara flechas de luz pura."}
+]
