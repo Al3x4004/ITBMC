@@ -460,7 +460,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     </div>
     <nav class="nav" role="navigation">
       <button class="nb active" onclick="showPage('misiones',this)"><span class="nb-icon">⚔️</span>Misiones</button>
-      <button class="nb" onclick="showPage('heroe',this)"><span class="nb-icon">🧙</span>Héroe</button>
+      <button class="nb" onclick="showPage('heroe',this)"><span class="nb-icon">🧙</span>Héroes</button>
       <button class="nb" onclick="showPage('arcos',this)"><span class="nb-icon">🗺️</span>Arcos</button>
       <button class="nb" onclick="showPage('ranking',this)"><span class="nb-icon">🏆</span>Ranking</button>
       <button class="nb" onclick="showPage('gacha',this)"><span class="nb-icon">✨</span>Gacha</button>
@@ -538,6 +538,18 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 
     <!-- ARCOS -->
     <div id="page-arcos" class="page">
+      <div class="card" style="margin-bottom:1.25rem;background:var(--accent-bg);border-color:var(--accent-border);">
+        <div style="font-size:15px;font-weight:500;margin-bottom:.5rem;">📖 ¿Cómo funcionan los Arcos?</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.8;">
+          Los <strong>Arcos</strong> son agrupaciones de misiones con un objetivo común — como un sprint o un proyecto.<br>
+          • Crea un arco desde <strong>Misiones → Nuevo arco</strong><br>
+          • Asigna misiones a ese arco al crearlas<br>
+          • Al completar <strong>todas las misiones</strong> del arco recibes un bonus de XP y oro igual a la suma de todas<br>
+          • El progreso del arco se actualiza automáticamente<br>
+          • Cuando creas tu personaje se genera el arco <strong>"Tutorial: Primeros Pasos"</strong> con 5 misiones para empezar
+        </div>
+      </div>
+      <div id="arcs-list"></div>
       <div class="g2" id="arcs-grid"></div>
     </div>
 
@@ -1480,15 +1492,27 @@ function switchPTab(btn,panelId){
 
 /* ── arcos ── */
 function renderArcs(){
-  document.getElementById('arcs-grid').innerHTML=arcs.map(a=>`
-    <div class="arcc">
+  const myArcs=session.isAdmin?arcs:arcs.filter(a=>missions.some(m=>m.arc===a.name&&m.playerId===session.playerId));
+  if(!myArcs.length){
+    document.getElementById('arcs-grid').innerHTML='<div style="font-size:13px;color:var(--muted);">Sin arcos aún. Crea uno desde Misiones → Nuevo arco.</div>';
+    return;
+  }
+  document.getElementById('arcs-grid').innerHTML=myArcs.map(a=>{
+    const pct=a.total>0?Math.round(a.done/a.total*100):0;
+    const canDel=session.isAdmin||(a.createdBy===session.playerId);
+    return `<div class="arcc">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-        <div class="arcn">${a.name}</div><span class="badge ${a.status==='active'?'b-teal':'b-gray'}">${a.status==='active'?'Activo':'Bloqueado'}</span>
+        <div class="arcn">${a.name}</div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="badge ${a.status==='active'?'b-teal':'b-gray'}">${a.status==='active'?'Activo':'Bloqueado'}</span>
+          ${canDel?`<button class="btn btn-sm" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);padding:2px 8px;font-size:11px;" onclick="deleteArc('${a.id}')">✕</button>`:''}
+        </div>
       </div>
       <div class="arcl">${a.lore}</div>
       <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px;"><span>Progreso</span><span>${a.done} / ${a.total}</span></div>
-      <div class="ptrk"><div class="pfill" style="width:${Math.round(a.done/a.total*100)}%;background:${a.status==='active'?'var(--teal)':'var(--muted)'};"></div></div>
-    </div>`).join('');
+      <div class="ptrk"><div class="pfill" style="width:${pct}%;background:${a.status==='active'?'var(--teal)':'var(--muted)'};\"></div></div>
+    </div>`;
+  }).join('');
 }
 
 /* ── ranking ── */
