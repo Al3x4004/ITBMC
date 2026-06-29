@@ -991,7 +991,7 @@ const DEMO={
 /* ══ ESTADO ══ */
 let session={loggedIn:false,isAdmin:false,playerId:null};
 let players=[],missions=[],arcs=[],gachaCards=[],shopItems=[],calEvents=[];
-let luState={pid:null,pts:0};
+let luState={pid:null,pts:0,spent:{}};
 let curHero=0,editPid=null;
 let cpState={cls:null,color:COLORS[0],emblem:'⚔️',weapon:null,armor:null,accessory:null};
 let galleryHeroIdx=0;
@@ -1115,7 +1115,7 @@ function exportJSON(){
   if(CFG.MODE==='supabase'){
     saveToSupabase();
     (function(){var _x=document.getElementById('umenu-inline');if(_x)_x.style.display='none';})();
-    toast('✅ Guardado en la nube automáticamente');
+    
     return;
   }
   const blob=new Blob([JSON.stringify({players,missions,arcs,gacha_cards:gachaCards,cal_events:calEvents},null,2)],{type:'application/json'});
@@ -1397,33 +1397,45 @@ function checkLevelUp(p){
   }
 }
 function showLevelUpPopup(p){
-  luState={pid:p.id,pts:p.pendingAttrPts};
+  luState={pid:p.id,pts:p.pendingAttrPts,spent:{}};
   document.getElementById('lu-level').textContent='Nivel '+p.level;
   document.getElementById('lu-pts').textContent=luState.pts;
   const emojis={fue:'💪',int:'🧠',agi:'⚡',car:'✨',sab:'📖'};
   document.getElementById('lu-attrs').innerHTML=Object.entries(AN).map(([k,name])=>
-    '<div class="attr-pt-btn" onclick="addAttrPt(\''+k+'\')">'
-    +'<div class="aicon">'+emojis[k]+'</div>'
-    +'<div class="aname">'+name+'</div>'
-    +'<div class="aval" id="lu-'+k+'">'+p.attrs[k]+'</div>'
-    +'</div>').join('');
+    '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--bg3);border-radius:var(--radius);padding:10px 6px;">'
+    +'<div style="font-size:18px;">'+emojis[k]+'</div>'
+    +'<div style="font-size:10px;color:var(--muted);">'+name+'</div>'
+    +'<div style="font-size:15px;font-weight:600;color:var(--text);" id="lu-'+k+'">'+p.attrs[k]+'</div>'
+    +'<div style="display:flex;gap:4px;">'
+    +'<button class="btn btn-sm" style="padding:2px 8px;font-size:14px;" onclick="addAttrPt(\''+k+'\',-1)">−</button>'
+    +'<button class="btn btn-sm btn-p" style="padding:2px 8px;font-size:14px;" onclick="addAttrPt(\''+k+'\'  ,1)">+</button>'
+    +'</div></div>'
+  ).join('');
   document.getElementById('levelup-pop').classList.add('show');
 }
-function addAttrPt(attr){
-  if(luState.pts<=0)return;
-  luState.pts--;
+function addAttrPt(attr,delta){
   const p=players.find(p=>p.id===luState.pid);
-  if(p){p.attrs[attr]++;document.getElementById('lu-'+attr).textContent=p.attrs[attr];}
+  if(!p)return;
+  if(delta<0){
+    if((luState.spent[attr]||0)<=0)return;
+    luState.spent[attr]=(luState.spent[attr]||0)-1;
+    luState.pts++;
+    p.attrs[attr]--;
+  }else{
+    if(luState.pts<=0)return;
+    luState.spent[attr]=(luState.spent[attr]||0)+1;
+    luState.pts--;
+    p.attrs[attr]++;
+  }
+  document.getElementById('lu-'+attr).textContent=p.attrs[attr];
   document.getElementById('lu-pts').textContent=luState.pts;
-  if(luState.pts===0)document.getElementById('lu-confirm').style.background='var(--teal)';
 }
 function confirmLevelUp(){
-  if(luState.pts>0){toast('Aún tienes '+luState.pts+' puntos sin repartir.');return;}
   const p=players.find(p=>p.id===luState.pid);
-  if(p)p.pendingAttrPts=0;
+  if(p)p.pendingAttrPts=luState.pts;
   document.getElementById('levelup-pop').classList.remove('show');
   if(CFG.MODE==='supabase')saveToSupabase();
-  renderAll();toast('¡Atributos actualizados!');
+  renderAll();
 }
 
 /* ── reward popup ── */
