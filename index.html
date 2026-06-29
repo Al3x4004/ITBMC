@@ -1042,10 +1042,17 @@ async function saveToSupabase(){
 async function loadData(){
   // Cartas del gacha siempre desde GitHub
   try{
-    const r=await fetch(CFG.GITHUB_RAW+CFG.GACHA_CARDS_PATH);
-    if(r.ok)gachaCards=await r.json();
-    else gachaCards=JSON.parse(JSON.stringify(DEMO.gacha_cards));
-  }catch{gachaCards=JSON.parse(JSON.stringify(DEMO.gacha_cards));}
+    const r=await fetch(CFG.GITHUB_RAW+CFG.GACHA_CARDS_PATH+'?v='+Date.now());
+    if(r.ok){
+      const _cards=await r.json();
+      gachaCards=(Array.isArray(_cards)&&_cards.length>0)?_cards:JSON.parse(JSON.stringify(DEMO.gacha_cards));
+    }else{
+      gachaCards=JSON.parse(JSON.stringify(DEMO.gacha_cards));
+    }
+  }catch(e){
+    console.error('gacha load error',e);
+    gachaCards=JSON.parse(JSON.stringify(DEMO.gacha_cards));
+  }
 
   if(CFG.MODE==='supabase'){
     const d=await loadFromSupabase();
@@ -1645,8 +1652,10 @@ function doPull(times){
     if(!p||p.gold<cost){toast(`Necesitas ${cost} oro para invocar.`);return;}
     p.gold-=cost;
   }
+  // Fallback to DEMO cards if none loaded
+  if(!gachaCards.length)gachaCards=JSON.parse(JSON.stringify(DEMO.gacha_cards));
   const results=Array.from({length:times},()=>pullResult()).filter(r=>r!==null);
-if(!results.length){toast('No hay cartas disponibles. Revisa el cards.json en GitHub.');return;}
+  if(!results.length){toast('Sin cartas disponibles.');return;}
   if(!p.gallery)p.gallery=[];
   if(!p.inventory)p.inventory=[];
   results.forEach(r=>{
