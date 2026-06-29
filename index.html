@@ -228,7 +228,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .levelup-pop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;align-items:center;justify-content:center;}
 .levelup-pop.show{display:flex;}
 .levelup-box{background:var(--bg2);border:1px solid var(--gold-border);border-radius:var(--radius-lg);padding:2rem;text-align:center;max-width:360px;width:100%;animation:popIn .3s ease;}
-.attr-pts-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:1rem 0;}
+.attr-pts-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:1rem 0;}
 .attr-pt-btn{background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius);padding:8px 4px;cursor:pointer;transition:all .15s;}
 .attr-pt-btn:hover{border-color:var(--accent);background:var(--accent-bg);}
 .attr-pt-btn .aicon{font-size:16px;margin-bottom:4px;}
@@ -368,8 +368,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     <div style="font-size:42px;margin-bottom:.5rem;">⬆️</div>
     <div style="font-size:22px;font-weight:700;color:var(--gold);margin-bottom:.25rem;">¡Subiste de nivel!</div>
     <div id="lu-level" style="font-size:14px;color:var(--muted);margin-bottom:1rem;"></div>
-    <div style="font-size:13px;color:var(--text);margin-bottom:.5rem;">Tienes <span class="pts-left" id="lu-pts">3</span> puntos para repartir</div>
-    <div class="attr-pts-grid" id="lu-attrs"></div>
+    <div style="font-size:13px;color:var(--text);margin-bottom:.5rem;">Puntos disponibles: <span class="pts-left" id="lu-pts">3</span></div>
+    <div id="lu-attrs" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:1rem 0;"></div>
     <button class="btn btn-p" id="lu-confirm" onclick="confirmLevelUp()" style="margin-top:.5rem;width:100%;">Confirmar</button>
   </div>
 </div>
@@ -528,6 +528,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
             </select>
           </div>
           <div class="field full" id="nm-diff-wrap" style="display:none;"></div>
+          <div class="field full"><label>Descripción (opcional)</label><textarea id="nm-desc" placeholder="Describe en qué consiste esta misión..." style="min-height:56px;"></textarea></div>
           <div class="field"><label>Fecha límite (opcional)</label><input type="date" id="nm-deadline"/></div>
           <div class="field full" style="display:flex;justify-content:flex-end;">
             <button class="btn btn-p" onclick="createMission()">Crear misión</button>
@@ -991,7 +992,7 @@ const DEMO={
 /* ══ ESTADO ══ */
 let session={loggedIn:false,isAdmin:false,playerId:null};
 let players=[],missions=[],arcs=[],gachaCards=[],shopItems=[],calEvents=[];
-let luState={pid:null,pts:0,spent:{}};
+let luState={pid:null,pts:0};
 let curHero=0,editPid=null;
 let cpState={cls:null,color:COLORS[0],emblem:'⚔️',weapon:null,armor:null,accessory:null};
 let galleryHeroIdx=0;
@@ -1014,11 +1015,20 @@ async function loadFromSupabase(){
 
 async function saveToSupabase(){
   try{
+    // Save main game data
     await fetch(`${CFG.SUPABASE_URL}/rest/v1/game_data`,{
       method:'POST',
       headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
       body:JSON.stringify({id:'main',data:{players,missions,arcs,gacha_cards:gachaCards,cal_events:calEvents}})
     });
+    // Save each player to players table
+    for(const p of players){
+      await fetch(`${CFG.SUPABASE_URL}/rest/v1/players`,{
+        method:'POST',
+        headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+        body:JSON.stringify({id:p.id,data:p,updated_at:new Date().toISOString()})
+      });
+    }
   }catch(e){console.error('Supabase save error',e);}
 }
 
@@ -1115,7 +1125,7 @@ function exportJSON(){
   if(CFG.MODE==='supabase'){
     saveToSupabase();
     (function(){var _x=document.getElementById('umenu-inline');if(_x)_x.style.display='none';})();
-    
+    toast('✅ Guardado en la nube automáticamente');
     return;
   }
   const blob=new Blob([JSON.stringify({players,missions,arcs,gacha_cards:gachaCards,cal_events:calEvents},null,2)],{type:'application/json'});
@@ -1299,7 +1309,7 @@ function mCard(m){
     <option value="">Sin asignar</option>
     ${players.map(p=>`<option value="${p.id}" ${m.playerId===p.id?'selected':''}>${p.emblem} ${p.name.split(' ')[0]}</option>`).join('')}
     </select>`:'';
-  return `<div class="mcrd ${m.daily?'daily-mission':''}">
+  return `<div class="mcrd ${m.daily?'daily-mission':''}" onclick="openMissionModal('${m.id}')" style="cursor:pointer;">
     <div class="minfo">
       <div class="mname">${m.name}${dailyBadge}</div>
       <div class="mmeta">${m.arc}${player?' · '+player.emblem+' '+player.name:' · Sin asignar'}</div>
@@ -1371,6 +1381,7 @@ function completeMission(id){
       const bonusKey='bonusPaid_'+p.id;
       if(arc&&!arc[bonusKey]){
         arc[bonusKey]=true;
+        arc.status='done';
         const bx=arcMs.reduce((s,mx)=>s+mx.xp,0),bg=arcMs.reduce((s,mx)=>s+mx.gold,0);
         p.xp+=bx;p.gold+=bg;
         setTimeout(()=>showRewardPopup({name:'¡Arco completado: '+m.arc+'!',xp:bx,gold:bg,attr:null},p),1200);
@@ -1397,45 +1408,33 @@ function checkLevelUp(p){
   }
 }
 function showLevelUpPopup(p){
-  luState={pid:p.id,pts:p.pendingAttrPts,spent:{}};
+  luState={pid:p.id,pts:p.pendingAttrPts};
   document.getElementById('lu-level').textContent='Nivel '+p.level;
   document.getElementById('lu-pts').textContent=luState.pts;
   const emojis={fue:'💪',int:'🧠',agi:'⚡',car:'✨',sab:'📖'};
   document.getElementById('lu-attrs').innerHTML=Object.entries(AN).map(([k,name])=>
-    '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--bg3);border-radius:var(--radius);padding:10px 6px;">'
-    +'<div style="font-size:18px;">'+emojis[k]+'</div>'
-    +'<div style="font-size:10px;color:var(--muted);">'+name+'</div>'
-    +'<div style="font-size:15px;font-weight:600;color:var(--text);" id="lu-'+k+'">'+p.attrs[k]+'</div>'
-    +'<div style="display:flex;gap:4px;">'
-    +'<button class="btn btn-sm" style="padding:2px 8px;font-size:14px;" onclick="addAttrPt(\''+k+'\',-1)">−</button>'
-    +'<button class="btn btn-sm btn-p" style="padding:2px 8px;font-size:14px;" onclick="addAttrPt(\''+k+'\'  ,1)">+</button>'
-    +'</div></div>'
-  ).join('');
+    '<div class="attr-pt-btn" onclick="addAttrPt(\''+k+'\')">'
+    +'<div class="aicon">'+emojis[k]+'</div>'
+    +'<div class="aname">'+name+'</div>'
+    +'<div class="aval" id="lu-'+k+'">'+p.attrs[k]+'</div>'
+    +'</div>').join('');
   document.getElementById('levelup-pop').classList.add('show');
 }
-function addAttrPt(attr,delta){
+function addAttrPt(attr){
+  if(luState.pts<=0)return;
+  luState.pts--;
   const p=players.find(p=>p.id===luState.pid);
-  if(!p)return;
-  if(delta<0){
-    if((luState.spent[attr]||0)<=0)return;
-    luState.spent[attr]=(luState.spent[attr]||0)-1;
-    luState.pts++;
-    p.attrs[attr]--;
-  }else{
-    if(luState.pts<=0)return;
-    luState.spent[attr]=(luState.spent[attr]||0)+1;
-    luState.pts--;
-    p.attrs[attr]++;
-  }
-  document.getElementById('lu-'+attr).textContent=p.attrs[attr];
+  if(p){p.attrs[attr]++;document.getElementById('lu-'+attr).textContent=p.attrs[attr];}
   document.getElementById('lu-pts').textContent=luState.pts;
+  if(luState.pts===0)document.getElementById('lu-confirm').style.background='var(--teal)';
 }
 function confirmLevelUp(){
+  if(luState.pts>0){toast('Aún tienes '+luState.pts+' puntos sin repartir.');return;}
   const p=players.find(p=>p.id===luState.pid);
-  if(p)p.pendingAttrPts=luState.pts;
+  if(p)p.pendingAttrPts=0;
   document.getElementById('levelup-pop').classList.remove('show');
   if(CFG.MODE==='supabase')saveToSupabase();
-  renderAll();
+  renderAll();toast('¡Atributos actualizados!');
 }
 
 /* ── reward popup ── */
@@ -1563,7 +1562,7 @@ function renderArcs(){
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
         <div class="arcn">${a.name}</div>
         <div style="display:flex;gap:6px;align-items:center;">
-          <span class="badge ${a.status==='active'?'b-teal':'b-gray'}">${a.status==='active'?'Activo':'Bloqueado'}</span>
+          <span class="badge ${a.status==='done'?'b-purple':a.status==='active'?'b-teal':'b-gray'}">${a.status==='done'?'Completado':a.status==='active'?'Activo':'Bloqueado'}</span>
           ${canDel?`<button class="btn btn-sm" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);padding:2px 8px;font-size:11px;" onclick="deleteArc('${a.id}')">✕</button>`:''}
         </div>
       </div>
@@ -1610,6 +1609,14 @@ function pullCard(){
   return pool[Math.floor(Math.random()*pool.length)];
 }
 
+function pullResult(){
+  // 30% chance of item, 70% chance of card
+  const gachaItems=shopItems.filter(i=>i.via==='gacha'||i.via==='ambas');
+  if(gachaItems.length&&Math.random()<0.3){
+    return {type:'item',data:gachaItems[Math.floor(Math.random()*gachaItems.length)]};
+  }
+  return {type:'card',data:pullCard()};
+}
 function doPull(times){
   const p=players.find(pl=>pl.id===session.playerId);
   if(!p){toast('Inicia sesión para invocar.');return;}
@@ -1618,21 +1625,34 @@ function doPull(times){
     if(!p||p.gold<cost){toast(`Necesitas ${cost} oro para invocar.`);return;}
     p.gold-=cost;
   }
-  const cards=Array.from({length:times},()=>pullCard());
-  cards.forEach(c=>{if(!p.gallery)p.gallery=[];p.gallery.push(c.id);});
+  const results=Array.from({length:times},()=>pullResult());
+  if(!p.gallery)p.gallery=[];
+  if(!p.inventory)p.inventory=[];
+  results.forEach(r=>{
+    if(r.type==='card')p.gallery.push(r.data.id);
+    else if(r.type==='item'&&!p.inventory.includes(r.data.id))p.inventory.push(r.data.id);
+  });
   const reveal=document.getElementById('card-reveal');
   reveal.innerHTML='';reveal.classList.add('show');
-  cards.forEach((c,i)=>{
+  results.forEach((r,i)=>{
     const div=document.createElement('div');div.className='gacha-card pull-anim';
     div.style.animationDelay=`${i*0.08}s`;
-    const imgUrl=CFG.GITHUB_RAW+c.image;
-    div.innerHTML=`<img src="${imgUrl}" alt="${c.name}" onerror="this.style.background='var(--bg3)';this.style.minHeight='160px';">
-      <div class="gacha-card-info"><div class="gacha-card-name">${c.name}</div><div class="gacha-card-rarity rarity-${c.rarity}">${RARITY_LABEL[c.rarity]}</div></div>`;
+    if(r.type==='card'){
+      const imgUrl=r.data.imageUrl||(r.data.image?CFG.GITHUB_RAW+r.data.image:'');
+      div.innerHTML=`<img src="${imgUrl}" alt="${r.data.name}" onerror="this.style.background='var(--bg3)';this.style.minHeight='160px';">
+        <div class="gacha-card-info"><div class="gacha-card-name">${r.data.name}</div><div class="gacha-card-rarity rarity-${r.data.rarity}">${RARITY_LABEL[r.data.rarity]}</div></div>`;
+    }else{
+      div.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;min-height:160px;font-size:48px;background:var(--gold-bg);">${r.data.icon}</div>
+        <div class="gacha-card-info"><div class="gacha-card-name">${r.data.name}</div><div class="gacha-card-rarity" style="color:var(--gold);">✨ Item obtenido</div></div>`;
+    }
     reveal.appendChild(div);
   });
   if(CFG.MODE==='supabase')saveToSupabase();
   renderGachaGold();renderMyGallery();renderGalleryTabs();renderAll();
-  toast(`¡${times} carta${times>1?'s':''} obtenida${times>1?'s':''}!`);
+  const nCards=results.filter(r=>r.type==='card').length;
+  const nItems=results.filter(r=>r.type==='item').length;
+  let msg=nCards>0?`${nCards} carta${nCards>1?'s':''}`:''+(nItems>0?(nCards>0?' + ':'')+`${nItems} item${nItems>1?'s':''}`:'');
+  toast(`¡Obtenido: ${msg}!`);
 }
 
 function renderGalleryCards(galleryEntries,mode){
@@ -1700,9 +1720,17 @@ function deletePlayer(){
   const p=players.find(p=>p.id===editPid);
   if(!p)return;
   if(!confirm('¿Seguro que quieres eliminar a '+p.name+'? Esta acción no se puede deshacer.'))return;
-  players=players.filter(p=>p.id!==editPid);
-  missions=missions.map(m=>m.playerId===editPid?{...m,playerId:''}:m);
-  if(CFG.MODE==='supabase')saveToSupabase();
+  const _delId=editPid;
+  players=players.filter(p=>p.id!==_delId);
+  missions=missions.map(m=>m.playerId===_delId?{...m,playerId:''}:m);
+  arcs=arcs.filter(a=>!a.id.includes(_delId));
+  if(CFG.MODE==='supabase'){
+    saveToSupabase();
+    fetch(`${CFG.SUPABASE_URL}/rest/v1/players?id=eq.`+_delId,{
+      method:'DELETE',
+      headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
+    });
+  }
   closeEdit();renderAll();
   if(curHero>=players.length)curHero=0;
   toast('Personaje eliminado');
@@ -2247,13 +2275,11 @@ function createWelcomeArc(p){
 }
 function createTutorialForPlayer(p){
   var arcName='Tutorial: Primeros Pasos';
-  arcs.push({id:'arc_tutorial_'+p.id,name:arcName,lore:'Tu primera aventura en el Cuartel General. Completa estas misiones para aprender cómo funciona el sistema.',status:'active',total:5,done:0,createdBy:'system'});
+  arcs.push({id:'arc_tutorial_'+p.id,name:arcName,lore:'Aprende lo básico del Cuartel General completando estas 3 misiones.',status:'active',total:3,done:0,createdBy:'system'});
   var tuts=[
-    {id:'tut1_'+p.id,name:'Explora tu ficha de héroe',arc:arcName,playerId:p.id,status:'pending',diff:'D',xp:25,gold:10,attr:'Sabiduría',attrPts:1,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
-    {id:'tut2_'+p.id,name:'Visita la Tienda y observa los items',arc:arcName,playerId:p.id,status:'pending',diff:'D',xp:25,gold:10,attr:'Inteligencia',attrPts:1,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
-    {id:'tut3_'+p.id,name:'Haz tu primera invocación en el Gacha',arc:arcName,playerId:p.id,status:'pending',diff:'C',xp:75,gold:25,attr:'Agilidad',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
-    {id:'tut4_'+p.id,name:'Crea tu primera misión propia',arc:arcName,playerId:p.id,status:'pending',diff:'C',xp:75,gold:25,attr:'Carisma',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
-    {id:'tut5_'+p.id,name:'Añade un evento al Calendario',arc:arcName,playerId:p.id,status:'pending',diff:'B',xp:150,gold:50,attr:'Sabiduría',attrPts:3,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
+    {id:'tut1_'+p.id,name:'Explora tu Héroe',desc:'Ve a la sección Héroes y revisa tu ficha: atributos, nivel, oro y el gráfico de pentágono. Cuando subas de nivel podrás repartir 3 puntos entre tus stats con los botones + y −.',arc:arcName,playerId:p.id,status:'pending',diff:'D',xp:25,gold:50,attr:'Sabiduría',attrPts:1,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
+    {id:'tut2_'+p.id,name:'Invoca en el Gacha',desc:'Ve a la sección Gacha y haz tu primera invocación con 100 de oro. Puedes obtener cartas ilustradas o items de equipamiento. Las cartas se guardan en tu galería y los items en tu Inventario.',arc:arcName,playerId:p.id,status:'pending',diff:'C',xp:75,gold:100,attr:'Agilidad',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
+    {id:'tut3_'+p.id,name:'Crea tu primera Misión',desc:'Ve a Misiones y despliega "Nueva misión". Escribe el nombre, una descripción, elige el arco y guárdala. Las misiones normales dan 75 XP y 25 oro. Las diarias se repiten cada día automáticamente.',arc:arcName,playerId:p.id,status:'pending',diff:'C',xp:75,gold:100,attr:'Carisma',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
   ];
   tuts.forEach(function(m){missions.push(m);});
   updateArcCounts();
@@ -2369,6 +2395,37 @@ function openShowcaseSelector(idx){
   renderHeroProfile(curHero);toast('Carta actualizada');
 }
 
+
+/* ══ MISSION MODAL ══ */
+function openMissionModal(id){
+  const m=missions.find(mx=>mx.id===id);if(!m)return;
+  const p=players.find(px=>px.id===m.playerId);
+  document.getElementById('mm-name').textContent=m.name;
+  const statusLabel=m.status==='done'?'Completada':m.status==='active'?'En curso':'Pendiente';
+  const statusCls=m.status==='done'?'b-teal':m.status==='active'?'b-gold':'b-gray';
+  document.getElementById('mm-badges').innerHTML=
+    `<span class="badge ${statusCls}">${statusLabel}</span>`
+    +(m.daily?'<span class="badge b-gold">Diaria</span>':'')
+    +`<span class="badge b-gray">${m.arc}</span>`
+    +(p?`<span class="badge b-purple">${p.emblem} ${p.name}</span>`:'');
+  document.getElementById('mm-desc').textContent=m.desc||m.name+' — Completa esta misión para obtener recompensas.';
+  document.getElementById('mm-stats').innerHTML=
+    `<div class="smini"><div class="v">${m.xp}</div><div class="l">XP</div></div>`
+    +`<div class="smini"><div class="v">${m.gold}</div><div class="l">Oro</div></div>`
+    +`<div class="smini"><div class="v">${m.diff||'C'}</div><div class="l">Dificultad</div></div>`;
+  const canComplete=(session.isAdmin||(session.playerId===m.playerId))&&m.status!=='done';
+  const canDel=session.isAdmin||(m.createdBy===session.playerId);
+  document.getElementById('mm-actions').innerHTML=
+    (canComplete?`<button class="btn btn-p" onclick="completeMission('${m.id}');closeMissionModal();">✓ Completar</button>`:'')
+    +(canDel?`<button class="btn" style="background:var(--coral-bg);color:var(--coral);" onclick="deleteMission('${m.id}');closeMissionModal();">🗑️ Eliminar</button>`:'')
+    +`<button class="btn" onclick="closeMissionModal()">Cerrar</button>`;
+  const modal=document.getElementById('mission-modal');
+  modal.style.display='flex';
+}
+function closeMissionModal(){
+  document.getElementById('mission-modal').style.display='none';
+}
+
 /* ══ TOAST ══ */
 let toastT;
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',2500);}
@@ -2427,6 +2484,7 @@ function createMission(){
   var newM={
     id:'m'+Date.now(),
     name:name,
+    desc:document.getElementById('nm-desc')?document.getElementById('nm-desc').value.trim():'',
     arc:arc||'General',
     playerId:session.playerId,
     status:'pending',
