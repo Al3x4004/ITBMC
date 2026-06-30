@@ -850,6 +850,26 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 </div>
 
 <!-- MODAL EVENTO CALENDARIO -->
+    <div class="cal-modal" id="cal-event-detail-modal">
+      <div class="cal-modal-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <h3 style="font-size:16px;font-weight:600;" id="evd-title">Evento</h3>
+          <button class="btn btn-sm" onclick="closeEventDetailModal()">✕</button>
+        </div>
+        <div id="evd-badges" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem;"></div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:1rem;" id="evd-datetime"></div>
+        <div id="evd-desc" style="font-size:13px;color:var(--text);line-height:1.7;background:var(--bg3);border-radius:var(--radius);padding:.875rem;margin-bottom:1rem;"></div>
+        <div id="evd-mission" style="display:none;font-size:12px;color:var(--accent);margin-bottom:1rem;"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <div id="evd-delete-wrap" style="display:none;margin-right:auto;">
+            <button class="btn btn-sm" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);" onclick="deleteEventFromDetail()">🗑️ Eliminar</button>
+          </div>
+          <button class="btn" onclick="closeEventDetailModal()">Cerrar</button>
+          <button class="btn btn-p" id="evd-edit-btn" onclick="editEventFromDetail()">✏️ Editar</button>
+        </div>
+      </div>
+    </div>
+
     <div class="cal-modal" id="cal-event-modal">
       <div class="cal-modal-box">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
@@ -2047,7 +2067,7 @@ function renderAdminItemsList(){
 
 
 /* ══ CALENDARIO ══ */
-var calState={year:new Date().getFullYear(),month:new Date().getMonth(),selectedDate:null,filter:'all',editingEventId:null};
+var calState={year:new Date().getFullYear(),month:new Date().getMonth(),selectedDate:null,filter:'all',editingEventId:null,viewingEventId:null};
 
 function initCalFilterBtns(){
   ['all','personal','team','mission'].forEach(function(k){
@@ -2081,7 +2101,7 @@ function renderCalendar(){
     var isSel=ds===selD;
     var dayEvs=getFilteredEvents(fil).filter(function(e){return e.date===ds;});
     var evHtml=dayEvs.slice(0,3).map(function(ev){
-      return '<div class="cal-event '+ev.type+'" onclick="event.stopPropagation();openEventModal(\"'+ev.id+'\")" title="'+ev.title+'">'+ev.title+'</div>';
+      return '<div class="cal-event '+ev.type+'" onclick="event.stopPropagation();openEventDetail(\"'+ev.id+'\")" title="'+ev.title+'">'+ev.title+'</div>';
     }).join('')+(dayEvs.length>3?'<div class="cal-more">+'+(dayEvs.length-3)+' más</div>':'');
     var cls='cal-day'+(isToday?' today':'')+(isSel?' selected':'');
     var numHtml=isToday?'<span style="background:var(--accent);color:#fff;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;">'+day+'</span>':day;
@@ -2115,6 +2135,13 @@ function selectCalDay(dateStr){
   renderCalendar();
 }
 
+function eventItemHTML(e){
+  const typeColor=e.type==='team'?'var(--teal)':'var(--accent)';
+  return '<div class="event-item" onclick="openEventDetail(\''+e.id+'\')" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--radius);cursor:pointer;border-left:3px solid '+typeColor+';background:var(--bg3);margin-bottom:6px;">'
+    +'<div style="font-size:11px;color:var(--muted);min-width:42px;">'+(e.time||'')+'</div>'
+    +'<div style="font-size:12px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+e.title+'</div>'
+    +'</div>';
+}
 function renderDayEvents(dateStr){
   const wrap=document.getElementById('cal-day-events');
   const lbl=document.getElementById('cal-selected-label');
@@ -2149,6 +2176,44 @@ function setCalFilter(f,btn){
   renderCalendar();
 }
 
+function openEventDetail(eventId){
+  const e=calEvents.find(ev=>ev.id===eventId);
+  if(!e)return;
+  calState.viewingEventId=eventId;
+  document.getElementById('evd-title').textContent=e.title;
+  const typeLabel=e.type==='team'?'👥 Equipo':'👤 Personal';
+  const typeColor=e.type==='team'?'var(--teal)':'var(--accent)';
+  document.getElementById('evd-badges').innerHTML='<span class="badge" style="background:'+typeColor+'22;color:'+typeColor+';">'+typeLabel+'</span>';
+  const dt=new Date(e.date+'T'+(e.time||'09:00'));
+  const dateStr=dt.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('evd-datetime').textContent='📅 '+dateStr+' · 🕐 '+(e.time||'09:00');
+  document.getElementById('evd-desc').textContent=e.desc&&e.desc.trim()?e.desc:'Sin descripción.';
+  const missionWrap=document.getElementById('evd-mission');
+  if(e.missionId){
+    const m=missions.find(mx=>mx.id===e.missionId);
+    if(m){missionWrap.style.display='block';missionWrap.textContent='🔗 Vinculado a la misión: '+m.name;}
+    else missionWrap.style.display='none';
+  }else missionWrap.style.display='none';
+  const canEdit=session.isAdmin||e.ownerId===session.playerId;
+  document.getElementById('evd-delete-wrap').style.display=canEdit?'block':'none';
+  document.getElementById('evd-edit-btn').style.display=canEdit?'inline-block':'none';
+  document.getElementById('cal-event-detail-modal').classList.add('show');
+}
+function closeEventDetailModal(){
+  document.getElementById('cal-event-detail-modal').classList.remove('show');
+}
+function editEventFromDetail(){
+  const id=calState.viewingEventId;
+  closeEventDetailModal();
+  openEventModal(id);
+}
+function deleteEventFromDetail(){
+  const id=calState.viewingEventId;
+  calState.editingEventId=id;
+  closeEventDetailModal();
+  deleteEvent();
+}
+
 function openEventModal(eventId){
   calState.editingEventId=eventId;
   const modal=document.getElementById('cal-event-modal');
@@ -2159,9 +2224,15 @@ function openEventModal(eventId){
   document.getElementById('ev-time').value=e?e.time:'09:00';
   document.getElementById('ev-desc').value=e?e.desc:'';
   document.getElementById('ev-type').value=e?e.type:'personal';
-  // Populate missions select
+  // Populate missions select (solo las visibles para el jugador)
   const msel=document.getElementById('ev-mission');
-  msel.innerHTML='<option value="">Sin vincular</option>'+missions.map(m=>'<option value="'+m.id+'"'+(e&&e.missionId===m.id?' selected':'')+'>'+m.name+'</option>').join('');
+  const visibleMissions=missions.filter(function(m){
+    if(session.isAdmin)return true;
+    if(m.playerId===session.playerId)return true;
+    if(m.type==='joint'&&m.participants&&m.participants.includes(session.playerId))return true;
+    return false;
+  });
+  msel.innerHTML='<option value="">Sin vincular</option>'+visibleMissions.map(m=>'<option value="'+m.id+'"'+(e&&e.missionId===m.id?' selected':'')+'>'+m.name+'</option>').join('');
   // Show delete only for owner or admin
   const delWrap=document.getElementById('ev-delete-wrap');
   if(delWrap)delWrap.style.display=(e&&(session.isAdmin||e.ownerId===session.playerId))?'block':'none';
