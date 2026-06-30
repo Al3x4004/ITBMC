@@ -1167,7 +1167,11 @@ function showScreen(id){
   else t.style.display='flex';
 }
 
-function doLogin(){
+async function doLogin(){
+  if(CFG.MODE==='supabase'){
+    const d=await loadFromSupabase();
+    if(d&&d.players)players=d.players;
+  }
   const name=document.getElementById('ln').value.trim().toLowerCase();
   const pin=document.getElementById('lp').value;
   const p=players.find(p=>p.name.toLowerCase()===name);
