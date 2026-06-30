@@ -1041,6 +1041,14 @@ async function saveToSupabase(){
 }
 
 async function loadData(){
+  try{
+    const _eq=await fetch(CFG.SUPABASE_URL+'/rest/v1/equipamiento?activo=eq.true&order=tipo',{
+      headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
+    });
+    const _eqd=await _eq.json();
+    shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',desc:r.descripcion||'',slot:r.tipo,cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0}})):[];
+    console.log('Items cargados:', shopItems.length);
+  }catch(e){console.error('Error cargando items:',e);shopItems=[];}
   // Cartas del gacha siempre desde GitHub
   try{
     const r=await fetch(CFG.GITHUB_RAW+CFG.GACHA_CARDS_PATH);
@@ -1052,13 +1060,7 @@ async function loadData(){
     const d=await loadFromSupabase();
     if(d&&d.players){
       players =d.players;
-      try{
-        const _eq=await fetch(CFG.SUPABASE_URL+'/rest/v1/equipamiento?activo=eq.true&order=tipo',{
-          headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
-        });
-        const _eqd=await _eq.json();
-        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',desc:r.descripcion||'',slot:r.tipo,cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0}})):JSON.parse(JSON.stringify(DEMO.shop_items));
-      }catch{shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));}
+      
       if(d.cal_events)calEvents=d.cal_events;
       else calEvents=JSON.parse(JSON.stringify(DEMO.cal_events));
       // Ensure tutorial missions exist for each player
@@ -1072,13 +1074,7 @@ async function loadData(){
       players =JSON.parse(JSON.stringify(DEMO.players));
       missions=JSON.parse(JSON.stringify(DEMO.missions));
       arcs    =JSON.parse(JSON.stringify(DEMO.arcs));
-      try{
-        const _eq=await fetch(CFG.SUPABASE_URL+'/rest/v1/equipamiento?activo=eq.true&order=tipo',{
-          headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
-        });
-        const _eqd=await _eq.json();
-        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',desc:r.descripcion||'',slot:r.tipo,cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0}})):JSON.parse(JSON.stringify(DEMO.shop_items));
-      }catch{shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));}
+      
       calEvents=JSON.parse(JSON.stringify(DEMO.cal_events));
       await saveToSupabase();
     }
