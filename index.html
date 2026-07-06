@@ -500,6 +500,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       <button class="nb" onclick="showPage('planner',this)"><span class="nb-icon">📋</span>Planner</button>
     </nav>
     <div class="sidebar-bottom">
+      <button onclick="toggleLang()" id="lang-btn" style="width:100%;margin-bottom:.25rem;justify-content:flex-start;gap:8px;padding:7px 12px;border-radius:var(--radius);border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s;display:flex;align-items:center;">🌐 <span id="lang-label">Canvi a català</span></button>
       <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar tema" style="width:100%;margin-bottom:.5rem;justify-content:flex-start;gap:8px;padding:7px 12px;border-radius:var(--radius);border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s;display:flex;align-items:center;">☀️ <span id="theme-label">Modo claro</span></button>
       <div id="umenu-inline" style="display:none;margin-bottom:.5rem;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius);padding:.5rem;">
         <div style="padding:6px 8px;font-size:12px;color:var(--muted);border-bottom:0.5px solid var(--border);margin-bottom:4px;" id="umname">—</div>
@@ -1394,10 +1395,10 @@ function renderMissions(){
   const active  =missions.filter(m=>!m.daily&&m.status==='active'&&canSeeMission(m));
   const pending =missions.filter(m=>!m.daily&&m.status==='pending'&&canSeeMission(m));
   const done    =missions.filter(m=>m.status==='done'&&!m.isDaily_instance&&canSeeMission(m));
-  document.getElementById('m-daily').innerHTML  =daily.length  ?daily.map(m=>mCard(m)).join('')  :`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones diarias.</div>`;
-  document.getElementById('m-active').innerHTML =active.length ?active.map(m=>mCard(m)).join('') :`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones activas.</div>`;
-  document.getElementById('m-pending').innerHTML=pending.length?pending.map(m=>mCard(m)).join(''):`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones pendientes.</div>`;
-  document.getElementById('m-done').innerHTML   =done.length   ?done.map(m=>mCard(m)).join('')   :`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones completadas.</div>`;
+  document.getElementById('m-daily').innerHTML  =daily.length  ?daily.map(m=>mCard(m)).join('')  :'';
+  document.getElementById('m-active').innerHTML =active.length ?active.map(m=>mCard(m)).join('') :'';
+  document.getElementById('m-pending').innerHTML=pending.length?pending.map(m=>mCard(m)).join(''):'';
+  document.getElementById('m-done').innerHTML   =done.length   ?done.map(m=>mCard(m)).join('')   :'';
 }
 
 function mCard(m){
@@ -1660,7 +1661,7 @@ function renderArcs(){
     return false;
   });
   if(!myArcs.length){
-    document.getElementById('arcs-grid').innerHTML='<div style="font-size:13px;color:var(--muted);">Sin arcos aún. Crea uno desde Misiones → Nuevo arco.</div>';
+    document.getElementById('arcs-grid').innerHTML='';
     return;
   }
   document.getElementById('arcs-grid').innerHTML=myArcs.map(a=>{
@@ -1811,7 +1812,7 @@ if(!results.length){toast('No hay cartas disponibles. Revisa el cards.json en Gi
 }
 
 function renderGalleryCards(galleryEntries,mode){
-  if(!galleryEntries||!galleryEntries.length)return`<div class="gallery-empty">Sin cartas aún. ¡Ve al Gacha a invocar!</div>`;
+  if(!galleryEntries||!galleryEntries.length)return'';
   // agrupar por rareza
   const sorted=[...galleryEntries].map(e=>typeof e==='string'?e:e.cardId||e).sort((a,b)=>{
     const ca=gachaCards.find(x=>x.id===a),cb=gachaCards.find(x=>x.id===b);
@@ -1832,7 +1833,7 @@ function renderGalleryCards(galleryEntries,mode){
 
 function renderMyGallery(){
   const p=players.find(pl=>pl.id===session.playerId);
-  document.getElementById('my-gallery').innerHTML=p?renderGalleryCards(p.gallery||[]):`<div class="gallery-empty">Inicia sesión para ver tu galería.</div>`;
+  document.getElementById('my-gallery').innerHTML=p?renderGalleryCards(p.gallery||[]):'';
 }
 
 function renderGalleryTabs(){
@@ -2151,7 +2152,7 @@ function renderDayEvents(dateStr){
   const months=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   if(lbl)lbl.textContent=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()];
   const evs=getFilteredEvents(calState.filter).filter(e=>e.date===dateStr);
-  if(!evs.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin eventos.</div>';return;}
+  if(!evs.length){wrap.innerHTML='';return;}
   wrap.innerHTML=evs.map(e=>eventItemHTML(e)).join('');
 }
 
@@ -2160,7 +2161,7 @@ function renderUpcoming(){
   if(!wrap)return;
   const today=formatDate(new Date());
   const upcoming=getFilteredEvents(calState.filter).filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
-  if(!upcoming.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin eventos próximos.</div>';return;}
+  if(!upcoming.length){wrap.innerHTML='';return;}
   wrap.innerHTML=upcoming.map(e=>eventItemHTML(e)).join('');
 }
 
@@ -2576,7 +2577,7 @@ function renderInventario(){
     var ia=shopItems.find(function(i){return i.id===a;}),ib=shopItems.find(function(i){return i.id===b;});
     return RARITY_ORDER.indexOf(ia?ia.rareza:'comun')-RARITY_ORDER.indexOf(ib?ib.rareza:'comun');
   });
-  if(!inv.length){gw.innerHTML='<div style="font-size:13px;color:var(--muted);">Sin items. Compra en la Tienda o consíguelos en el Gacha.</div>';return;}
+  if(!inv.length){gw.innerHTML='';return;}
   gw.innerHTML=inv.map(function(iid){
     var item=shopItems.find(function(i){return i.id===iid;});
     if(!item)return '';
@@ -2699,6 +2700,51 @@ function openMissionModal(id){
 }
 function closeMissionModal(){
   document.getElementById('mission-modal').style.display='none';
+}
+
+
+/* ══ IDIOMA ══ */
+var LANG='es';
+var TRANSLATIONS={
+  es:{
+    misiones:'Misiones',heroes:'Héroes',arcos:'Arcos',ranking:'Ranking',
+    gacha:'Gacha',tienda:'Tienda',inventario:'Inventario',
+    calendario:'Calendario',planner:'Planner',
+    modoOscuro:'Modo oscuro',modoClaro:'Modo claro',
+    langBtn:'Canvi a català'
+  },
+  ca:{
+    misiones:'Missions',heroes:'Herois',arcos:'Arcs',ranking:'Rànquing',
+    gacha:'Gacha',tienda:'Botiga',inventario:'Inventari',
+    calendario:'Calendari',planner:'Planner',
+    modoOscuro:'Mode fosc',modoClaro:'Mode clar',
+    langBtn:'Canviar a castellà'
+  }
+};
+function toggleLang(){
+  LANG=LANG==='es'?'ca':'es';
+  localStorage.setItem('cg_lang',LANG);
+  applyLang();
+}
+function applyLang(){
+  var t=TRANSLATIONS[LANG];
+  var nb=document.querySelectorAll('.nb');
+  var labels=['misiones','heroes','arcos','ranking','gacha','tienda','inventario','calendario','planner'];
+  var keys=['misiones','heroes','arcos','ranking','gacha','tienda','inventario','calendario','planner'];
+  nb.forEach(function(btn){
+    var page=btn.getAttribute('onclick')||'';
+    keys.forEach(function(k,i){
+      if(page.includes("'"+labels[i]+"'")&&t[k]){
+        var icon=btn.querySelector('.nb-icon');
+        btn.textContent=t[k];
+        if(icon){btn.insertBefore(icon,btn.firstChild);}
+      }
+    });
+  });
+  var tl=document.getElementById('theme-label');
+  if(tl)tl.textContent=(document.documentElement.getAttribute('data-theme')==='dark'?t.modoOscuro:t.modoClaro);
+  var ll=document.getElementById('lang-label');
+  if(ll)ll.textContent=t.langBtn;
 }
 
 /* ══ TOAST ══ */
@@ -2850,6 +2896,7 @@ function createArc(){
 
 /* ══ ARRANQUE DE LA APP ══ */
 (async()=>{
+  LANG=localStorage.getItem('cg_lang')||'es';
   initTheme();
   await loadData();
   const sid=localStorage.getItem('cg_pid');
