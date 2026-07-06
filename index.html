@@ -593,7 +593,28 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       </div>
       <div class="stitle">Slots de equipamiento</div>
       <div class="inv-slots" id="inv-slots"></div>
-      <div class="stitle" style="margin-top:1.25rem;">Items disponibles</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:.75rem;margin-top:1rem;">
+        <input type="text" id="inv-search" placeholder="🔍 Buscar item..." oninput="renderInventario()" style="flex:1;min-width:160px;padding:7px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);outline:none;"/>
+        <select id="inv-filter-slot" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="">Todos los slots</option>
+          <option value="arma">Arma</option>
+          <option value="armadura">Armadura</option>
+          <option value="accesorio">Accesorio</option>
+          <option value="casco">Casco</option>
+          <option value="botas">Botas</option>
+        </select>
+        <select id="inv-filter-rarity" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="">Todas las rarezas</option>
+          <option value="comun">Común</option>
+          <option value="rara">Rara</option>
+          <option value="epica">Épica</option>
+          <option value="legendaria">Legendaria</option>
+        </select>
+        <select id="inv-sort" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="rarity">Ordenar: Rareza</option>
+          <option value="name">Ordenar: Nombre</option>
+        </select>
+      </div>
       <div class="inv-grid" id="inv-grid"></div>
     </div>
 
@@ -689,7 +710,30 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
         </div>
       </div>
       <div id="my-equipped"></div>
-      <div class="stitle">Items disponibles</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:1rem;margin-top:.5rem;">
+        <input type="text" id="shop-search" placeholder="🔍 Buscar item..." oninput="renderShop()" style="flex:1;min-width:160px;padding:7px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);outline:none;"/>
+        <select id="shop-filter-slot" onchange="renderShop()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="">Todos los slots</option>
+          <option value="arma">Arma</option>
+          <option value="armadura">Armadura</option>
+          <option value="accesorio">Accesorio</option>
+          <option value="casco">Casco</option>
+          <option value="botas">Botas</option>
+        </select>
+        <select id="shop-filter-rarity" onchange="renderShop()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="">Todas las rarezas</option>
+          <option value="comun">Común</option>
+          <option value="rara">Rara</option>
+          <option value="epica">Épica</option>
+          <option value="legendaria">Legendaria</option>
+        </select>
+        <select id="shop-sort" onchange="renderShop()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="rarity">Ordenar: Rareza</option>
+          <option value="name">Ordenar: Nombre</option>
+          <option value="cost-asc">Ordenar: Precio ↑</option>
+          <option value="cost-desc">Ordenar: Precio ↓</option>
+        </select>
+      </div>
       <div id="shop-grid-wrap"></div>
     </div>
 
@@ -1955,7 +1999,20 @@ function renderShop(){
   var wrap=document.getElementById('shop-grid-wrap');
   if(!wrap)return;
   if(!shopItems.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);">No hay items en la tienda aún.</div>';return;}
-  var sortedShopItems=shopItems.slice().sort(function(a,b){
+  var shopSearch=(document.getElementById('shop-search')?document.getElementById('shop-search').value.toLowerCase().trim():'');
+  var shopSlot=(document.getElementById('shop-filter-slot')?document.getElementById('shop-filter-slot').value:'');
+  var shopRarity=(document.getElementById('shop-filter-rarity')?document.getElementById('shop-filter-rarity').value:'');
+  var shopSortBy=(document.getElementById('shop-sort')?document.getElementById('shop-sort').value:'rarity');
+  var filteredShopItems=shopItems.filter(function(item){
+    if(shopSearch&&item.name.toLowerCase().indexOf(shopSearch)<0)return false;
+    if(shopSlot&&item.slot!==shopSlot)return false;
+    if(shopRarity&&item.rareza!==shopRarity)return false;
+    return true;
+  });
+  var sortedShopItems=filteredShopItems.slice().sort(function(a,b){
+    if(shopSortBy==='name')return a.name.localeCompare(b.name);
+    if(shopSortBy==='cost-asc')return (a.cost||0)-(b.cost||0);
+    if(shopSortBy==='cost-desc')return (b.cost||0)-(a.cost||0);
     return RARITY_ORDER.indexOf(a.rareza||'comun')-RARITY_ORDER.indexOf(b.rareza||'comun');
   });
   wrap.innerHTML='<div class="shop-grid">'+sortedShopItems.map(function(item){
@@ -2573,8 +2630,20 @@ function renderInventario(){
     html+='</div>';
     return html;
   }).join('');
-  var inv=(p.inventory||[]).slice().sort(function(a,b){
+  var invSearch=(document.getElementById('inv-search')?document.getElementById('inv-search').value.toLowerCase().trim():'');
+  var invSlot=(document.getElementById('inv-filter-slot')?document.getElementById('inv-filter-slot').value:'');
+  var invRarity=(document.getElementById('inv-filter-rarity')?document.getElementById('inv-filter-rarity').value:'');
+  var invSortBy=(document.getElementById('inv-sort')?document.getElementById('inv-sort').value:'rarity');
+  var inv=(p.inventory||[]).filter(function(iid){
+    var item=shopItems.find(function(i){return i.id===iid;});
+    if(!item)return false;
+    if(invSearch&&item.name.toLowerCase().indexOf(invSearch)<0)return false;
+    if(invSlot&&item.slot!==invSlot)return false;
+    if(invRarity&&item.rareza!==invRarity)return false;
+    return true;
+  }).slice().sort(function(a,b){
     var ia=shopItems.find(function(i){return i.id===a;}),ib=shopItems.find(function(i){return i.id===b;});
+    if(invSortBy==='name')return (ia?ia.name:'').localeCompare(ib?ib.name:'');
     return RARITY_ORDER.indexOf(ia?ia.rareza:'comun')-RARITY_ORDER.indexOf(ib?ib.rareza:'comun');
   });
   if(!inv.length){gw.innerHTML='';return;}
