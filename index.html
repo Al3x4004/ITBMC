@@ -1285,7 +1285,7 @@ function buildCreatorCls(){
 }
 function buildAttrBars(cid,attrs){
   document.getElementById(cid).innerHTML=Object.entries(attrs).map(([k,v])=>
-    `<div class="srow"><span class="slbl">${AN[k]}</span><div class="strk"><div class="sfill" style="width:${Math.round(v/6*100)}%;background:${AC[k]};"></div></div><span class="snum">${v}</span></div>`
+    `<div class="srow"><span class="slbl">${AN[k]}</span><div class="strk"><div class="sfill" style="width:${Math.min(100,Math.round(v/99*100))}%;background:${AC[k]};"></div></div><span class="snum">${v}</span></div>`
   ).join('');
 }
 function buildCreatorColors(cid){
@@ -1621,7 +1621,7 @@ function renderHeroProfile(i){
         <div class="pbody">
           <div>
             <div class="stitle">Atributos</div>
-            ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl">'+AN[k]+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(ev/20*100)+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
+            ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl">'+AN[k]+'</span><div class="strk"><div class="sfill" style="width:'+Math.min(100,Math.round(ev/99*100))+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
             <div class="pentagon-wrap" style="margin-top:1rem;">${buildPentagon(getEffectiveAttrs(p),p.color)}</div>
             <div class="stitle" style="margin-top:1rem;">Equipamiento</div>
             ${(function(){var eq=Object.values(p.equipped||{}).filter(Boolean);if(!eq.length)return '';var items=eq.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);return '<div class="stitle" style="margin-top:.75rem;">Items equipados</div><div class="erow">'+items.map(function(i){return '<span class="epill" style="border-color:var(--gold);color:var(--gold);">'+i.icon+' '+i.name+'</span>';}).join('')+'</div>';})()}
@@ -2541,7 +2541,7 @@ function buildPentagon(attrs,color){
     return '<polygon class="penta-bg" points="'+pts+'"/>';
   }).join('');
   var axes=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;return '<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+r*Math.cos(a)).toFixed(1)+'" y2="'+(cy+r*Math.sin(a)).toFixed(1)+'" stroke="var(--border)" stroke-width="1"/>';}).join('');
-  var dataPts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;var v=Math.min(100,attrs[k]||0)/100;return {x:cx+r*v*Math.cos(a),y:cy+r*v*Math.sin(a),lx:cx+(r+20)*Math.cos(a),ly:cy+(r+20)*Math.sin(a),label:labels[i],val:attrs[k]||0};});
+  var dataPts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;var v=Math.min(99,attrs[k]||0)/99;return {x:cx+r*v*Math.cos(a),y:cy+r*v*Math.sin(a),lx:cx+(r+20)*Math.cos(a),ly:cy+(r+20)*Math.sin(a),label:labels[i],val:attrs[k]||0};});
   var fillPts=dataPts.map(function(p){return p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');
   var lblSvg=dataPts.map(function(p){return '<text class="penta-label" x="'+p.lx.toFixed(1)+'" y="'+p.ly.toFixed(1)+'" text-anchor="middle" dominant-baseline="middle">'+p.label+'</text><text class="penta-value" x="'+(p.x+(p.lx-p.x)*0.45).toFixed(1)+'" y="'+(p.y+(p.ly-p.y)*0.45).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" fill="'+color+'">'+p.val+'</text>';}).join('');
   return '<svg width="200" height="200" viewBox="0 0 200 200" style="overflow:visible">'+bgSvg+axes+'<polygon class="penta-fill" points="'+fillPts+'" fill="'+color+'" stroke="'+color+'"/>'+lblSvg+'</svg>';
