@@ -2382,14 +2382,29 @@ function renderInventario(){
     html+='</div>';
     return html;
   }).join('');
-  var inv=p.inventory||[];
-  if(!inv.length){gw.innerHTML='<div style="font-size:13px;color:var(--muted);">Sin items. Compra en la Tienda o consíguelos en el Gacha.</div>';return;}
+  var invSearch=(document.getElementById('inv-search')?document.getElementById('inv-search').value.toLowerCase().trim():'');
+  var invSlot=(document.getElementById('inv-filter-slot')?document.getElementById('inv-filter-slot').value:'');
+  var invRarity=(document.getElementById('inv-filter-rarity')?document.getElementById('inv-filter-rarity').value:'');
+  var invSortBy=(document.getElementById('inv-sort')?document.getElementById('inv-sort').value:'rarity');
+  var inv=(p.inventory||[]).filter(function(iid){
+    var item=shopItems.find(function(i){return i.id===iid;});
+    if(!item)return false;
+    if(invSearch&&item.name.toLowerCase().indexOf(invSearch)<0)return false;
+    if(invSlot&&item.slot!==invSlot)return false;
+    if(invRarity&&item.rareza!==invRarity)return false;
+    return true;
+  }).sort(function(a,b){
+    var ia=shopItems.find(function(i){return i.id===a;}),ib=shopItems.find(function(i){return i.id===b;});
+    if(invSortBy==='name')return(ia?ia.name:'').localeCompare(ib?ib.name:'');
+    return RARITY_ORDER.indexOf(ia?ia.rareza:'comun')-RARITY_ORDER.indexOf(ib?ib.rareza:'comun');
+  });
+  if(!inv.length){gw.innerHTML='';return;}
   gw.innerHTML=inv.map(function(iid){
     var item=shopItems.find(function(i){return i.id===iid;});
     if(!item)return '';
     var eq=p.equipped&&Object.values(p.equipped).indexOf(iid)>=0;
     var bonusStr=Object.entries(item.bonus||{}).filter(function(e){return e[1]>0;}).map(function(e){return '+'+e[1]+' '+AN[e[0]];}).join(' · ');
-    var html='<div class="inv-item '+(eq?'equipped':'')+'">';
+    var html='<div class="inv-item bg-rarity-'+(item.rareza||'comun')+' '+(eq?'equipped':'')+'">';
     html+='<div style="font-size:24px;text-align:center;">'+item.icon+'</div>';
     html+='<div style="font-size:13px;font-weight:500;">'+item.name+'</div>';
     html+='<div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">'+item.slot+'</div>';
