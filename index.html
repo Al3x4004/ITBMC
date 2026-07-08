@@ -360,8 +360,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .showcase-empty{width:95px;height:133px;border-radius:var(--radius);border:2px dashed var(--border2);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:border-color .15s;background:var(--bg3);}
 .showcase-empty:hover{border-color:var(--accent);}
 
-.nb-edit-btn{display:none;font-size:10px;padding:1px 4px;border-radius:3px;border:none;background:transparent;cursor:pointer;color:var(--muted);margin-left:auto;opacity:0;line-height:1;}
-.nb:hover .nb-edit-btn{opacity:.7;}
+.nb-edit-btn{display:none;font-size:10px;padding:2px 6px;border-radius:3px;border:0.5px solid var(--accent-border);background:var(--accent-bg);cursor:pointer;color:var(--accent);margin-left:auto;line-height:1;}
 body.admin-mode .nb-edit-btn{display:inline-flex;}
 </style>
 </head>
@@ -576,7 +575,28 @@ body.admin-mode .nb-edit-btn{display:inline-flex;}
       </div>
       <div class="stitle">Slots d'equipament</div>
       <div class="inv-slots" id="inv-slots"></div>
-      <div class="stitle" style="margin-top:1.25rem;">Ítems disponibles</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:.75rem;margin-top:1rem;">
+        <input type="text" id="inv-search" placeholder="🔍 Cercar ítem..." oninput="renderInventario()" style="flex:1;min-width:160px;padding:7px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);outline:none;"/>
+        <select id="inv-filter-slot" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="">Tots els slots</option>
+          <option value="arma">Arma</option>
+          <option value="armadura">Armadura</option>
+          <option value="accesorio">Accessori</option>
+          <option value="casco">Casc</option>
+          <option value="botas">Botes</option>
+        </select>
+        <select id="inv-filter-rarity" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="">Totes les rareses</option>
+          <option value="comun">Comú</option>
+          <option value="rara">Rara</option>
+          <option value="epica">Èpica</option>
+          <option value="legendaria">Llegendària</option>
+        </select>
+        <select id="inv-sort" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="rarity">Ordenar: Raresa</option>
+          <option value="name">Ordenar: Nom</option>
+        </select>
+      </div>
       <div class="inv-grid" id="inv-grid"></div>
     </div>
 
@@ -672,7 +692,30 @@ body.admin-mode .nb-edit-btn{display:inline-flex;}
         </div>
       </div>
       <div id="my-equipped"></div>
-      <div class="stitle">Ítems disponibles</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:1rem;margin-top:.5rem;">
+        <input type="text" id="shop-search" placeholder="🔍 Cercar ítem..." oninput="renderShop()" style="flex:1;min-width:160px;padding:7px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);outline:none;"/>
+        <select id="shop-filter-slot" onchange="renderShop()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="">Tots els slots</option>
+          <option value="arma">Arma</option>
+          <option value="armadura">Armadura</option>
+          <option value="accesorio">Accessori</option>
+          <option value="casco">Casc</option>
+          <option value="botas">Botes</option>
+        </select>
+        <select id="shop-filter-rarity" onchange="renderShop()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="">Totes les rareses</option>
+          <option value="comun">Comú</option>
+          <option value="rara">Rara</option>
+          <option value="epica">Èpica</option>
+          <option value="legendaria">Llegendària</option>
+        </select>
+        <select id="shop-sort" onchange="renderShop()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="rarity">Ordenar: Raresa</option>
+          <option value="name">Ordenar: Nom</option>
+          <option value="cost-asc">Ordenar: Preu ↑</option>
+          <option value="cost-desc">Ordenar: Preu ↓</option>
+        </select>
+      </div>
       <div id="shop-grid-wrap"></div>
     </div>
 
@@ -834,6 +877,20 @@ body.admin-mode .nb-edit-btn{display:inline-flex;}
 </div>
 
 <!-- MODAL EVENTO CALENDARIO -->
+    <!-- MODAL MISSIÓ -->
+    <div id="mission-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center;" onclick="closeMissionModal()">
+      <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:460px;animation:popIn .2s ease;" onclick="event.stopPropagation()">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <div style="font-size:15px;font-weight:500;" id="mm-name">Missió</div>
+          <button class="btn btn-sm" onclick="closeMissionModal()">✕</button>
+        </div>
+        <div id="mm-badges" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem;"></div>
+        <div id="mm-desc" style="font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:1rem;padding:.75rem;background:var(--bg3);border-radius:var(--radius);"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:1rem;" id="mm-stats"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;" id="mm-actions"></div>
+      </div>
+    </div>
+
     <div class="cal-modal" id="cal-event-modal">
       <div class="cal-modal-box">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
@@ -1061,7 +1118,7 @@ async function loadData(){
           headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
         });
         const _eqd=await _eq.json();
-        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',desc:r.descripcion||'',slot:r.tipo,cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0}})):JSON.parse(JSON.stringify(DEMO.shop_items));
+        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',desc:r.descripcion||'',slot:r.tipo,rareza:r.rareza||'comun',cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0}})):JSON.parse(JSON.stringify(DEMO.shop_items));
       }catch{shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));}
       if(d.cal_events)calEvents=d.cal_events;
       else calEvents=JSON.parse(JSON.stringify(DEMO.cal_events));
@@ -1081,7 +1138,7 @@ async function loadData(){
           headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
         });
         const _eqd=await _eq.json();
-        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',desc:r.descripcion||'',slot:r.tipo,cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0}})):JSON.parse(JSON.stringify(DEMO.shop_items));
+        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',desc:r.descripcion||'',slot:r.tipo,rareza:r.rareza||'comun',cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0}})):JSON.parse(JSON.stringify(DEMO.shop_items));
       }catch{shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));}
       calEvents=JSON.parse(JSON.stringify(DEMO.cal_events));
       await saveToSupabase();
@@ -1149,7 +1206,7 @@ function exportJSON(){
   if(CFG.MODE==='supabase'){
     saveToSupabase();
     (function(){var _x=document.getElementById('umenu-inline');if(_x)_x.style.display='none';})();
-    toast('✅ Guardado en la nube automáticamente');
+    
     return;
   }
   const blob=new Blob([JSON.stringify({players,missions,arcs,gacha_cards:gachaCards,cal_events:calEvents},null,2)],{type:'application/json'});
@@ -1157,7 +1214,7 @@ function exportJSON(){
   const a=document.createElement('a');a.href=url;a.download='data.json';a.click();
   URL.revokeObjectURL(url);
   (function(){var _x=document.getElementById('umenu-inline');if(_x)_x.style.display='none';})();
-  toast('data.json descargado — súbelo a GitHub en la carpeta Excel/');
+  
 }
 
 /* ══ AUTH ══ */
@@ -1367,20 +1424,20 @@ function deleteArc(id){
   if(!confirm('¿Eliminar este arco?'))return;
   arcs=arcs.filter(function(a){return a.id!==id;});
   if(CFG.MODE==='supabase')saveToSupabase();
-  renderAll();toast('Arco eliminado');
+  renderAll();
 }
 function deleteMission(id){
   if(!confirm('¿Eliminar esta misión?'))return;
   missions=missions.filter(function(m){return m.id!==id;});
   if(CFG.MODE==='supabase')saveToSupabase();
-  renderAll();toast('Misión eliminada');
+  renderAll();
 }
 
 function assignMission(missionId, playerId){
   const m=missions.find(m=>m.id===missionId);if(!m)return;
   m.playerId=playerId;
   if(CFG.MODE==='supabase')saveToSupabase();
-  renderAll();toast('Misión asignada');
+  renderAll();
 }
 
 function completeMission(id){
@@ -1683,7 +1740,7 @@ if(!results.length){toast('No hay cartas disponibles. Revisa el cards.json en Gi
   const nCards=results.filter(r=>r.type==='card').length;
   const nItems=results.filter(r=>r.type==='item').length;
   let msg=nCards>0?`${nCards} carta${nCards>1?'s':''}`:''+(nItems>0?(nCards>0?' + ':'')+`${nItems} item${nItems>1?'s':''}`:'');
-  toast(`¡Obtenido: ${msg}!`);
+  
 }
 
 function renderGalleryCards(galleryEntries,mode){
@@ -1764,7 +1821,7 @@ function deletePlayer(){
   }
   closeEdit();renderAll();
   if(curHero>=players.length)curHero=0;
-  toast('Personatge eliminat');
+  
 }
 function saveEdit(){
   const p=players.find(p=>p.id===editPid);if(!p)return;
@@ -1778,7 +1835,7 @@ function saveEdit(){
     const cls=CLASSES.find(c=>c.name===p.cls);if(cls){p.role=cls.role;p.attrs={...cls.attrs};}
   }
   if(CFG.MODE==='supabase')saveToSupabase();
-  closeEdit();renderAll();toast('Personaje actualizado');
+  closeEdit();renderAll();
 }
 
 
@@ -1830,7 +1887,22 @@ function renderShop(){
   var wrap=document.getElementById('shop-grid-wrap');
   if(!wrap)return;
   if(!shopItems.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);">No hi ha ítems a la botiga encara.</div>';return;}
-  wrap.innerHTML='<div class="shop-grid">'+shopItems.map(function(item){
+  var shopSearch=(document.getElementById('shop-search')?document.getElementById('shop-search').value.toLowerCase().trim():'');
+  var shopSlot=(document.getElementById('shop-filter-slot')?document.getElementById('shop-filter-slot').value:'');
+  var shopRarity=(document.getElementById('shop-filter-rarity')?document.getElementById('shop-filter-rarity').value:'');
+  var shopSortBy=(document.getElementById('shop-sort')?document.getElementById('shop-sort').value:'rarity');
+  var filteredShop=shopItems.filter(function(item){
+    if(shopSearch&&item.name.toLowerCase().indexOf(shopSearch)<0)return false;
+    if(shopSlot&&item.slot!==shopSlot)return false;
+    if(shopRarity&&item.rareza!==shopRarity)return false;
+    return true;
+  }).sort(function(a,b){
+    if(shopSortBy==='name')return a.name.localeCompare(b.name);
+    if(shopSortBy==='cost-asc')return(a.cost||0)-(b.cost||0);
+    if(shopSortBy==='cost-desc')return(b.cost||0)-(a.cost||0);
+    return RARITY_ORDER.indexOf(a.rareza||'comun')-RARITY_ORDER.indexOf(b.rareza||'comun');
+  });
+  wrap.innerHTML='<div class="shop-grid">'+filteredShop.map(function(item){
     var owned=p&&(p.inventory||[]).indexOf(item.id)>=0;
     var equipped=p&&p.equipped&&Object.values(p.equipped).indexOf(item.id)>=0;
     var canBuy=p&&canBuyItem(p,item)&&!owned;
@@ -1865,7 +1937,7 @@ function buyItem(itemId){
   p.inventory.push(itemId);
   if(CFG.MODE==='supabase')saveToSupabase();
   renderShop();renderAll();
-  toast('¡'+item.icon+' '+item.name+' comprado!');
+  
 }
 function equipItem(itemId){
   var p=players.find(function(pl){return pl.id===session.playerId;});
@@ -1875,7 +1947,7 @@ function equipItem(itemId){
   p.equipped[item.slot]=itemId;
   if(CFG.MODE==='supabase')saveToSupabase();
   renderShop();renderHeroProfile(curHero);
-  toast('¡'+item.icon+' '+item.name+' equipat!');
+  
 }
 function unequipItem(itemId){
   var p=players.find(function(pl){return pl.id===session.playerId;});
@@ -1884,7 +1956,7 @@ function unequipItem(itemId){
   p.equipped[item.slot]=null;
   if(CFG.MODE==='supabase')saveToSupabase();
   renderShop();renderHeroProfile(curHero);
-  toast(item.name+' desequipat.');
+  
 }
 function adminCreateItem(){
   var name=document.getElementById('si-name').value.trim();
@@ -1901,7 +1973,7 @@ function adminCreateItem(){
   if(CFG.MODE==='supabase')saveToSupabase();
   ['si-name','si-icon','si-desc','si-cost','si-lvl'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   ['si-rfue','si-rint','si-ragi','si-rcar','si-rsab','si-bfue','si-bint','si-bagi','si-bcar','si-bsab'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='0';});
-  renderShop();toast('Item creado: '+icon+' '+name);
+  renderShop();
 }
 function adminDeleteItem(itemId){
   if(!confirm('¿Eliminar este item?'))return;
@@ -1911,7 +1983,7 @@ function adminDeleteItem(itemId){
     if(p.equipped)Object.keys(p.equipped).forEach(function(k){if(p.equipped[k]===itemId)p.equipped[k]=null;});
   });
   if(CFG.MODE==='supabase')saveToSupabase();
-  renderShop();toast('Item eliminado.');
+  renderShop();
 }
 function renderAdminItemsList(){
   var wrap=document.getElementById('admin-items-list');
@@ -1998,6 +2070,15 @@ function selectCalDay(dateStr){
   renderCalendar();
 }
 
+function eventItemHTML(e){
+  var typeColor=e.type==='team'?'var(--teal)':'var(--accent)';
+  var d=document.createElement('div');
+  d.style.cssText='display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--radius);cursor:pointer;border-left:3px solid '+typeColor+';background:var(--bg3);margin-bottom:6px;';
+  d.addEventListener('click',function(){openEventModal(e.id);});
+  d.innerHTML='<div style="font-size:11px;color:var(--muted);min-width:42px;">'+(e.time||'')+'</div>'
+    +'<div style="font-size:12px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+e.title+'</div>';
+  return d.outerHTML;
+}
 function renderDayEvents(dateStr){
   const wrap=document.getElementById('cal-day-events');
   const lbl=document.getElementById('cal-selected-label');
@@ -2071,7 +2152,7 @@ function saveEvent(){
     if(idx>=0)calEvents[idx]=ev;else calEvents.push(ev);
   }else{calEvents.push(ev);}
   if(CFG.MODE==='supabase')saveToSupabase();
-  closeEventModal();renderCalendar();toast('Evento guardado');
+  closeEventModal();renderCalendar();
 }
 
 function deleteEvent(){
@@ -2079,7 +2160,7 @@ function deleteEvent(){
   if(!confirm('¿Eliminar este evento?'))return;
   calEvents=calEvents.filter(e=>e.id!==calState.editingEventId);
   if(CFG.MODE==='supabase')saveToSupabase();
-  closeEventModal();renderCalendar();toast('Evento eliminado');
+  closeEventModal();renderCalendar();
 }
 
 
@@ -2265,7 +2346,7 @@ function confirmPlannerImport(){
   renderAll();
   renderPlannerImported();
   document.getElementById('planner-imported').style.display='block';
-  toast(imported+' misiones importadas desde Planner');
+  
 }
 
 function clearPlannerImport(){
@@ -2441,7 +2522,7 @@ function openShowcaseSelector(idx){
   var ci=available.indexOf(p.showcase[idx]);
   p.showcase[idx]=available[(ci+1)%available.length];
   if(CFG.MODE==='supabase')saveToSupabase();
-  renderHeroProfile(curHero);toast('Carta actualitzada');
+  renderHeroProfile(curHero);
 }
 
 
@@ -2493,8 +2574,11 @@ function applyMenuNames(){
     if(!btn)return;
     var icon=btn.querySelector('.nb-icon');
     var iconHtml=icon?icon.outerHTML:'';
-    var editBtn=session.isAdmin?'<button class="nb-edit-btn" onclick="event.stopPropagation();promptRenameMenu(\"'+k+'\")" title="Reanomenar">✏️</button>':'';
-    btn.innerHTML=iconHtml+menuNames[k]+editBtn;
+    btn.innerHTML=iconHtml+menuNames[k]+(session.isAdmin?'<button class="nb-edit-btn" title="Reanomenar">✏️</button>':'');
+    if(session.isAdmin){
+      var eb=btn.querySelector('.nb-edit-btn');
+      if(eb){eb.addEventListener('click',function(ev){ev.stopPropagation();promptRenameMenu(k);});}
+    }
   });
 }
 function promptRenameMenu(key){
@@ -2590,7 +2674,7 @@ function createMission(){
   document.getElementById('nm-name').value='';
   document.getElementById('nm-deadline').value='';
   document.getElementById('panel-new-mission').removeAttribute('open');
-  renderAll();toast('Misión creada: '+name);
+  renderAll();
 }
 
 function createArc(){
@@ -2610,8 +2694,25 @@ function createArc(){
   document.getElementById('na-name').value='';
   document.getElementById('na-desc').value='';
   document.getElementById('panel-new-arc').removeAttribute('open');
-  renderAll();populateArcSelect();toast('Arc creat: '+name);
+  renderAll();populateArcSelect();
 }
+
+/* ══ ARRANQUE DE LA APP ══ */
+(async()=>{
+  initTheme();
+  await loadData();
+  loadMenuNames();
+  const sid=localStorage.getItem('cg_pid');
+  if(sid){
+    const p=players.find(p=>p.id===sid);
+    if(p){
+      session={loggedIn:true,isAdmin:false,playerId:sid};
+      const idx=players.findIndex(pl=>pl.id===sid);if(idx>=0)curHero=idx;
+      enterApp();return;
+    }
+  }
+  showScreen('screen-welcome');
+})();
 
 </script>
 </body>
