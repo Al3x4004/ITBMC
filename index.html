@@ -832,16 +832,25 @@ body.admin-mode .nb-edit-btn{display:inline-flex;}
       </div>
       <!-- Items list -->
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-          <div class="stitle" style="margin:0;">Ítems existents (<span id="ai-count">0</span>)</div>
-          <div style="display:flex;gap:8px;">
-            <select id="ai-filter-via" onchange="renderAdminItemsPage()" style="padding:5px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
-              <option value="">Tots</option>
-              <option value="tienda">Botiga+Gacha</option>
-              <option value="gacha">Només Gacha</option>
-              <option value="solo_tienda">Només Botiga</option>
-            </select>
-          </div>
+        <div style="margin-bottom:.5rem;"><div class="stitle" style="margin:0;">Ítems existents (<span id="ai-count">0</span>)</div></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem;">
+          <input type="text" id="ai-search" placeholder="🔍 Cercar ítem..." oninput="renderAdminItemsPage()" style="flex:1;min-width:150px;padding:6px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);outline:none;"/>
+          <select id="ai-filter-slot" onchange="renderAdminItemsPage()" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+            <option value="">Tots els slots</option>
+            <option value="arma">Arma</option><option value="armadura">Armadura</option>
+            <option value="accesorio">Accessori</option><option value="casco">Casc</option><option value="botas">Botes</option>
+          </select>
+          <select id="ai-filter-rarity" onchange="renderAdminItemsPage()" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+            <option value="">Totes les rareses</option>
+            <option value="comun">Comú</option><option value="rara">Rara</option>
+            <option value="epica">Èpica</option><option value="legendaria">Llegendària</option>
+          </select>
+          <select id="ai-filter-via" onchange="renderAdminItemsPage()" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+            <option value="">Totes les ubicacions</option>
+            <option value="tienda">Botiga+Gacha</option>
+            <option value="gacha">Només Gacha</option>
+            <option value="solo_tienda">Només Botiga</option>
+          </select>
         </div>
         <div id="ai-list"></div>
       </div>
@@ -2206,7 +2215,16 @@ async function adminDeleteItemFull(itemId){
 }
 function renderAdminItemsPage(){
   var filterVia=document.getElementById('ai-filter-via')?document.getElementById('ai-filter-via').value:'';
-  var items=shopItems.filter(function(i){return !filterVia||i.via===filterVia;});
+  var filterSlot=document.getElementById('ai-filter-slot')?document.getElementById('ai-filter-slot').value:'';
+  var filterRarity=document.getElementById('ai-filter-rarity')?document.getElementById('ai-filter-rarity').value:'';
+  var aiSearch=document.getElementById('ai-search')?document.getElementById('ai-search').value.toLowerCase().trim():'';
+  var items=shopItems.filter(function(i){
+    if(filterVia&&i.via!==filterVia)return false;
+    if(filterSlot&&i.slot!==filterSlot)return false;
+    if(filterRarity&&i.rareza!==filterRarity)return false;
+    if(aiSearch&&i.name.toLowerCase().indexOf(aiSearch)<0)return false;
+    return true;
+  });
   var countEl=document.getElementById('ai-count');
   if(countEl)countEl.textContent=items.length;
   var wrap=document.getElementById('ai-list');
@@ -2327,7 +2345,12 @@ async function adminDeleteCarta(id){
 }
 function renderAdminCartasPage(){
   var filterRarity=document.getElementById('ac-filter-rarity')?document.getElementById('ac-filter-rarity').value:'';
-  var cartas=gachaCards.filter(function(c){return !filterRarity||c.rarity===filterRarity;});
+  var acSearch=document.getElementById('ac-search')?document.getElementById('ac-search').value.toLowerCase().trim():'';
+  var cartas=gachaCards.filter(function(c){
+    if(filterRarity&&c.rarity!==filterRarity)return false;
+    if(acSearch&&c.name.toLowerCase().indexOf(acSearch)<0)return false;
+    return true;
+  });
   var countEl=document.getElementById('ac-count');
   if(countEl)countEl.textContent=cartas.length;
   var wrap=document.getElementById('ac-list');
