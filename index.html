@@ -1225,6 +1225,37 @@ async function loadFromSupabase(){
 }
 
 
+async function saveItemToSupabase(item){
+  try{
+    await fetch(CFG.SUPABASE_URL+'/rest/v1/equipamiento',{
+      method:'POST',
+      headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({
+        id:item.id,
+        nombre:item.name,
+        icono:item.icon||'📦',
+        imagen_url:item.imageUrl||null,
+        descripcion:item.desc||'',
+        tipo:item.slot,
+        rareza:item.rareza||'comun',
+        coste_oro:item.cost||0,
+        nivel_minimo:item.minLevel||1,
+        via_obtencion:item.via||'tienda',
+        req_attrs:item.minAttrs||{fue:0,int:0,agi:0,car:0,sab:0},
+        bonus_attrs:item.bonus||{fue:0,int:0,agi:0,car:0,sab:0},
+        activo:true
+      })
+    });
+  }catch(e){console.error('Error saving item to Supabase',e);}
+}
+async function deleteItemFromSupabase(id){
+  try{
+    await fetch(CFG.SUPABASE_URL+'/rest/v1/equipamiento?id=eq.'+id,{
+      method:'DELETE',
+      headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
+    });
+  }catch(e){console.error('Error deleting item from Supabase',e);}
+}
 async function saveCartaToSupabase(carta){
   try{
     await fetch(CFG.SUPABASE_URL+'/rest/v1/cartas',{
@@ -2146,7 +2177,7 @@ function adminCreateItemFull(){
     bonus:{fue:parseInt(document.getElementById('ai-bfue').value)||0,int:parseInt(document.getElementById('ai-bint').value)||0,agi:parseInt(document.getElementById('ai-bagi').value)||0,car:parseInt(document.getElementById('ai-bcar').value)||0,sab:parseInt(document.getElementById('ai-bsab').value)||0}
   };
   shopItems.push(newItem);
-  if(CFG.MODE==='supabase')saveToSupabase();
+  if(CFG.MODE==='supabase')saveItemToSupabase(newItem);
   ['ai-name','ai-icon','ai-imageurl','ai-desc','ai-cost','ai-lvl'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   ['ai-rfue','ai-rint','ai-ragi','ai-rcar','ai-rsab','ai-bfue','ai-bint','ai-bagi','ai-bcar','ai-bsab'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='0';});
   renderAdminItemsPage();
@@ -2156,7 +2187,7 @@ function adminChangeVia(itemId, via){
   var item=shopItems.find(function(i){return i.id===itemId;});
   if(!item)return;
   item.via=via;
-  if(CFG.MODE==='supabase')saveToSupabase();
+  if(CFG.MODE==='supabase')saveItemToSupabase(item);
   renderAdminItemsPage();
   renderShop();
 }
@@ -2167,7 +2198,7 @@ function adminDeleteItemFull(itemId){
     if(p.inventory)p.inventory=p.inventory.filter(function(id){return id!==itemId;});
     if(p.equipped)Object.keys(p.equipped).forEach(function(k){if(p.equipped[k]===itemId)p.equipped[k]=null;});
   });
-  if(CFG.MODE==='supabase')saveToSupabase();
+  if(CFG.MODE==='supabase'){deleteItemFromSupabase(itemId);saveToSupabase();}
   renderAdminItemsPage();
   renderShop();
 }
@@ -2248,7 +2279,7 @@ async function saveAdminEdit(){
     item.cost=parseInt(document.getElementById('aem-cost').value)||0;
     item.minLevel=parseInt(document.getElementById('aem-lvl').value)||1;
     item.via=document.getElementById('aem-via').value;
-    if(CFG.MODE==='supabase')saveToSupabase();
+    if(CFG.MODE==='supabase')saveItemToSupabase(item);
     renderAdminItemsPage();renderShop();
   }else if(_adminEditType==='carta'){
     var carta=gachaCards.find(function(c){return c.id===_adminEditId;});
