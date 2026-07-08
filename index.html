@@ -1052,6 +1052,21 @@ body.admin-mode .nb-edit-btn{display:inline-flex;}
       </div>
     </div>
 
+<!-- MODAL EDICIÓ ÍTEM/CARTA ADMIN -->
+<div id="modal-admin-edit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;" onclick="closeAdminEditModal()">
+  <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="font-size:15px;font-weight:500;" id="aem-title">Editar</h3>
+      <button class="btn btn-sm" onclick="closeAdminEditModal()">✕</button>
+    </div>
+    <div id="aem-fields"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem;">
+      <button class="btn" onclick="closeAdminEditModal()">Cancel·lar</button>
+      <button class="btn btn-p" onclick="saveAdminEdit()">Desar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* EARLY BINDINGS */
 window.showScreen=function(id){
@@ -2178,11 +2193,75 @@ function renderAdminItemsPage(){
         +'<option value="gacha"'+(item.via==='gacha'?' selected':'')+'>Només Gacha</option>'
         +'<option value="solo_tienda"'+(item.via==='solo_tienda'?' selected':'')+'>Només Botiga</option>'
       +'</select>'
+      +'<button class="btn btn-sm" style="flex-shrink:0;margin-right:4px;" data-iid="'+item.id+'" onclick="openAdminEditItem(this.dataset.iid)">✏️</button>'
       +'<button class="btn btn-sm" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);flex-shrink:0;" data-iid="'+item.id+'" onclick="adminDeleteItemFull(this.dataset.iid)">🗑️</button>'
       +'</div>';
   }).join('');
 }
 
+var _adminEditType=null, _adminEditId=null;
+function openAdminEditItem(itemId){
+  var item=shopItems.find(function(i){return i.id===itemId;});
+  if(!item)return;
+  _adminEditType='item';_adminEditId=itemId;
+  document.getElementById('aem-title').textContent='Editar Ítem: '+item.name;
+  document.getElementById('aem-fields').innerHTML=
+    '<div class="field"><label>Nom</label><input type="text" id="aem-name" value="'+item.name+'"/></div>'
+    +'<div class="field"><label>Icona (emoji)</label><input type="text" id="aem-icon" value="'+(item.icon||'')+'" maxlength="2"/></div>'
+    +'<div class="field"><label>URL Imatge</label><input type="text" id="aem-imageurl" value="'+(item.imageUrl||'')+'"/></div>'
+    +'<div class="field"><label>Descripció</label><input type="text" id="aem-desc" value="'+(item.desc||'')+'"/></div>'
+    +'<div class="g2">'
+    +'<div class="field"><label>Slot</label><select id="aem-slot"><option value="arma"'+(item.slot==='arma'?' selected':'')+'>Arma</option><option value="armadura"'+(item.slot==='armadura'?' selected':'')+'>Armadura</option><option value="accesorio"'+(item.slot==='accesorio'?' selected':'')+'>Accessori</option><option value="casco"'+(item.slot==='casco'?' selected':'')+'>Casc</option><option value="botas"'+(item.slot==='botas'?' selected':'')+'>Botes</option></select></div>'
+    +'<div class="field"><label>Raresa</label><select id="aem-rarity"><option value="comun"'+(item.rareza==='comun'?' selected':'')+'>Comú</option><option value="rara"'+(item.rareza==='rara'?' selected':'')+'>Rara</option><option value="epica"'+(item.rareza==='epica'?' selected':'')+'>Èpica</option><option value="legendaria"'+(item.rareza==='legendaria'?' selected':'')+'>Llegendària</option></select></div>'
+    +'<div class="field"><label>Cost (or)</label><input type="number" id="aem-cost" value="'+(item.cost||0)+'"/></div>'
+    +'<div class="field"><label>Nivell mínim</label><input type="number" id="aem-lvl" value="'+(item.minLevel||1)+'"/></div>'
+    +'</div>'
+    +'<div class="field"><label>Disponible a</label><select id="aem-via"><option value="tienda"'+(item.via==='tienda'?' selected':'')+'>Botiga+Gacha</option><option value="gacha"'+(item.via==='gacha'?' selected':'')+'>Només Gacha</option><option value="solo_tienda"'+(item.via==='solo_tienda'?' selected':'')+'>Només Botiga</option></select></div>';
+  document.getElementById('modal-admin-edit').style.display='flex';
+}
+function openAdminEditCarta(cartaId){
+  var carta=gachaCards.find(function(c){return c.id===cartaId;});
+  if(!carta)return;
+  _adminEditType='carta';_adminEditId=cartaId;
+  document.getElementById('aem-title').textContent='Editar Carta: '+carta.name;
+  document.getElementById('aem-fields').innerHTML=
+    '<div class="field"><label>Nom</label><input type="text" id="aem-name" value="'+carta.name+'"/></div>'
+    +'<div class="field"><label>Raresa</label><select id="aem-rarity"><option value="comun"'+(carta.rarity==='comun'?' selected':'')+'>Comú</option><option value="rara"'+(carta.rarity==='rara'?' selected':'')+'>Rara</option><option value="epica"'+(carta.rarity==='epica'?' selected':'')+'>Èpica</option><option value="legendaria"'+(carta.rarity==='legendaria'?' selected':'')+'>Llegendària</option></select></div>'
+    +'<div class="field"><label>URL Imatge</label><input type="text" id="aem-imageurl" value="'+(carta.imageUrl||'')+'"/></div>'
+    +'<div class="field"><label>Descripció</label><input type="text" id="aem-desc" value="'+(carta.description||'')+'"/></div>';
+  document.getElementById('modal-admin-edit').style.display='flex';
+}
+function closeAdminEditModal(){
+  document.getElementById('modal-admin-edit').style.display='none';
+  _adminEditType=null;_adminEditId=null;
+}
+async function saveAdminEdit(){
+  if(_adminEditType==='item'){
+    var item=shopItems.find(function(i){return i.id===_adminEditId;});
+    if(!item)return;
+    item.name=document.getElementById('aem-name').value.trim()||item.name;
+    item.icon=document.getElementById('aem-icon').value.trim()||item.icon;
+    item.imageUrl=document.getElementById('aem-imageurl').value.trim()||null;
+    item.desc=document.getElementById('aem-desc').value.trim();
+    item.slot=document.getElementById('aem-slot').value;
+    item.rareza=document.getElementById('aem-rarity').value;
+    item.cost=parseInt(document.getElementById('aem-cost').value)||0;
+    item.minLevel=parseInt(document.getElementById('aem-lvl').value)||1;
+    item.via=document.getElementById('aem-via').value;
+    if(CFG.MODE==='supabase')saveToSupabase();
+    renderAdminItemsPage();renderShop();
+  }else if(_adminEditType==='carta'){
+    var carta=gachaCards.find(function(c){return c.id===_adminEditId;});
+    if(!carta)return;
+    carta.name=document.getElementById('aem-name').value.trim()||carta.name;
+    carta.rarity=document.getElementById('aem-rarity').value;
+    carta.imageUrl=document.getElementById('aem-imageurl').value.trim()||'';
+    carta.description=document.getElementById('aem-desc').value.trim();
+    await saveCartaToSupabase(carta);
+    renderAdminCartasPage();
+  }
+  closeAdminEditModal();
+}
 function switchAdminTab(btn, tabId){
   document.querySelectorAll('#page-items-admin .ptab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
@@ -2229,6 +2308,7 @@ function renderAdminCartasPage(){
         +'<div style="font-size:13px;font-weight:500;">'+carta.name+'</div>'
         +'<div style="font-size:11px;color:'+(rarityColor[carta.rarity]||'var(--muted)')+';">'+RARITY_LABEL[carta.rarity]+(carta.description?' · '+carta.description:'')+'</div>'
       +'</div>'
+      +'<button class="btn btn-sm" style="flex-shrink:0;margin-right:4px;" data-cid="'+carta.id+'" onclick="openAdminEditCarta(this.dataset.cid)">✏️</button>'
       +'<button class="btn btn-sm" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);flex-shrink:0;" data-cid="'+carta.id+'" onclick="adminDeleteCarta(this.dataset.cid)">🗑️</button>'
       +'</div>';
   }).join('');
