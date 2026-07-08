@@ -497,6 +497,7 @@ body.admin-mode .nb-edit-btn{display:inline-flex;}
       <button class="nb" onclick="showPage('inventario',this)" id="nav-inventario"><span class="nb-icon">🎒</span>Inventari</button>
       <button class="nb" onclick="showPage('calendario',this)" id="nav-calendario"><span class="nb-icon">📅</span>Calendari</button>
       <button class="nb" onclick="showPage('planner',this)" id="nav-planner"><span class="nb-icon">📋</span>Planner</button>
+      <button class="nb admin-only" onclick="showPage('items-admin',this)" id="nav-items-admin" style="display:none;border-top:0.5px solid var(--border);margin-top:4px;"><span class="nb-icon">⚙️</span>Items</button>
     </nav>
     <div class="sidebar-bottom">
       <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar tema" style="width:100%;margin-bottom:.5rem;justify-content:flex-start;gap:8px;padding:7px 12px;border-radius:var(--radius);border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s;display:flex;align-items:center;">☀️ <span id="theme-label">Mode clar</span></button>
@@ -754,6 +755,89 @@ body.admin-mode .nb-edit-btn{display:inline-flex;}
             <div class="event-list" id="cal-upcoming"></div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- ITEMS ADMIN -->
+    <div id="page-items-admin" class="page">
+      <div style="margin-bottom:1.25rem;">
+        <div style="font-size:18px;font-weight:500;margin-bottom:4px;">⚙️ Gestió d'Ítems</div>
+        <div style="font-size:13px;color:var(--muted);">Crea, edita i assigna els ítems de la botiga i el gacha.</div>
+      </div>
+      <!-- Crear item -->
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="stitle">Nou ítem</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Nom</label><input type="text" id="ai-name" placeholder="Espasa de l'Abisme"/></div>
+          <div class="field"><label>Icona (emoji)</label><input type="text" id="ai-icon" placeholder="⚔️" maxlength="2"/></div>
+          <div class="field"><label>URL Imatge (opcional)</label><input type="text" id="ai-imageurl" placeholder="https://..."/></div>
+          <div class="field"><label>Descripció</label><input type="text" id="ai-desc" placeholder="Forjada a les ombres..."/></div>
+          <div class="field"><label>Slot</label>
+            <select id="ai-slot">
+              <option value="arma">Arma</option>
+              <option value="armadura">Armadura</option>
+              <option value="accesorio">Accessori</option>
+              <option value="casco">Casc</option>
+              <option value="botas">Botes</option>
+            </select>
+          </div>
+          <div class="field"><label>Raresa</label>
+            <select id="ai-rarity">
+              <option value="comun">Comú</option>
+              <option value="rara">Rara</option>
+              <option value="epica">Èpica</option>
+              <option value="legendaria">Llegendària</option>
+            </select>
+          </div>
+          <div class="field"><label>Cost (or)</label><input type="number" id="ai-cost" placeholder="200" min="0"/></div>
+          <div class="field"><label>Nivell mínim</label><input type="number" id="ai-lvl" placeholder="1" min="1"/></div>
+          <div class="field"><label>Disponible a</label>
+            <select id="ai-via">
+              <option value="tienda">Botiga + Gacha</option>
+              <option value="gacha">Només Gacha</option>
+              <option value="solo_tienda">Només Botiga</option>
+            </select>
+          </div>
+          <div class="field"></div>
+          <div style="grid-column:1/-1;">
+            <div class="stitle">Requisits d'atributs (0 = sense requisit)</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
+              <div class="field" style="margin:0;"><label>Força mín.</label><input type="number" id="ai-rfue" value="0" min="0"/></div>
+              <div class="field" style="margin:0;"><label>Int. mín.</label><input type="number" id="ai-rint" value="0" min="0"/></div>
+              <div class="field" style="margin:0;"><label>Agi. mín.</label><input type="number" id="ai-ragi" value="0" min="0"/></div>
+              <div class="field" style="margin:0;"><label>Car. mín.</label><input type="number" id="ai-rcar" value="0" min="0"/></div>
+              <div class="field" style="margin:0;"><label>Sav. mín.</label><input type="number" id="ai-rsab" value="0" min="0"/></div>
+            </div>
+          </div>
+          <div style="grid-column:1/-1;">
+            <div class="stitle">Bonus d'atributs en equipar (0 = sense bonus)</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
+              <div class="field" style="margin:0;"><label>+Força</label><input type="number" id="ai-bfue" value="0" min="0"/></div>
+              <div class="field" style="margin:0;"><label>+Int.</label><input type="number" id="ai-bint" value="0" min="0"/></div>
+              <div class="field" style="margin:0;"><label>+Agi.</label><input type="number" id="ai-bagi" value="0" min="0"/></div>
+              <div class="field" style="margin:0;"><label>+Car.</label><input type="number" id="ai-bcar" value="0" min="0"/></div>
+              <div class="field" style="margin:0;"><label>+Sav.</label><input type="number" id="ai-bsab" value="0" min="0"/></div>
+            </div>
+          </div>
+          <div style="grid-column:1/-1;display:flex;justify-content:flex-end;">
+            <button class="btn btn-p" onclick="adminCreateItemFull()">+ Crear ítem</button>
+          </div>
+        </div>
+      </div>
+      <!-- Items list -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <div class="stitle" style="margin:0;">Ítems existents (<span id="ai-count">0</span>)</div>
+          <div style="display:flex;gap:8px;">
+            <select id="ai-filter-via" onchange="renderAdminItemsPage()" style="padding:5px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+              <option value="">Tots</option>
+              <option value="tienda">Botiga+Gacha</option>
+              <option value="gacha">Només Gacha</option>
+              <option value="solo_tienda">Només Botiga</option>
+            </select>
+          </div>
+        </div>
+        <div id="ai-list"></div>
       </div>
     </div>
 
@@ -1258,6 +1342,8 @@ function doLogout(){
 function enterApp(){
   showScreen('screen-app');
   document.body.classList.toggle('admin-mode', session.isAdmin);
+  var adminNav=document.getElementById('nav-items-admin');
+  if(adminNav)adminNav.style.display=session.isAdmin?'flex':'none';
   const p=players.find(p=>p.id===session.playerId);
   if(p){const _idx=players.findIndex(function(pl){return pl.id===session.playerId;});if(_idx>=0)curHero=_idx;}
   document.getElementById('ulabel').textContent=session.isAdmin?'Dios 👑':(p?p.name.split(' ')[0]:'—');
@@ -1355,6 +1441,7 @@ function showPage(name,btn){
   if(name==='misiones')populateArcSelect();
   if(name==='calendario'){if(!calState.selectedDate)calState.selectedDate=new Date().toISOString().slice(0,10);renderCalendar();}
   if(name==='planner'){renderPlannerImported();}
+  if(name==='items-admin'){renderAdminItemsPage();}
 }
 
 /* ── misiones stats ── */
@@ -1892,6 +1979,7 @@ function renderShop(){
   var shopRarity=(document.getElementById('shop-filter-rarity')?document.getElementById('shop-filter-rarity').value:'');
   var shopSortBy=(document.getElementById('shop-sort')?document.getElementById('shop-sort').value:'rarity');
   var filteredShop=shopItems.filter(function(item){
+    if(item.via==='gacha')return false;
     if(shopSearch&&item.name.toLowerCase().indexOf(shopSearch)<0)return false;
     if(shopSlot&&item.slot!==shopSlot)return false;
     if(shopRarity&&item.rareza!==shopRarity)return false;
@@ -1917,7 +2005,7 @@ function renderShop(){
     else if(!meetsR)btn='<div style="font-size:11px;color:var(--coral);margin-top:auto;">🔒 Requisitos no cumplidos</div>';
     else btn='<div style="font-size:11px;color:var(--coral);margin-top:auto;">Oro insuficiente</div>';
     return '<div class="shop-item '+cls+'">'
-      +(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--radius);margin-bottom:4px;">':'<div class="item-icon">'+item.icon+'</div>')
+      +(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'" style="width:100%;height:120px;object-fit:cover;border-radius:var(--radius);margin-bottom:4px;">':'<div class="item-icon">'+item.icon+'</div>')
       +'<div class="item-name">'+item.name+'</div>'
       +'<div class="item-slot">'+item.slot+'</div>'
       +'<div class="item-desc">'+item.desc+'</div>'
@@ -1958,6 +2046,76 @@ function unequipItem(itemId){
   renderShop();renderHeroProfile(curHero);
   
 }
+function adminCreateItemFull(){
+  var name=document.getElementById('ai-name').value.trim();
+  if(!name){alert('El ítem necessita un nom.');return;}
+  var icon=document.getElementById('ai-icon').value.trim()||'📦';
+  var imageUrl=document.getElementById('ai-imageurl').value.trim()||null;
+  var desc=document.getElementById('ai-desc').value.trim();
+  var slot=document.getElementById('ai-slot').value;
+  var rareza=document.getElementById('ai-rarity').value;
+  var cost=parseInt(document.getElementById('ai-cost').value)||0;
+  var minLevel=parseInt(document.getElementById('ai-lvl').value)||1;
+  var via=document.getElementById('ai-via').value;
+  var newItem={
+    id:'item'+Date.now(),name:name,icon:icon,imageUrl:imageUrl,desc:desc,
+    slot:slot,rareza:rareza,cost:cost,minLevel:minLevel,via:via,
+    minAttrs:{fue:parseInt(document.getElementById('ai-rfue').value)||0,int:parseInt(document.getElementById('ai-rint').value)||0,agi:parseInt(document.getElementById('ai-ragi').value)||0,car:parseInt(document.getElementById('ai-rcar').value)||0,sab:parseInt(document.getElementById('ai-rsab').value)||0},
+    bonus:{fue:parseInt(document.getElementById('ai-bfue').value)||0,int:parseInt(document.getElementById('ai-bint').value)||0,agi:parseInt(document.getElementById('ai-bagi').value)||0,car:parseInt(document.getElementById('ai-bcar').value)||0,sab:parseInt(document.getElementById('ai-bsab').value)||0}
+  };
+  shopItems.push(newItem);
+  if(CFG.MODE==='supabase')saveToSupabase();
+  ['ai-name','ai-icon','ai-imageurl','ai-desc','ai-cost','ai-lvl'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['ai-rfue','ai-rint','ai-ragi','ai-rcar','ai-rsab','ai-bfue','ai-bint','ai-bagi','ai-bcar','ai-bsab'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='0';});
+  renderAdminItemsPage();
+  renderShop();
+}
+function adminChangeVia(itemId, via){
+  var item=shopItems.find(function(i){return i.id===itemId;});
+  if(!item)return;
+  item.via=via;
+  if(CFG.MODE==='supabase')saveToSupabase();
+  renderAdminItemsPage();
+  renderShop();
+}
+function adminDeleteItemFull(itemId){
+  if(!confirm('Eliminar aquest ítem?'))return;
+  shopItems=shopItems.filter(function(i){return i.id!==itemId;});
+  players.forEach(function(p){
+    if(p.inventory)p.inventory=p.inventory.filter(function(id){return id!==itemId;});
+    if(p.equipped)Object.keys(p.equipped).forEach(function(k){if(p.equipped[k]===itemId)p.equipped[k]=null;});
+  });
+  if(CFG.MODE==='supabase')saveToSupabase();
+  renderAdminItemsPage();
+  renderShop();
+}
+function renderAdminItemsPage(){
+  var filterVia=document.getElementById('ai-filter-via')?document.getElementById('ai-filter-via').value:'';
+  var items=shopItems.filter(function(i){return !filterVia||i.via===filterVia;});
+  var countEl=document.getElementById('ai-count');
+  if(countEl)countEl.textContent=items.length;
+  var wrap=document.getElementById('ai-list');
+  if(!wrap)return;
+  if(!items.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);">No hi ha ítems.</div>';return;}
+  wrap.innerHTML=items.map(function(item){
+    var viaLabel=item.via==='gacha'?'Només Gacha':item.via==='solo_tienda'?'Només Botiga':'Botiga+Gacha';
+    var viaColor=item.via==='gacha'?'var(--accent)':item.via==='solo_tienda'?'var(--teal)':'var(--gold)';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);">'
+      +(item.imageUrl?'<img src="'+item.imageUrl+'" style="width:36px;height:36px;object-fit:cover;border-radius:var(--radius);flex-shrink:0;">':'<span style="font-size:22px;width:36px;text-align:center;">'+item.icon+'</span>')
+      +'<div style="flex:1;min-width:0;">'
+        +'<div style="font-size:13px;font-weight:500;">'+item.name+'</div>'
+        +'<div style="font-size:11px;color:var(--muted);">'+item.slot+' · '+item.rareza+' · '+item.cost+' or · Nv.'+item.minLevel+'</div>'
+      +'</div>'
+      +'<select data-iid="'+item.id+'" onchange="adminChangeVia(this.dataset.iid,this.value)" style="padding:4px 8px;font-size:11px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:'+viaColor+';">'
+        +'<option value="tienda"'+(item.via==='tienda'?' selected':'')+'>Botiga+Gacha</option>'
+        +'<option value="gacha"'+(item.via==='gacha'?' selected':'')+'>Només Gacha</option>'
+        +'<option value="solo_tienda"'+(item.via==='solo_tienda'?' selected':'')+'>Només Botiga</option>'
+      +'</select>'
+      +'<button class="btn btn-sm" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);flex-shrink:0;" data-iid="'+item.id+'" onclick="adminDeleteItemFull(this.dataset.iid)">🗑️</button>'
+      +'</div>';
+  }).join('');
+}
+
 function adminCreateItem(){
   var name=document.getElementById('si-name').value.trim();
   var icon=document.getElementById('si-icon').value.trim()||'📦';
@@ -2488,7 +2646,7 @@ function renderInventario(){
     var eq=p.equipped&&Object.values(p.equipped).indexOf(iid)>=0;
     var bonusStr=Object.entries(item.bonus||{}).filter(function(e){return e[1]>0;}).map(function(e){return '+'+e[1]+' '+AN[e[0]];}).join(' · ');
     var html='<div class="inv-item bg-rarity-'+(item.rareza||'comun')+' '+(eq?'equipped':'')+'">';
-    html+=(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--radius);margin-bottom:4px;">':'<div style="font-size:24px;text-align:center;">'+item.icon+'</div>');
+    html+=(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'" style="width:100%;height:120px;object-fit:cover;border-radius:var(--radius);margin-bottom:4px;">':'<div style="font-size:24px;text-align:center;">'+item.icon+'</div>');
     html+='<div style="font-size:13px;font-weight:500;">'+item.name+'</div>';
     html+='<div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">'+item.slot+'</div>';
     if(bonusStr)html+='<div style="font-size:11px;color:var(--accent);">⬆️ '+bonusStr+'</div>';
