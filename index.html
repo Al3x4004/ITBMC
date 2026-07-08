@@ -1118,7 +1118,7 @@ async function loadData(){
           headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
         });
         const _eqd=await _eq.json();
-        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',desc:r.descripcion||'',slot:r.tipo,rareza:r.rareza||'comun',cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0}})):JSON.parse(JSON.stringify(DEMO.shop_items));
+        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',imageUrl:r.imagen_url||null,desc:r.descripcion||'',slot:r.tipo,rareza:r.rareza||'comun',cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0}})):JSON.parse(JSON.stringify(DEMO.shop_items));
       }catch{shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));}
       if(d.cal_events)calEvents=d.cal_events;
       else calEvents=JSON.parse(JSON.stringify(DEMO.cal_events));
@@ -1138,7 +1138,7 @@ async function loadData(){
           headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
         });
         const _eqd=await _eq.json();
-        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',desc:r.descripcion||'',slot:r.tipo,rareza:r.rareza||'comun',cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0}})):JSON.parse(JSON.stringify(DEMO.shop_items));
+        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',imageUrl:r.imagen_url||null,desc:r.descripcion||'',slot:r.tipo,rareza:r.rareza||'comun',cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0}})):JSON.parse(JSON.stringify(DEMO.shop_items));
       }catch{shopItems=JSON.parse(JSON.stringify(DEMO.shop_items));}
       calEvents=JSON.parse(JSON.stringify(DEMO.cal_events));
       await saveToSupabase();
@@ -1917,7 +1917,7 @@ function renderShop(){
     else if(!meetsR)btn='<div style="font-size:11px;color:var(--coral);margin-top:auto;">🔒 Requisitos no cumplidos</div>';
     else btn='<div style="font-size:11px;color:var(--coral);margin-top:auto;">Oro insuficiente</div>';
     return '<div class="shop-item '+cls+'">'
-      +'<div class="item-icon">'+item.icon+'</div>'
+      +(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--radius);margin-bottom:4px;">':'<div class="item-icon">'+item.icon+'</div>')
       +'<div class="item-name">'+item.name+'</div>'
       +'<div class="item-slot">'+item.slot+'</div>'
       +'<div class="item-desc">'+item.desc+'</div>'
@@ -2488,7 +2488,7 @@ function renderInventario(){
     var eq=p.equipped&&Object.values(p.equipped).indexOf(iid)>=0;
     var bonusStr=Object.entries(item.bonus||{}).filter(function(e){return e[1]>0;}).map(function(e){return '+'+e[1]+' '+AN[e[0]];}).join(' · ');
     var html='<div class="inv-item bg-rarity-'+(item.rareza||'comun')+' '+(eq?'equipped':'')+'">';
-    html+='<div style="font-size:24px;text-align:center;">'+item.icon+'</div>';
+    html+=(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--radius);margin-bottom:4px;">':'<div style="font-size:24px;text-align:center;">'+item.icon+'</div>');
     html+='<div style="font-size:13px;font-weight:500;">'+item.name+'</div>';
     html+='<div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">'+item.slot+'</div>';
     if(bonusStr)html+='<div style="font-size:11px;color:var(--accent);">⬆️ '+bonusStr+'</div>';
