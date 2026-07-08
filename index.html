@@ -1227,7 +1227,7 @@ async function loadFromSupabase(){
 
 async function saveItemToSupabase(item){
   try{
-    await fetch(CFG.SUPABASE_URL+'/rest/v1/equipamiento',{
+    const _r=await fetch(CFG.SUPABASE_URL+'/rest/v1/equipamiento',{
       method:'POST',
       headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
       body:JSON.stringify({
@@ -1246,6 +1246,8 @@ async function saveItemToSupabase(item){
         activo:true
       })
     });
+    if(!_r.ok){const _e=await _r.text();console.error('Supabase error saving item:',_r.status,_e);}
+    else{console.log('Item saved OK:',item.name);}
   }catch(e){console.error('Error saving item to Supabase',e);}
 }
 async function deleteItemFromSupabase(id){
@@ -2159,7 +2161,7 @@ function unequipItem(itemId){
   renderShop();renderHeroProfile(curHero);
   
 }
-function adminCreateItemFull(){
+async function adminCreateItemFull(){
   var name=document.getElementById('ai-name').value.trim();
   if(!name){alert('El ítem necessita un nom.');return;}
   var icon=document.getElementById('ai-icon').value.trim()||'📦';
@@ -2177,28 +2179,28 @@ function adminCreateItemFull(){
     bonus:{fue:parseInt(document.getElementById('ai-bfue').value)||0,int:parseInt(document.getElementById('ai-bint').value)||0,agi:parseInt(document.getElementById('ai-bagi').value)||0,car:parseInt(document.getElementById('ai-bcar').value)||0,sab:parseInt(document.getElementById('ai-bsab').value)||0}
   };
   shopItems.push(newItem);
-  if(CFG.MODE==='supabase')saveItemToSupabase(newItem);
+  if(CFG.MODE==='supabase')await saveItemToSupabase(newItem);
   ['ai-name','ai-icon','ai-imageurl','ai-desc','ai-cost','ai-lvl'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   ['ai-rfue','ai-rint','ai-ragi','ai-rcar','ai-rsab','ai-bfue','ai-bint','ai-bagi','ai-bcar','ai-bsab'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='0';});
   renderAdminItemsPage();
   renderShop();
 }
-function adminChangeVia(itemId, via){
+async function adminChangeVia(itemId, via){
   var item=shopItems.find(function(i){return i.id===itemId;});
   if(!item)return;
   item.via=via;
-  if(CFG.MODE==='supabase')saveItemToSupabase(item);
+  if(CFG.MODE==='supabase')await saveItemToSupabase(item);
   renderAdminItemsPage();
   renderShop();
 }
-function adminDeleteItemFull(itemId){
+async function adminDeleteItemFull(itemId){
   if(!confirm('Eliminar aquest ítem?'))return;
   shopItems=shopItems.filter(function(i){return i.id!==itemId;});
   players.forEach(function(p){
     if(p.inventory)p.inventory=p.inventory.filter(function(id){return id!==itemId;});
     if(p.equipped)Object.keys(p.equipped).forEach(function(k){if(p.equipped[k]===itemId)p.equipped[k]=null;});
   });
-  if(CFG.MODE==='supabase'){deleteItemFromSupabase(itemId);saveToSupabase();}
+  if(CFG.MODE==='supabase'){await deleteItemFromSupabase(itemId);await saveToSupabase();}
   renderAdminItemsPage();
   renderShop();
 }
