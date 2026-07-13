@@ -181,7 +181,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 /* ══ MISC ══ */
 .adm-rib{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--gold-bg);color:var(--gold);border:0.5px solid var(--gold-border);margin-left:6px;}
 .daily-rib{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--gold-bg);color:var(--gold);margin-left:6px;}
-.mode-ban{background:var(--teal-bg);border:0.5px solid var(--teal-border);border-radius:var(--radius);padding:8px 14px;font-size:12px;color:var(--teal);margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:12px;}
 /* ══ GACHA ══ */
 .gacha-wrap{text-align:center;padding:1rem 0;}
 .gacha-cost{font-size:13px;color:var(--muted);margin-bottom:1rem;}
@@ -354,3 +353,24 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 
 .nb-edit-btn{display:none;font-size:10px;padding:2px 6px;border-radius:3px;border:0.5px solid var(--accent-border);background:var(--accent-bg);cursor:pointer;color:var(--accent);margin-left:auto;line-height:1;}
 body.admin-mode .nb-edit-btn{display:inline-flex;}
+/* ══ AVATAR PIXEL-ART CON CAPAS ══ */
+.pixel-avatar{position:relative;image-rendering:pixelated;image-rendering:crisp-edges;}
+.pixel-avatar .pa-base{position:absolute;inset:0;width:100%;height:100%;}
+.pixel-avatar .pa-layer{position:absolute;image-rendering:pixelated;pointer-events:none;}
+/* Posiciones fijas por slot sobre el avatar (porcentajes relativos al contenedor) */
+.pa-slot-casco    {top:-2%;  left:18%; width:64%; height:auto;z-index:5;}
+.pa-slot-armadura {top:42%;  left:20%; width:60%; height:auto;z-index:3;}
+.pa-slot-arma     {top:30%;  left:60%; width:46%; height:auto;z-index:4;}
+.pa-slot-accesorio{top:22%;  left:8%;  width:30%; height:auto;z-index:4;}
+.pa-slot-botas    {top:78%;  left:26%; width:48%; height:auto;z-index:2;}
+.pixel-avatar-lg{width:180px;height:180px;}
+.pixel-avatar-sm{width:38px;height:38px;}
+.pixel-avatar-mini{width:30px;height:30px;}
+/* Editor de avatar */
+.avatar-editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;}
+.ava-opt-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.ava-opt-row label{font-size:12px;color:var(--muted);width:80px;flex-shrink:0;}
+.ava-swatch{width:26px;height:26px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all .12s;}
+.ava-swatch.selected{border-color:var(--text);transform:scale(1.12);}
+.ava-cycle-btn{width:26px;height:26px;border-radius:6px;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
+.ava-cycle-btn:hover{background:var(--bg3);}
