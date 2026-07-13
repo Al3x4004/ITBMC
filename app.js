@@ -18,8 +18,6 @@ window.showScreen=function(id){
 /* ══ CONFIG ══ */
 const CFG={
   MODE:'supabase',
-  DATA_PATH:'Excel/data.json',
-  GACHA_CARDS_PATH:'gacha/cards.json',
   GITHUB_RAW:'https://raw.githubusercontent.com/Al3x4004/ITBMC/main/',
   ADMIN_PW:'admin1234',
   SUPABASE_URL:'https://ksmxclenaeglnahinkvm.supabase.co',
@@ -27,7 +25,7 @@ const CFG={
 };
 
 /* ══ DATOS ESTÁTICOS ══ */
-const CLASSES=[
+let CLASSES=[
   {name:'Mago',       icon:'🔮',role:'Dev / Técnico',       bonus:'+5 INT · +3 AGI',attrs:{fue:1,int:5,agi:3,car:1,sab:2}},
   {name:'Paladín',    icon:'🛡️',role:'Gestión / Liderazgo', bonus:'+5 CAR · +4 SAB',attrs:{fue:2,int:1,agi:1,car:5,sab:4}},
   {name:'Exploradora',icon:'🏹',role:'Data / Análisis',      bonus:'+5 AGI · +4 INT',attrs:{fue:1,int:4,agi:5,car:1,sab:2}},
@@ -35,14 +33,6 @@ const CLASSES=[
   {name:'Pícaro',     icon:'🗡️',role:'Diseño / Creatividad',bonus:'+5 AGI · +3 CAR',attrs:{fue:1,int:3,agi:5,car:3,sab:1}},
   {name:'Bardo',      icon:'📯',role:'Marketing / Comms',   bonus:'+6 CAR · +3 SAB',attrs:{fue:1,int:2,agi:1,car:6,sab:3}},
 ];
-const EQUIP={
-  'Mago':       {w:['Báculo arcano','Tomo de hechizos','Varita de poder'],        a:['Túnica de seda','Capa del arcano','Velos del vacío'],          c:['Anillo de enfoque','Amuleto de mana','Cristal oráculo']},
-  'Paladín':    {w:['Espada sagrada','Martillo de la justicia','Lanza del alba'],  a:['Armadura completa','Escudo reluciente','Cota de malla'],         c:['Símbolo sagrado','Capa de liderazgo','Corona de estratega']},
-  'Exploradora':{w:['Arco largo','Dagas gemelas','Ballesta de precisión'],         a:['Cuero ligero','Capucha de rastreador','Manto del bosque'],        c:['Brújula mágica','Lente de análisis','Mapa estelar']},
-  'Guerrero':   {w:['Hacha de guerra','Espada bastarda','Mandoble del norte'],     a:['Armadura de placas','Coraza de hierro','Malla de batalla'],       c:['Brazales de fuerza','Cinturón de campeón','Casco de berserker']},
-  'Pícaro':     {w:['Daga envenenada','Garfio de sombras','Estiletes gemelos'],    a:['Traje de sombras','Capa de invisibilidad','Cuero tachonado'],     c:['Gema de ilusión','Máscara de engaño','Guantes de artesano']},
-  'Bardo':      {w:['Laúd de guerra','Trompeta del trueno','Pluma encantada'],     a:['Ropas de gala','Capa del viajero','Vestido de corte'],            c:['Insignia de elocuencia','Anillo de persuasión','Sello de alianzas']},
-};
 const COLORS=[
   {hex:'#7f77dd',bg:'rgba(127,119,221,0.15)'},{hex:'#1d9e75',bg:'rgba(29,158,117,0.15)'},
   {hex:'#d85a30',bg:'rgba(216,90,48,0.15)'}, {hex:'#378add',bg:'rgba(55,138,221,0.15)'},
@@ -54,95 +44,13 @@ const AC={fue:'#d85a30',int:'#7f77dd',agi:'#1d9e75',car:'#378add',sab:'#e4a428'}
 const AN={fue:'Força',int:'Intel·ligència',agi:'Agilitat',car:'Carisma',sab:'Saviesa'};
 const RARITY_ORDER=['legendaria','epica','rara','comun'];
 const RARITY_PROB={comun:60,rara:25,epica:12,legendaria:3};
+const GACHA_COST_SINGLE=100;
+const GACHA_COST_MULTI=900;
 const RARITY_LABEL={comun:'Comú',rara:'Rara',epica:'Èpica',legendaria:'Llegendària'};
 
-const DEMO={
-  players:[
-    {id:'pj001',realName:'',name:'Aldric el Arcano',   cls:'Mago',       role:'Dev / Técnico',       emblem:'🔮',color:'#7f77dd',colorBg:'rgba(127,119,221,0.15)',level:3,xp:2400,xpNext:100,gold:580,missions:8,weapon:'Báculo arcano',  armor:'Túnica de seda',   accessory:'Cristal oráculo',   lore:'Estudioso de los lenguajes arcanos del código.',quote:'El código no falla, fallan los que no lo prueban.',pin:'',attrs:{fue:1,int:18,agi:10,car:4,sab:8},gachaTokens:0,gallery:[],lastDaily:''},
-    {id:'pj002',realName:'',name:'Brynn Escudohierro', cls:'Paladín',    role:'Gestión / Liderazgo', emblem:'🛡️',color:'#378add',colorBg:'rgba(55,138,221,0.15)', level:2,xp:1200,xpNext:100,gold:310,missions:5,weapon:'Espada sagrada',armor:'Armadura completa',accessory:'Corona de estratega',lore:'Líder nato que guía al grupo con honor.',       quote:'Un equipo sin dirección es un ejército sin mapa.',pin:'',attrs:{fue:8,int:5,agi:4,car:16,sab:14},gachaTokens:0,gallery:[],lastDaily:''},
-    {id:'pj003',realName:'',name:'Seraphine Ojoagudo', cls:'Exploradora',role:'Data / Análisis',     emblem:'🏹',color:'#1d9e75',colorBg:'rgba(29,158,117,0.15)', level:2,xp:1050,xpNext:100,gold:270,missions:4,weapon:'Arco largo',    armor:'Cuero ligero',     accessory:'Lente de análisis', lore:'Rastreadora de datos perdidos en el caos.',     quote:'Los datos no mienten. Las personas sí.',         pin:'',attrs:{fue:3,int:14,agi:16,car:6,sab:10},gachaTokens:0,gallery:[],lastDaily:''},
-  ],
-  missions:[
-    {id:'tut1_demo',name:'Explora tu ficha de héroe',arc:'Tutorial: Primeros Pasos',playerId:'pj001',status:'pending',diff:'D',xp:25,gold:10,attr:'Sabiduría',attrPts:1,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
-    {id:'tut2_demo',name:'Visita la Tienda y observa los items',arc:'Tutorial: Primeros Pasos',playerId:'pj001',status:'pending',diff:'C',xp:75,gold:25,attr:'Inteligencia',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
-    {id:'tut3_demo',name:'Haz tu primera invocación en el Gacha',arc:'Tutorial: Primeros Pasos',playerId:'pj001',status:'pending',diff:'C',xp:75,gold:25,attr:'Agilidad',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
-    {id:'tut4_demo',name:'Crea tu primera misión propia',arc:'Tutorial: Primeros Pasos',playerId:'pj001',status:'pending',diff:'C',xp:75,gold:25,attr:'Carisma',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
-    {id:'tut5_demo',name:'Añade un evento al Calendario',arc:'Tutorial: Primeros Pasos',playerId:'pj001',status:'pending',diff:'C',xp:75,gold:25,attr:'Sabiduría',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
-  ],
-  arcs:[
-    {id:'arc_tutorial_demo',name:'Tutorial: Primeros Pasos',lore:'Bienvenido al Cuartel General. Este arco te guiará por las funciones principales: crea misiones, explora la tienda, invoca en el gacha y añade eventos al calendario. ¡Completa las 5 misiones para recibir un bonus de XP y oro!',status:'active',total:5,done:0,createdBy:'system'},
-  ],
-  cal_events:[
-    {id:'ev001',title:'Reunión de sprint',date:'2026-06-26',time:'10:00',desc:'Review del sprint actual.',type:'team',missionId:'',ownerId:'team'},
-    {id:'ev002',title:'Deploy producción',date:'2026-06-30',time:'15:00',desc:'Despliegue del arco completo.',type:'team',missionId:'m001',ownerId:'team'},
-    {id:'ev003',title:'1on1 con manager',date:'2026-06-28',time:'11:00',desc:'Sesión individual.',type:'personal',missionId:'',ownerId:'pj001'},
-  ],
-  shop_items:[
-    // ── ARMAS ──
-    {id:'i001',name:'Daga de Hierro',      icon:'🗡️',desc:'Una daga básica pero efectiva.',                    slot:'arma',     cost:80,  minLevel:1, minAttrs:{fue:0,int:0,agi:2,car:0,sab:0},bonus:{fue:0,int:0,agi:2,car:0,sab:0}},
-    {id:'i002',name:'Espada Corta',         icon:'⚔️',desc:'Equilibrada y fácil de manejar.',                  slot:'arma',     cost:150, minLevel:2, minAttrs:{fue:3,int:0,agi:0,car:0,sab:0},bonus:{fue:2,int:0,agi:1,car:0,sab:0}},
-    {id:'i003',name:'Báculo Arcano',        icon:'🔮',desc:'Amplifica los hechizos del portador.',             slot:'arma',     cost:200, minLevel:2, minAttrs:{fue:0,int:5,agi:0,car:0,sab:0},bonus:{fue:0,int:4,agi:0,car:0,sab:1}},
-    {id:'i004',name:'Arco Élfico',          icon:'🏹',desc:'Tallado en madera de roble milenario.',            slot:'arma',     cost:220, minLevel:3, minAttrs:{fue:0,int:0,agi:6,car:0,sab:0},bonus:{fue:0,int:1,agi:4,car:0,sab:0}},
-    {id:'i005',name:'Hacha de Guerra',      icon:'🪓',desc:'Pura fuerza bruta en cada golpe.',                 slot:'arma',     cost:280, minLevel:3, minAttrs:{fue:7,int:0,agi:0,car:0,sab:0},bonus:{fue:5,int:0,agi:0,car:0,sab:0}},
-    {id:'i006',name:'Espada del Abismo',    icon:'⚡',desc:'Forjada en las sombras más profundas.',            slot:'arma',     cost:450, minLevel:5, minAttrs:{fue:10,int:0,agi:0,car:0,sab:0},bonus:{fue:7,int:0,agi:2,car:0,sab:0}},
-    {id:'i007',name:'Varita de Caos',       icon:'✨',desc:'Inestable pero devastadoramente poderosa.',        slot:'arma',     cost:500, minLevel:5, minAttrs:{fue:0,int:12,agi:0,car:0,sab:0},bonus:{fue:0,int:8,agi:0,car:0,sab:2}},
-    // ── ARMADURAS ──
-    {id:'i008',name:'Túnica de Tela',       icon:'👘',desc:'Ligera, cómoda y fácil de llevar.',                slot:'armadura', cost:60,  minLevel:1, minAttrs:{fue:0,int:0,agi:0,car:0,sab:0},bonus:{fue:0,int:1,agi:1,car:0,sab:0}},
-    {id:'i009',name:'Cuero Reforzado',      icon:'🥋',desc:'Protección ligera para el ágil explorador.',      slot:'armadura', cost:130, minLevel:2, minAttrs:{fue:0,int:0,agi:4,car:0,sab:0},bonus:{fue:1,int:0,agi:2,car:0,sab:0}},
-    {id:'i010',name:'Capa del Arcano',      icon:'🧥',desc:'Tejida con hilos de maná puro.',                  slot:'armadura', cost:180, minLevel:2, minAttrs:{fue:0,int:4,agi:0,car:0,sab:0},bonus:{fue:0,int:2,agi:1,car:0,sab:1}},
-    {id:'i011',name:'Cota de Malla',        icon:'🛡️',desc:'Protección estándar para el guerrero.',           slot:'armadura', cost:240, minLevel:3, minAttrs:{fue:5,int:0,agi:0,car:0,sab:0},bonus:{fue:2,int:0,agi:0,car:1,sab:0}},
-    {id:'i012',name:'Armadura de Placas',   icon:'⚙️',desc:'Máxima protección, mínima movilidad.',            slot:'armadura', cost:380, minLevel:5, minAttrs:{fue:9,int:0,agi:0,car:0,sab:0},bonus:{fue:4,int:0,agi:0,car:0,sab:1}},
-    {id:'i013',name:'Manto de Sombras',     icon:'🌑',desc:'Te hace casi invisible en la oscuridad.',          slot:'armadura', cost:350, minLevel:4, minAttrs:{fue:0,int:0,agi:8,car:0,sab:0},bonus:{fue:0,int:0,agi:5,car:0,sab:0}},
-    // ── ACCESORIOS ──
-    {id:'i014',name:'Amuleto de Maná',      icon:'💎',desc:'Aumenta el flujo de energía mágica.',             slot:'accesorio',cost:100, minLevel:1, minAttrs:{fue:0,int:3,agi:0,car:0,sab:0},bonus:{fue:0,int:2,agi:0,car:0,sab:1}},
-    {id:'i015',name:'Anillo Veloz',         icon:'💍',desc:'Acelera los reflejos del portador.',               slot:'accesorio',cost:120, minLevel:1, minAttrs:{fue:0,int:0,agi:3,car:0,sab:0},bonus:{fue:0,int:0,agi:3,car:0,sab:0}},
-    {id:'i016',name:'Colgante del Orador',  icon:'📿',desc:'Mejora la persuasión y presencia social.',        slot:'accesorio',cost:160, minLevel:2, minAttrs:{fue:0,int:0,agi:0,car:4,sab:0},bonus:{fue:0,int:0,agi:0,car:3,sab:1}},
-    {id:'i017',name:'Brazales de Fuerza',   icon:'💪',desc:'Refuerzan los músculos del portador.',             slot:'accesorio',cost:200, minLevel:2, minAttrs:{fue:5,int:0,agi:0,car:0,sab:0},bonus:{fue:4,int:0,agi:0,car:0,sab:0}},
-    {id:'i018',name:'Lente del Analista',   icon:'🔍',desc:'Revela patrones ocultos en los datos.',            slot:'accesorio',cost:250, minLevel:3, minAttrs:{fue:0,int:6,agi:0,car:0,sab:3},bonus:{fue:0,int:3,agi:0,car:0,sab:3}},
-    {id:'i019',name:'Botas de Viento',      icon:'👟',desc:'Tan rápidas como el viento del norte.',            slot:'accesorio',cost:280, minLevel:3, minAttrs:{fue:0,int:0,agi:7,car:0,sab:0},bonus:{fue:0,int:0,agi:5,car:0,sab:0}},
-    {id:'i020',name:'Sello del Líder',      icon:'🏅',desc:'Símbolo de autoridad reconocido en todo el reino.',slot:'accesorio',cost:400, minLevel:5, minAttrs:{fue:0,int:0,agi:0,car:10,sab:5},bonus:{fue:0,int:0,agi:0,car:6,sab:3}},
-    // ── ESPECIALES ──
-    {id:'i021',name:'Tomo del Novato',      icon:'📓',desc:'Primeros pasos en el camino del conocimiento.',   slot:'especial', cost:90,  minLevel:1, minAttrs:{fue:0,int:0,agi:0,car:0,sab:0},bonus:{fue:0,int:1,agi:0,car:0,sab:2}},
-    {id:'i022',name:'Insignia de Escudero', icon:'🎖️',desc:'Reconocimiento por completar el primer arco.',    slot:'especial', cost:150, minLevel:2, minAttrs:{fue:2,int:2,agi:2,car:2,sab:2},bonus:{fue:1,int:1,agi:1,car:1,sab:1}},
-    {id:'i023',name:'Cristal Arcano',       icon:'🔮',desc:'Fragmento de poder puro de las eras antiguas.',   slot:'especial', cost:300, minLevel:3, minAttrs:{fue:0,int:8,agi:0,car:0,sab:4},bonus:{fue:0,int:4,agi:0,car:0,sab:4}},
-    {id:'i024',name:'Corona del Orador',    icon:'👑',desc:'Solo los más carismáticos pueden portarla.',      slot:'especial', cost:420, minLevel:4, minAttrs:{fue:0,int:0,agi:0,car:10,sab:0},bonus:{fue:0,int:0,agi:0,car:6,sab:2}},
-    {id:'i025',name:'Máscara del Pícaro',   icon:'🎭',desc:'Oculta la identidad y aguza los sentidos.',       slot:'especial', cost:350, minLevel:4, minAttrs:{fue:0,int:3,agi:8,car:3,sab:0},bonus:{fue:0,int:2,agi:5,car:2,sab:0}},
-    {id:'i026',name:'Grimorio Ancestral',   icon:'📜',desc:'Contiene hechizos olvidados por siglos.',         slot:'especial', cost:480, minLevel:5, minAttrs:{fue:0,int:12,agi:0,car:0,sab:8},bonus:{fue:0,int:6,agi:0,car:0,sab:6}},
-    {id:'i027',name:'Capa del Campeón',     icon:'🦸',desc:'Otorgada solo a los héroes del reino.',           slot:'especial', cost:550, minLevel:6, minAttrs:{fue:8,int:5,agi:5,car:5,sab:5},bonus:{fue:3,int:2,agi:2,car:2,sab:2}},
-    {id:'i028',name:'Orbe de Sabiduría',    icon:'🌐',desc:'Concentra el conocimiento universal.',            slot:'especial', cost:500, minLevel:5, minAttrs:{fue:0,int:10,agi:0,car:0,sab:10},bonus:{fue:0,int:5,agi:0,car:0,sab:7}},
-    {id:'i029',name:'Talismán de Batalla',  icon:'⚔️',desc:'Bendecido por los dioses de la guerra.',          slot:'especial', cost:460, minLevel:5, minAttrs:{fue:12,int:0,agi:5,car:0,sab:0},bonus:{fue:6,int:0,agi:3,car:0,sab:0}},
-    {id:'i030',name:'Corona del DM',        icon:'🌟',desc:'El poder absoluto. Solo para el elegido.',        slot:'especial', cost:999, minLevel:10,minAttrs:{fue:15,int:15,agi:15,car:15,sab:15},bonus:{fue:10,int:10,agi:10,car:10,sab:10}},
-  ],
-  gacha_cards:[
-    {id:'c001',name:'Escudo del Alba',    rarity:'comun',    imageUrl:'https://picsum.photos/seed/c001/200/280',description:'Un viejo escudo que aún brilla.'},
-    {id:'c002',name:'Daga Susurrante',    rarity:'comun',    imageUrl:'https://picsum.photos/seed/c002/200/280',description:'Silenciosa como la noche.'},
-    {id:'c003',name:'Manto del Viajero',  rarity:'comun',    imageUrl:'https://picsum.photos/seed/c003/200/280',description:'Ha recorrido mil reinos.'},
-    {id:'c004',name:'Amuleto de Piedra',  rarity:'comun',    imageUrl:'https://picsum.photos/seed/c004/200/280',description:'Trae suerte al portador.'},
-    {id:'c005',name:'Espada Rúnica',      rarity:'rara',     imageUrl:'https://picsum.photos/seed/c005/200/280',description:'Inscrita con hechizos olvidados.'},
-    {id:'c006',name:'Orbe de Tormenta',   rarity:'rara',     imageUrl:'https://picsum.photos/seed/c006/200/280',description:'Contiene una tormenta en su interior.'},
-    {id:'c007',name:'Capa del Arcano',    rarity:'rara',     imageUrl:'https://picsum.photos/seed/c007/200/280',description:'Tejida con hilos de maná puro.'},
-    {id:'c008',name:'Yelmo del Guardián', rarity:'rara',     imageUrl:'https://picsum.photos/seed/c008/200/280',description:'Protege la mente del portador.'},
-    {id:'c009',name:'Armadura del Dragón',rarity:'epica',    imageUrl:'https://picsum.photos/seed/c009/200/280',description:'Forjada con escamas de dragón anciano.'},
-    {id:'c010',name:'Báculo del Caos',    rarity:'epica',    imageUrl:'https://picsum.photos/seed/c010/200/280',description:'Canaliza energías inestables.'},
-    {id:'c011',name:'Sello del Titán',    rarity:'epica',    imageUrl:'https://picsum.photos/seed/c011/200/280',description:'Solo los titanes pueden portarlo.'},
-    {id:'c012',name:'Corona del DM',      rarity:'legendaria',imageUrl:'https://picsum.photos/seed/c012/200/280',description:'El poder absoluto en una corona.'},
-    {id:'c013',name:'Espada Dragontooth', rarity:'legendaria',imageUrl:'https://picsum.photos/seed/c013/200/280',description:'Tallada en el colmillo de un dragón.'},
-    {id:'c014',name:'Arco Estelar',       rarity:'legendaria',imageUrl:'https://picsum.photos/seed/c014/200/280',description:'Dispara flechas de luz pura.'},
-  ]
-};
-
-/* ══ ESTADO ══ */
-let session={loggedIn:false,isAdmin:false,playerId:null};
-let players=[],missions=[],arcs=[],gachaCards=[],shopItems=[],calEvents=[];
-let luState={pid:null,pts:0,spent:{}};
-let curHero=0,editPid=null;
-let cpState={cls:null,color:COLORS[0],emblem:'⚔️',weapon:null,armor:null,accessory:null};
 let galleryHeroIdx=0;
 
 /* ══ CARGA ══ */
-/* ══ JSONBIN ══ */
-const JB_URL=`https://api.jsonbin.io/v3/b/${CFG.JSONBIN_ID}`;
-const JB_HDR={'Content-Type':'application/json','X-Master-Key':CFG.JSONBIN_KEY,'X-Bin-Versioning':'false'};
 
 async function loadFromSupabase(){
   try{
@@ -210,20 +118,22 @@ function missionToRow(m){
   return {
     id:m.id,nombre:m.name,descripcion:m.desc||'',arco:m.arc||'',
     player_id:m.playerId||'',status:m.status||'pending',diff:m.diff||'C',
-    xp:m.xp||0,gold:m.gold||0,attr:m.attr||'',attr_pts:m.attrPts||0,
+    xp:m.xp||0,gold:m.gold||0,frag:m.frag||0,attr:m.attr||'',attr_pts:m.attrPts||0,
     deadline:m.deadline||'',daily:!!m.daily,is_daily_instance:!!m.isDaily_instance,
     template_id:m.templateId||'',planner_id:m.plannerId||'',
-    from_planner:!!m.fromPlanner,created_by:m.createdBy||''
+    from_planner:!!m.fromPlanner,created_by:m.createdBy||'',
+    planner_creator:m.plannerCreator||'',planner_assignee:m.plannerAssignee||'',planner_tags:m.plannerTags||''
   };
 }
 function rowToMission(r){
   return {
     id:r.id,name:r.nombre,desc:r.descripcion||'',arc:r.arco||'General',
     playerId:r.player_id||'',status:r.status||'pending',diff:r.diff||'C',
-    xp:r.xp||0,gold:r.gold||0,attr:r.attr||'',attrPts:r.attr_pts||0,
+    xp:r.xp||0,gold:r.gold||0,frag:r.frag||0,attr:r.attr||'',attrPts:r.attr_pts||0,
     deadline:r.deadline||'',daily:!!r.daily,isDaily_instance:!!r.is_daily_instance,
     templateId:r.template_id||'',plannerId:r.planner_id||'',
-    fromPlanner:!!r.from_planner,createdBy:r.created_by||''
+    fromPlanner:!!r.from_planner,createdBy:r.created_by||'',
+    plannerCreator:r.planner_creator||'',plannerAssignee:r.planner_assignee||'',plannerTags:r.planner_tags||''
   };
 }
 async function saveMissionToSupabase(m){
@@ -264,6 +174,47 @@ async function loadMissionsFromSupabase(){
   }catch(e){console.error('Error loading missions',e);return null;}
 }
 
+// ══ CLASES: mapping entre formato JS y Supabase ══
+function classToRow(cls,idx){
+  return {
+    id:cls.id,nombre:cls.name,rol:cls.role||'',icono:cls.icon||'⚔️',
+    attrs:cls.attrs||{fue:1,int:1,agi:1,car:1,sab:1},
+    items_iniciales:cls.startItems||[],orden:(typeof idx==='number'?idx:cls.orden||0)
+  };
+}
+function rowToClass(r){
+  return {
+    id:r.id,name:r.nombre,role:r.rol||'',icon:r.icono||'⚔️',
+    attrs:r.attrs||{fue:1,int:1,agi:1,car:1,sab:1},
+    startItems:r.items_iniciales||[],orden:r.orden||0,
+    bonus:computeClassBonus(r.attrs||{})
+  };
+}
+function computeClassBonus(attrs){
+  var abbr={fue:'FUE',int:'INT',agi:'AGI',car:'CAR',sab:'SAB'};
+  return Object.entries(attrs).sort(function(a,b){return b[1]-a[1];}).slice(0,2)
+    .map(function(e){return '+'+e[1]+' '+abbr[e[0]];}).join(' · ');
+}
+async function loadClassesFromSupabase(){
+  try{
+    const _r=await fetch(CFG.SUPABASE_URL+'/rest/v1/clases?order=orden',{
+      headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
+    });
+    const _d=await _r.json();
+    return Array.isArray(_d)&&_d.length?_d.map(rowToClass):null;
+  }catch(e){console.error('Error loading classes',e);return null;}
+}
+async function saveClassToSupabase(cls,idx){
+  try{
+    const _r=await fetch(CFG.SUPABASE_URL+'/rest/v1/clases',{
+      method:'POST',
+      headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify(classToRow(cls,idx))
+    });
+    if(!_r.ok){const _e=await _r.text();console.error('Error saving class:',_r.status,_e);}
+  }catch(e){console.error('Error saving class',e);}
+}
+
 async function saveToSupabase(){
   try{
     // Save main game data
@@ -299,6 +250,12 @@ async function loadData(){
     }
   }catch(e){gachaCards=[];}
 
+  // Clases desde tabla dedicada (siempre, independiente de players)
+  if(CFG.MODE==='supabase'){
+    var _clsLoad=await loadClassesFromSupabase();
+    if(_clsLoad&&_clsLoad.length)CLASSES=_clsLoad;
+  }
+
   if(CFG.MODE==='supabase'){
     const d=await loadFromSupabase();
     if(d&&d.players){
@@ -312,6 +269,7 @@ async function loadData(){
       }catch{shopItems=[];}
       if(d.cal_events)calEvents=d.cal_events;
       else calEvents=[];
+
       // Ensure tutorial missions exist for each player
       players.forEach(function(p){
         var hasTutorial=missions&&missions.find(function(m){return m.arc==='Tutorial: Primeros Pasos'&&m.playerId===p.id;});
@@ -345,22 +303,10 @@ async function loadData(){
       calEvents=[];
       await saveToSupabase();
     }
-  }else{
-    try{
-      const r=await fetch(CFG.DATA_PATH);
-      if(!r.ok)throw new Error();
-      const d=await r.json();
-      players =d.players  ||[];
-      missions=d.missions ||[];
-      arcs    =d.arcs     ||[];
-    }catch{
-      players =[];
-      missions=[];
-      arcs    =[];
-    }
   }
   players.forEach(p=>{
     if(!p.gachaTokens)p.gachaTokens=0;
+    if(p.fragments===undefined)p.fragments=0;
     if(!p.gallery)p.gallery=[];
     if(!p.lastDaily)p.lastDaily='';
     if(!p.inventory)p.inventory=[];
@@ -405,18 +351,9 @@ function checkDailyMissions(){
 }
 
 function exportJSON(){
-  if(CFG.MODE==='supabase'){
-    saveToSupabase();
-    (function(){var _x=document.getElementById('umenu-inline');if(_x)_x.style.display='none';})();
-    
-    return;
-  }
-  const blob=new Blob([JSON.stringify({players,missions,arcs,gacha_cards:gachaCards,cal_events:calEvents},null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download='data.json';a.click();
-  URL.revokeObjectURL(url);
-  (function(){var _x=document.getElementById('umenu-inline');if(_x)_x.style.display='none';})();
-  
+  // Guardar en Supabase (ya no hay modo local)
+  saveToSupabase();
+  var _x=document.getElementById('umenu-inline');if(_x)_x.style.display='none';
 }
 
 /* ══ AUTH ══ */
@@ -462,17 +399,13 @@ function enterApp(){
   document.body.classList.toggle('admin-mode', session.isAdmin);
   var adminNav=document.getElementById('nav-items-admin');
   if(adminNav)adminNav.style.display=session.isAdmin?'flex':'none';
+  var classNav=document.getElementById('nav-classes-admin');
+  if(classNav)classNav.style.display=session.isAdmin?'flex':'none';
   const p=players.find(p=>p.id===session.playerId);
   if(p){const _idx=players.findIndex(function(pl){return pl.id===session.playerId;});if(_idx>=0)curHero=_idx;}
   document.getElementById('ulabel').textContent=session.isAdmin?'Dios 👑':(p?p.name.split(' ')[0]:'—');
+  updateSidebarAvatar();
   (function(){var _x=document.getElementById('umname');if(_x)_x.textContent=session.isAdmin?'👑 Dios':(p?p.name:'—');})();
-  if(CFG.MODE==='local'){
-    document.getElementById('mode-ban-wrap').innerHTML=`
-      <div class="mode-ban">
-        <span>⚗️ Modo pruebas local — exporta el JSON para guardar cambios</span>
-        <button class="btn btn-sm btn-g" onclick="exportJSON()">⬇️ Exportar data.json</button>
-      </div>`;
-  }
   renderAll();
 }
 function toggleUMenu(){
@@ -493,8 +426,8 @@ function buildCreatorCls(){
     d.innerHTML=`<div class="icon">${c.icon}</div><div class="cname">${c.name}</div><div class="crole">${c.role}</div><div class="cbonus">${c.bonus}</div>`;
     d.onclick=()=>{
       document.querySelectorAll('.copt').forEach(x=>x.classList.remove('selected'));d.classList.add('selected');
-      cpState.cls=c;cpState.weapon=EQUIP[c.name].w[0];cpState.armor=EQUIP[c.name].a[0];cpState.accessory=EQUIP[c.name].c[0];
-      buildAttrBars('cp-abars',c.attrs);document.getElementById('cp-cstats').style.display='block';buildEquipOpts();
+      cpState.cls=c;
+      buildAttrBars('cp-abars',c.attrs);document.getElementById('cp-cstats').style.display='block';buildStartItemsPreview(c);
     };
     g.appendChild(d);
   });
@@ -512,14 +445,18 @@ function buildCreatorEmblems(cid){
   const c=document.getElementById(cid);c.innerHTML='';
   EMBLEMS.forEach(e=>{const d=document.createElement('div');d.style.cssText=`width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;border:1px solid ${e===cpState.emblem?'var(--accent)':'var(--border)'};background:${e===cpState.emblem?'var(--bg3)':'transparent'};transition:all .15s;`;d.textContent=e;d.onclick=()=>{cpState.emblem=e;buildCreatorEmblems(cid);};c.appendChild(d);});
 }
-function buildEquipOpts(){
-  const eq=cpState.cls?EQUIP[cpState.cls.name]:null;if(!eq)return;
-  const c=document.getElementById('cp-equip');c.innerHTML='';
-  [['Arma','w','weapon'],['Armadura','a','armor'],['Accesorio','c','accessory']].forEach(([lbl,key,sk])=>{
-    let h=`<div><div class="stitle">${lbl}</div>`;
-    eq[key].forEach(item=>{const sel=cpState[sk]===item;h+=`<div onclick="cpState['${sk}']='${item}';buildEquipOpts();" style="padding:6px 10px;font-size:12px;border:1px solid ${sel?'var(--accent)':'var(--border)'};border-radius:var(--rsm);cursor:pointer;background:${sel?'rgba(127,119,221,.1)':'transparent'};color:${sel?'var(--accent)':'var(--muted)'};margin-bottom:4px;transition:all .15s;">${item}</div>`;});
-    h+='</div>';c.innerHTML+=h;
-  });
+function buildStartItemsPreview(cls){
+  const c=document.getElementById('cp-equip');if(!c)return;
+  var items=(cls.startItems||[]).map(function(iid){return shopItems.find(function(i){return i.id===iid;});}).filter(Boolean);
+  if(!items.length){c.innerHTML='<div style="font-size:12px;color:var(--muted);grid-column:1/-1;">Aquesta classe no té equipament inicial assignat.</div>';return;}
+  c.innerHTML='<div style="grid-column:1/-1;"><div class="stitle">Equipament inicial de la classe</div></div>'
+    +items.map(function(item){
+      return '<div style="border:0.5px solid var(--border);border-radius:var(--radius);padding:8px;text-align:center;">'
+        +(item.imageUrl?'<img src="'+item.imageUrl+'" style="width:100%;height:60px;object-fit:cover;border-radius:var(--radius);margin-bottom:4px;">':'<div style="font-size:24px;">'+item.icon+'</div>')
+        +'<div style="font-size:11px;font-weight:500;margin-top:2px;">'+item.name+'</div>'
+        +'<div style="font-size:10px;color:var(--muted);">'+item.slot+'</div>'
+        +'</div>';
+    }).join('');
 }
 function cGoTo(step){
   document.querySelectorAll('.wp').forEach((p,i)=>p.classList.toggle('active',i===step));
@@ -534,7 +471,14 @@ function saveNewChar(){
   const rn=document.getElementById('cp-rn').value.trim(),pn=document.getElementById('cp-pn').value.trim(),pin=document.getElementById('cp-pin').value;
   const lore=document.getElementById('cp-lore').value.trim(),quote=document.getElementById('cp-quote').value.trim();
   if(!cpState.cls){toast('Vuelve al paso 2 y elige una clase.');return;}
-  const np={id:'pj'+Date.now(),realName:rn,name:pn,cls:cpState.cls.name,role:cpState.cls.role,emblem:cpState.emblem,color:cpState.color.hex,colorBg:cpState.color.bg,level:1,xp:0,xpNext:100,gold:0,missions:0,weapon:cpState.weapon,armor:cpState.armor,accessory:cpState.accessory,lore:lore||'Historia por escribir...',quote:quote||'...',pin,attrs:{...cpState.cls.attrs},gachaTokens:0,gallery:[],lastDaily:''};
+  // Items iniciales fijos de la clase
+  var startItems=(cpState.cls.startItems||[]).slice();
+  var equipped={arma:null,armadura:null,accesorio:null,casco:null,botas:null};
+  startItems.forEach(function(iid){
+    var item=shopItems.find(function(i){return i.id===iid;});
+    if(item&&equipped.hasOwnProperty(item.slot)&&!equipped[item.slot])equipped[item.slot]=iid;
+  });
+  const np={id:'pj'+Date.now(),realName:rn,name:pn,cls:cpState.cls.name,role:cpState.cls.role,emblem:cpState.emblem,color:cpState.color.hex,colorBg:cpState.color.bg,level:1,xp:0,xpNext:100,gold:0,missions:0,lore:lore||'Historia por escribir...',quote:quote||'...',pin,attrs:{...cpState.cls.attrs},gachaTokens:0,fragments:0,gallery:[],lastDaily:'',inventory:startItems,equipped:equipped,pendingAttrPts:0};
   players.push(np);
   createWelcomeArc(np);
   createTutorialForPlayer(np);
@@ -560,6 +504,7 @@ function showPage(name,btn){
   if(name==='calendario'){if(!calState.selectedDate)calState.selectedDate=new Date().toISOString().slice(0,10);renderCalendar();}
   if(name==='planner'){renderPlannerImported();}
   if(name==='items-admin'){renderAdminItemsPage();renderAdminCartasPage();}
+  if(name==='classes-admin'){renderClassesAdmin();}
 }
 
 /* ── misiones stats ── */
@@ -650,7 +595,8 @@ function completeMission(id){
   const p=players.find(p=>p.id===m.playerId);
   m.status='done';
   if(p){
-    p.xp+=m.xp;p.gold+=m.gold;p.missions++;
+    var mFrag=m.frag||({D:20,C:50,B:100,A:200,S:400}[m.diff]||50);
+    p.xp+=m.xp;p.gold+=m.gold;p.fragments=(p.fragments||0)+mFrag;p.missions++;
     if(m.attrPts&&m.attr){const k=Object.keys(AN).find(k=>AN[k]===m.attr);if(k)p.attrs[k]=(p.attrs[k]||0)+m.attrPts;}
     p.level=Math.floor(p.xp/100)+1;
     showRewardPopup(m,p);
@@ -732,9 +678,11 @@ function showRewardPopup(m,p){
   document.getElementById('rp-emoji').textContent=p.emblem;
   document.getElementById('rp-title').textContent='¡Misión completada!';
   document.getElementById('rp-mission').textContent=m.name;
+  var mFrag=m.frag||({D:20,C:50,B:100,A:200,S:400}[m.diff]||0);
   document.getElementById('rp-chips').innerHTML=`
     <span class="badge b-purple">+${m.xp} XP</span>
-    <span class="badge b-gold">+${m.gold} oro</span>
+    <span class="badge b-gold">+${m.gold} or</span>
+    ${mFrag?`<span class="badge b-purple" style="background:var(--accent-bg);">+${mFrag} ✨</span>`:''}
     ${m.attr?`<span class="badge b-teal">+${m.attrPts} ${m.attr}</span>`:''}`;
   document.getElementById('reward-pop').classList.add('show');
 }
@@ -771,7 +719,7 @@ function getAdminProfile(){
     lore:'Existía antes de que el primer personaje fuera creado. Su poder no tiene límites ni necesita demostración.',
     quote:'Yo soy el principio y el fin de este repo.',
     pin:'',attrs:{fue:20,int:20,agi:20,car:20,sab:20},
-    gachaTokens:Infinity,gallery:allCards,lastDaily:''
+    gachaTokens:Infinity,fragments:Infinity,gallery:allCards,lastDaily:''
   };
 }
 
@@ -788,7 +736,7 @@ function renderHeroProfile(i){
       </div>
       <div class="ptab-panel active" id="pinfo">
         <div class="phead">
-          <div class="av av-lg" style="background:${p.colorBg};border-color:${p.color};">${p.emblem}</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">${renderAvatar(p,"pixel-avatar-lg")}${canEdit?`<button class="btn btn-sm" onclick="openAvatarEditor('${p.id}')">🎨 Editar avatar</button>`:""}</div>
           <div style="flex:1;min-width:0;">
             <span class="badge b-purple" style="margin-bottom:6px;display:inline-block;">Nivel ${p.level} · ${p.cls}</span>
             <div class="pname">${p.name}${session.isAdmin?'<span class="adm-rib">DIOS</span>':`<span class="adm-rib" style="display:none"></span>`}</div>
@@ -801,9 +749,10 @@ function renderHeroProfile(i){
           <div class="xpl"><span>XP: ${p.xp.toLocaleString()}</span><span>Nivel ${p.level+1} en ${(p.xpNext-p.xp).toLocaleString()} XP</span></div>
           <div class="xpt"><div class="xpf" style="width:${xpPct}%;background:${p.color};"></div></div>
         </div>
-        <div class="g3" style="margin-bottom:1.25rem;">
+        <div class="g4" style="margin-bottom:1.25rem;">
           <div class="smini"><div class="v">${p.xp.toLocaleString()}</div><div class="l">XP total</div></div>
-          <div class="smini"><div class="v">${p.gold}</div><div class="l">Oro</div></div>
+          <div class="smini"><div class="v">${p.gold}</div><div class="l">Or</div></div>
+          <div class="smini"><div class="v">${p.fragments||0} ✨</div><div class="l">Fragments</div></div>
           <div class="smini"><div class="v">${p.missions}</div><div class="l">Missions</div></div>
         </div>
         <div class="pbody">
@@ -811,9 +760,8 @@ function renderHeroProfile(i){
             <div class="stitle">Atributos</div>
             ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl">'+AN[k]+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(ev/20*100)+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
             <div class="pentagon-wrap" style="margin-top:1rem;">${buildPentagon(getEffectiveAttrs(p),p.color)}</div>
-            <div class="stitle" style="margin-top:1rem;">Equipamiento</div>
-            <div class="erow"><span class="epill">⚔️ ${p.weapon}</span><span class="epill">🛡️ ${p.armor}</span><span class="epill">💎 ${p.accessory}</span></div>
-            ${(function(){var eq=Object.values(p.equipped||{}).filter(Boolean);if(!eq.length)return '';var items=eq.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);return '<div class="stitle" style="margin-top:.75rem;">Items equipados</div><div class="erow">'+items.map(function(i){return '<span class="epill" style="border-color:var(--gold);color:var(--gold);">'+i.icon+' '+i.name+'</span>';}).join('')+'</div>';})()}
+            <div class="stitle" style="margin-top:1rem;">Equipament</div>
+            ${(function(){var eq=Object.values(p.equipped||{}).filter(Boolean);if(!eq.length)return '<div style="font-size:12px;color:var(--muted);">Sense equipament.</div>';var items=eq.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);return '<div class="erow">'+items.map(function(i){return '<span class="epill" style="border-color:var(--gold);color:var(--gold);">'+(i.icon||'')+' '+i.name+'</span>';}).join('')+'</div>';})()}
           </div>
           <div>
             <div class="stitle">Història</div>
@@ -882,7 +830,7 @@ function renderRanking(){
 /* ══ GACHA ══ */
 function renderGachaGold(){
   const p=players.find(p=>p.id===session.playerId);
-  document.getElementById('gacha-gold-display').textContent=session.isAdmin?'∞ oro':p?`${p.gold} oro`:'— oro';
+  document.getElementById('gacha-gold-display').textContent=session.isAdmin?'∞ fragments ✨':p?`${p.fragments||0} fragments ✨`:'— fragments';
 }
 
 function getRarityByChance(){
@@ -912,40 +860,49 @@ function pullResult(){
 function doPull(times){
   const p=players.find(pl=>pl.id===session.playerId);
   if(!p){toast('Inicia sesión para invocar.');return;}
-  const cost=times===1?100:900;
+  const cost=times===1?GACHA_COST_SINGLE:GACHA_COST_MULTI;
+  const costPerPull=cost/times;
   if(!session.isAdmin){
-    if(!p||p.gold<cost){toast(`Necesitas ${cost} oro para invocar.`);return;}
-    p.gold-=cost;
+    if((p.fragments||0)<cost){toast(`Necessites ${cost} fragments ✨ per invocar.`);return;}
+    p.fragments-=cost;
   }
   const results=Array.from({length:times},()=>pullResult()).filter(r=>r!==null);
-if(!results.length){toast('No hay cartas disponibles. Revisa el cards.json en GitHub.');return;}
+  if(!results.length){toast('No hi ha cartes disponibles.');return;}
   if(!p.gallery)p.gallery=[];
   if(!p.inventory)p.inventory=[];
+  var refund=0,dupes=0;
   results.forEach(r=>{
-    if(r.type==='card')p.gallery.push(r.data.id);
-    else if(r.type==='item'&&!p.inventory.includes(r.data.id))p.inventory.push(r.data.id);
+    if(r.type==='card'){
+      var already=p.gallery.indexOf(r.data.id)>=0;
+      if(already){refund+=Math.floor(costPerPull/2);dupes++;r._dupe=true;}
+      p.gallery.push(r.data.id);
+    }else if(r.type==='item'){
+      var haveItem=p.inventory.indexOf(r.data.id)>=0;
+      if(haveItem){refund+=Math.floor(costPerPull/2);dupes++;r._dupe=true;}
+      else p.inventory.push(r.data.id);
+    }
   });
+  if(refund>0&&!session.isAdmin)p.fragments+=refund;
   const reveal=document.getElementById('card-reveal');
   reveal.innerHTML='';reveal.classList.add('show');
   results.forEach((r,i)=>{
     const div=document.createElement('div');div.className='gacha-card pull-anim';
     div.style.animationDelay=`${i*0.08}s`;
+    var dupeBadge=r._dupe?'<div style="position:absolute;top:4px;right:4px;background:var(--gold-bg);color:var(--gold);font-size:9px;padding:2px 5px;border-radius:20px;border:0.5px solid var(--gold-border);">✨ +'+Math.floor(costPerPull/2)+'</div>':'';
+    div.style.position='relative';
     if(r.type==='card'){
       const imgUrl=r.data.imageUrl||(r.data.image?CFG.GITHUB_RAW+r.data.image:'');
-      div.innerHTML=`<img src="${imgUrl}" alt="${r.data.name}" onerror="this.style.background='var(--bg3)';this.style.minHeight='160px';">
+      div.innerHTML=dupeBadge+`<img src="${imgUrl}" alt="${r.data.name}" onerror="this.style.background='var(--bg3)';this.style.minHeight='160px';">
         <div class="gacha-card-info"><div class="gacha-card-name">${r.data.name}</div><div class="gacha-card-rarity rarity-${r.data.rarity}">${RARITY_LABEL[r.data.rarity]}</div></div>`;
     }else{
-      div.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;min-height:160px;font-size:48px;background:var(--gold-bg);">${r.data.icon}</div>
-        <div class="gacha-card-info"><div class="gacha-card-name">${r.data.name}</div><div class="gacha-card-rarity" style="color:var(--gold);">✨ Item obtenido</div></div>`;
+      div.innerHTML=dupeBadge+`<div style="display:flex;align-items:center;justify-content:center;min-height:160px;font-size:48px;background:var(--gold-bg);">${r.data.icon}</div>
+        <div class="gacha-card-info"><div class="gacha-card-name">${r.data.name}</div><div class="gacha-card-rarity" style="color:var(--gold);">✨ Item obtingut</div></div>`;
     }
     reveal.appendChild(div);
   });
   if(CFG.MODE==='supabase')saveToSupabase();
   renderGachaGold();renderMyGallery();renderGalleryTabs();renderAll();
-  const nCards=results.filter(r=>r.type==='card').length;
-  const nItems=results.filter(r=>r.type==='item').length;
-  let msg=nCards>0?`${nCards} carta${nCards>1?'s':''}`:''+(nItems>0?(nCards>0?' + ':'')+`${nItems} item${nItems>1?'s':''}`:'');
-  
+  if(dupes>0)toast(dupes+' duplicat'+(dupes>1?'s':'')+' · +'+refund+' fragments ✨ retornats');
 }
 
 function renderGalleryCards(galleryEntries,mode){
@@ -1003,6 +960,7 @@ function openEditModal(pid){
     ae.style.display='block';ad.style.display='block';
     document.getElementById('e-xp').value=p.xp;
     document.getElementById('e-gold').value=p.gold;
+    document.getElementById('e-frag').value=p.fragments||0;
     document.getElementById('e-cls').value=p.cls;
   }else{ae.style.display='none';ad.style.display='none';}
   document.getElementById('modal-edit').style.display='block';
@@ -1036,6 +994,7 @@ function saveEdit(){
   if(session.isAdmin){
     p.xp=parseInt(document.getElementById('e-xp').value)||p.xp;
     p.gold=parseInt(document.getElementById('e-gold').value)||p.gold;
+    p.fragments=parseInt(document.getElementById('e-frag').value)||0;
     p.cls=document.getElementById('e-cls').value;p.level=Math.floor(p.xp/100)+1;
     const cls=CLASSES.find(c=>c.name===p.cls);if(cls){p.role=cls.role;p.attrs={...cls.attrs};}
   }
@@ -1658,115 +1617,106 @@ function parsePlannerExcel(buffer){
 }
 
 function showPlannerPreview(){
-  if(!plannerRows.length){toast('No se encontraron tareas en el archivo.');return;}
+  if(!plannerRows.length){toast('No s\'han trobat tasques al fitxer.');return;}
   document.getElementById('planner-preview').style.display='block';
-  document.getElementById('planner-preview-title').textContent='Previsualització — '+plannerRows.length+' tareas encontradas';
-  
-  // Populate column selectors
-  var selects=['map-title','map-assignee','map-deadline','map-bucket','map-status'];
-  var defaults={
-    'map-title':['Nombre de la tarea','Task Name','Title','Título'],
-    'map-assignee':['Asignado a','Assigned To','Assignee'],
-    'map-deadline':['Fecha de vencimiento','Due Date','Deadline'],
-    'map-bucket':['Depósito','Bucket Name','Nombre de depósito','Bucket'],
-    'map-status':['Estado','Progress','State','Status']
-  };
-  selects.forEach(function(sid){
-    var sel=document.getElementById(sid);
-    if(!sel)return;
-    sel.innerHTML='<option value="">(ninguna)</option>'+plannerHeaders.map(function(h){
-      return '<option value="'+h+'">'+h+'</option>';
-    }).join('');
-    // Auto-select best match
-    var candidates=defaults[sid]||[];
-    for(var i=0;i<candidates.length;i++){
-      var match=plannerHeaders.find(function(h){return h.toLowerCase().includes(candidates[i].toLowerCase());});
-      if(match){sel.value=match;break;}
-    }
-  });
-  
-  // Build preview table
-  var titleCol=document.getElementById('map-title').value||plannerHeaders[0];
+  document.getElementById('planner-preview-title').textContent='Previsualització — '+plannerRows.length+' tasques trobades';
+
+  // Mapeo FIJO — el CSV de Planner siempre tiene el mismo formato
+  // Columnas: Nombre de la tarea, Depósito, Estado, Priority, Asignado a, Creado por, Fecha de vencimiento, Etiquetas, Notas
   var table=document.getElementById('planner-table');
-  var cols=plannerHeaders.slice(0,6);
+  var cols=['Nombre de la tarea','Depósito','Estado','Priority','Asignado a','Creado por','Fecha de vencimiento','Etiquetas'];
+  // Only show columns that actually exist
+  cols=cols.filter(function(col){return plannerHeaders.indexOf(col)>=0;});
+  if(!cols.length)cols=plannerHeaders.slice(0,6);
   table.innerHTML='<thead><tr>'+cols.map(function(h){
     return '<th style="text-align:left;padding:6px 8px;border-bottom:0.5px solid var(--border);font-size:11px;color:var(--muted);font-weight:500;">'+h+'</th>';
-  }).join('')+'</tr></thead><tbody>'+plannerRows.slice(0,8).map(function(row){
+  }).join('')+'</tr></thead><tbody>'+plannerRows.slice(0,10).map(function(row){
     return '<tr>'+cols.map(function(h){
-      return '<td style="padding:6px 8px;border-bottom:0.5px solid var(--border);font-size:12px;color:var(--text);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+((row[h]||'')+'</td>');
+      return '<td style="padding:6px 8px;border-bottom:0.5px solid var(--border);font-size:12px;color:var(--text);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(row[h]||'')+'</td>';
     }).join('')+'</tr>';
   }).join('')+'</tbody>';
 }
 
 function confirmPlannerImport(){
-  var titleCol  =document.getElementById('map-title').value;
-  var assignCol =document.getElementById('map-assignee').value;
-  var deadlineCol=document.getElementById('map-deadline').value;
-  var bucketCol =document.getElementById('map-bucket').value;
-  var statusCol =document.getElementById('map-status').value;
-  var defaultDiff=document.getElementById('map-diff').value;
-  
-  if(!titleCol){toast('Selecciona al menos la columna de título.');return;}
-  
-  var DIFF_REWARDS={D:{xp:25,gold:10},C:{xp:75,gold:25},B:{xp:150,gold:50},A:{xp:300,gold:100},S:{xp:500,gold:200}};
+  // Mapeo FIJO — formato estándar de exportación de Planner
+  var titleCol='Nombre de la tarea';
+  var bucketCol='Depósito';
+  var statusCol='Estado';
+  var assignCol='Asignado a';
+  var creatorCol='Creado por';
+  var deadlineCol='Fecha de vencimiento';
+  var tagsCol='Etiquetas';
+  var notesCol='Notas';
+
+  // Dificultad por defecto FIJA
+  var DEFAULT_DIFF='C';
+  var DIFF_REWARDS={D:{xp:25,gold:10,frag:20},C:{xp:75,gold:25,frag:50},B:{xp:150,gold:50,frag:100},A:{xp:300,gold:100,frag:200},S:{xp:500,gold:200,frag:400}};
   var imported=0;
-  
+
   plannerRows.forEach(function(row){
     var title=(row[titleCol]||'').trim();
     if(!title)return;
-    
+
     // Skip if already imported (same plannerId)
-    var existingId='planner_'+title.replace(/\s+/g,'_').toLowerCase().slice(0,20);
+    var existingId='planner_'+title.replace(/\s+/g,'_').toLowerCase().slice(0,30);
     if(missions.find(function(m){return m.plannerId===existingId;}))return;
-    
+
     // Map status
     var plannerStatus=(row[statusCol]||'').toLowerCase();
     var status=plannerStatus.includes('complet')||plannerStatus.includes('done')?'done':
-               plannerStatus.includes('progres')||plannerStatus.includes('curso')?'active':'pending';
-    
-    // Map bucket to arc
-    var arc=(row[bucketCol]||'General').trim()||'General';
-    
-    // Find assignee
+               plannerStatus.includes('curso')||plannerStatus.includes('progres')||plannerStatus.includes('progress')?'active':'pending';
+
+    // Find assignee by real name
     var assigneeName=(row[assignCol]||'').trim();
     var assignedPlayer=players.find(function(p){
       return p.realName&&assigneeName&&(
-        p.realName.toLowerCase().includes(assigneeName.toLowerCase().split(' ')[0])||
+        p.realName.toLowerCase().includes(assigneeName.toLowerCase().split(';')[0].split(' ')[0])||
         assigneeName.toLowerCase().includes(p.realName.toLowerCase().split(' ')[0])
       );
     });
-    
-    var priorityMap={'Urgente':'A','Importante':'B','Media':'C','Baja':'D'};
-    var taskPriority=row['Priority']||row['Prioridad']||'';
-    var taskDiff=priorityMap[taskPriority]||defaultDiff;
-    var rewards=DIFF_REWARDS[taskDiff]||DIFF_REWARDS['C'];
-    
+
+    // Difficulty by priority (fallback to default)
+    var priorityMap={'urgente':'A','importante':'B','media':'C','baja':'D'};
+    var taskPriority=(row['Priority']||row['Prioridad']||'').toLowerCase().trim();
+    var taskDiff=priorityMap[taskPriority]||DEFAULT_DIFF;
+    var rewards=DIFF_REWARDS[taskDiff]||DIFF_REWARDS[DEFAULT_DIFF];
+
+    // Build description: Notas + Etiquetas + Creado por + Asignado
+    var notes=(row[notesCol]||'').trim();
+    var tags=(row[tagsCol]||'').trim();
+    var creator=(row[creatorCol]||'').trim();
+
     var newM={
       id:'planner_'+Date.now()+'_'+imported,
       name:title,
-      arc:arc,
+      desc:notes,
+      arc:'General',
       playerId:assignedPlayer?assignedPlayer.id:'',
       status:status,
       diff:taskDiff,
       xp:rewards.xp,
       gold:rewards.gold,
+      frag:rewards.frag||50,
       attr:'Inteligencia',attrPts:2,
       deadline:row[deadlineCol]||'',
       daily:false,isDaily_instance:false,
       plannerId:existingId,
       createdBy:session.playerId,
-      fromPlanner:true
+      fromPlanner:true,
+      plannerCreator:creator,
+      plannerAssignee:assigneeName,
+      plannerTags:tags
     };
     missions.push(newM);
     imported++;
   });
-  
+
   if(CFG.MODE==='supabase')saveToSupabase();
   clearPlannerImport();
   renderAll();
   renderPlannerImported();
   document.getElementById('planner-imported').style.display='block';
-  
+  toast(imported+' missions importades');
 }
 
 function clearPlannerImport(){
@@ -1775,6 +1725,70 @@ function clearPlannerImport(){
   document.getElementById('planner-file').value='';
   var drop=document.getElementById('planner-drop');
   if(drop)drop.innerHTML='<div style="font-size:32px;margin-bottom:8px;">📂</div><div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px;">Arrossega el teu fitxer aquí</div><div style="font-size:12px;color:var(--muted);">o haz clic para seleccionar — .xlsx, .csv</div><input type="file" id="planner-file" accept=".csv,.xlsx,.xls" style="display:none;" onchange="plannerFileSelected(this)"/>';
+}
+
+function renderClassesAdmin(){
+  var wrap=document.getElementById('classes-list');
+  if(!wrap)return;
+  // Group shop items by slot for the selectors
+  wrap.innerHTML=CLASSES.map(function(cls,idx){
+    var startItems=cls.startItems||[];
+    // Build item checklist
+    var itemsHtml=shopItems.map(function(item){
+      var checked=startItems.indexOf(item.id)>=0;
+      return '<label style="display:flex;align-items:center;gap:6px;padding:4px 6px;font-size:12px;border-radius:var(--radius);cursor:pointer;'+(checked?'background:var(--accent-bg);':'')+'">'
+        +'<input type="checkbox" data-cls="'+idx+'" data-item="'+item.id+'" class="cls-item-chk" '+(checked?'checked':'')+'>'
+        +'<span>'+(item.icon||'📦')+' '+item.name+' <span style="color:var(--muted);">('+item.slot+')</span></span>'
+        +'</label>';
+    }).join('');
+    return '<div class="card" style="margin-bottom:1rem;">'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;">'
+        +'<input type="text" id="cls-icon-'+idx+'" value="'+(cls.icon||'')+'" maxlength="2" style="width:44px;padding:6px;font-size:20px;text-align:center;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);"/>'
+        +'<div style="flex:1;">'
+          +'<input type="text" id="cls-name-'+idx+'" value="'+cls.name+'" style="width:100%;padding:6px 10px;font-size:14px;font-weight:500;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);margin-bottom:4px;"/>'
+          +'<input type="text" id="cls-role-'+idx+'" value="'+(cls.role||'')+'" placeholder="Rol" style="width:100%;padding:5px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--muted);"/>'
+        +'</div>'
+      +'</div>'
+      +'<div class="stitle">Estadístiques base</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:1rem;">'
+        +['fue','int','agi','car','sab'].map(function(k){
+          return '<div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">'+AN[k]+'</label>'
+            +'<input type="number" id="cls-'+k+'-'+idx+'" value="'+(cls.attrs[k]||0)+'" min="0" style="width:100%;padding:6px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);text-align:center;"/></div>';
+        }).join('')
+      +'</div>'
+      +'<div class="stitle">Equipament inicial (es dóna en crear el personatge)</div>'
+      +'<div style="max-height:180px;overflow-y:auto;border:0.5px solid var(--border);border-radius:var(--radius);padding:6px;margin-bottom:1rem;display:grid;grid-template-columns:1fr 1fr;gap:2px;">'
+        +(shopItems.length?itemsHtml:'<div style="font-size:12px;color:var(--muted);padding:6px;">No hi ha ítems creats encara.</div>')
+      +'</div>'
+      +'<div style="display:flex;justify-content:flex-end;">'
+        +'<button class="btn btn-p btn-sm" data-idx="'+idx+'" onclick="saveClassEdit(parseInt(this.dataset.idx))">Desar canvis</button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+async function saveClassEdit(idx){
+  var cls=CLASSES[idx];
+  if(!cls)return;
+  var newName=document.getElementById('cls-name-'+idx).value.trim();
+  if(!newName){alert('La classe necessita un nom.');return;}
+  var oldName=cls.name;
+  cls.name=newName;
+  cls.role=document.getElementById('cls-role-'+idx).value.trim();
+  cls.icon=document.getElementById('cls-icon-'+idx).value.trim()||'⚔️';
+  ['fue','int','agi','car','sab'].forEach(function(k){
+    cls.attrs[k]=parseInt(document.getElementById('cls-'+k+'-'+idx).value)||0;
+  });
+  // Collect selected start items
+  var chks=document.querySelectorAll('.cls-item-chk[data-cls="'+idx+'"]:checked');
+  cls.startItems=Array.prototype.map.call(chks,function(chk){return chk.getAttribute('data-item');});
+  // Recompute bonus
+  cls.bonus=computeClassBonus(cls.attrs);
+  // If name changed, update players
+  if(oldName!==newName){players.forEach(function(p){if(p.cls===oldName)p.cls=newName;});}
+  // Save to dedicated table
+  if(CFG.MODE==='supabase'){await saveClassToSupabase(cls,idx);if(oldName!==newName)saveToSupabase();}
+  renderClassesAdmin();
+  toast('Classe "'+newName+'" actualitzada');
 }
 
 function renderPlannerImported(){
@@ -1788,13 +1802,22 @@ function renderPlannerImported(){
   document.getElementById('planner-imported').style.display='block';
   wrap.innerHTML=imported.map(function(m){
     var p=players.find(function(pl){return pl.id===m.playerId;});
-    return '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:0.5px solid var(--border);">'
-      +'<span class="badge d'+m.diff+'">'+m.diff+'</span>'
-      +'<div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+m.name+'</div>'
-      +'<div style="font-size:11px;color:var(--muted);">'+m.arc+(p?' · '+p.emblem+' '+p.name:'')+(m.deadline?' · '+m.deadline:'')+'</div></div>'
-      +'<span class="badge '+(m.status==='done'?'b-teal':m.status==='active'?'b-gold':'b-gray')+'">'+
-        (m.status==='done'?'Completada':m.status==='active'?'En curs':'Pendiente')+'</span>'
-      +'<button class="btn btn-sm" style="font-size:11px;" onclick="deleteMission(\''+m.id+'\')">✕</button>'
+    var metaParts=[];
+    if(m.plannerAssignee)metaParts.push('👤 Assignat: '+m.plannerAssignee);
+    if(m.plannerCreator)metaParts.push('✍️ Creat per: '+m.plannerCreator);
+    if(m.deadline)metaParts.push('📅 '+m.deadline);
+    if(m.plannerTags)metaParts.push('🏷️ '+m.plannerTags);
+    var statusLabel=m.status==='done'?'Completada':m.status==='active'?'En curs':'Pendent';
+    var statusCls=m.status==='done'?'b-teal':m.status==='active'?'b-gold':'b-gray';
+    return '<div style="padding:10px 0;border-bottom:0.5px solid var(--border);">'
+      +'<div style="display:flex;align-items:center;gap:10px;">'
+        +'<span class="badge d'+m.diff+'">'+m.diff+'</span>'
+        +'<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:500;">'+m.name+'</div></div>'
+        +'<span class="badge '+statusCls+'">'+statusLabel+'</span>'
+        +'<button class="btn btn-sm" style="font-size:11px;" data-mid="'+m.id+'" onclick="deleteMission(this.dataset.mid)">✕</button>'
+      +'</div>'
+      +(metaParts.length?'<div style="font-size:11px;color:var(--muted);margin-top:4px;padding-left:2px;">'+metaParts.join(' · ')+'</div>':'')
+      +(m.desc?'<div style="font-size:11px;color:var(--muted);margin-top:4px;padding:6px 8px;background:var(--bg3);border-radius:var(--radius);white-space:pre-wrap;">'+m.desc+'</div>':'')
       +'</div>';
   }).join('');
 }
@@ -1842,6 +1865,143 @@ function cleanOldCompleted(){
   });
 }
 
+
+/* ══ AVATAR PIXEL-ART ══ */
+// Opciones disponibles del estilo pixel-art de DiceBear
+const AVATAR_OPTS={
+  skinColor:['ffdbac','f5cfa0','eac393','d9a066','c68642','8d5524','5c3a21'],
+  hairColor:['000000','3b2417','6b4423','a55728','d4a017','e8e1c4','cc4400','7a2e2e','9146ff'],
+  hair:['short01','short02','short03','short04','short05','long01','long02','long03','long04','long05'],
+  eyesColor:['5b7c99','3a7d44','8b4513','2f2f2f','6a4c93'],
+  glasses:['none','variant01','variant02','variant03','variant04'],
+  clothingColor:['5b7c99','a34d4d','3a7d44','8a6d3b','5d4a8a','2f2f2f','c9843e']
+};
+// Construye la URL de DiceBear para el avatar base
+function buildAvatarUrl(av){
+  av=av||{};
+  var base='https://api.dicebear.com/10.x/pixel-art/svg';
+  var params=[];
+  params.push('seed='+encodeURIComponent(av.seed||'hero'));
+  if(av.skinColor)params.push('skinColor='+av.skinColor);
+  if(av.hairColor)params.push('hairColor='+av.hairColor);
+  if(av.hair)params.push('hair='+av.hair);
+  if(av.eyesColor)params.push('eyesColor='+av.eyesColor);
+  if(av.clothingColor)params.push('clothingColor='+av.clothingColor);
+  if(av.glasses&&av.glasses!=='none'){params.push('glasses='+av.glasses);params.push('glassesProbability=100');}
+  else params.push('glassesProbability=0');
+  params.push('backgroundColor=transparent');
+  return base+'?'+params.join('&');
+}
+// Devuelve el objeto avatar del jugador (con defaults)
+function getPlayerAvatar(p){
+  if(!p.avatar)p.avatar={seed:p.id||p.name||'hero',skinColor:'ffdbac',hairColor:'6b4423',hair:'short01',eyesColor:'5b7c99',glasses:'none',clothingColor:'5b7c99'};
+  return p.avatar;
+}
+// Renderiza el avatar completo (base DiceBear + capas de items equipados)
+function renderAvatar(p,sizeClass){
+  var av=getPlayerAvatar(p);
+  var url=buildAvatarUrl(av);
+  var html='<div class="pixel-avatar '+(sizeClass||'pixel-avatar-lg')+'">';
+  html+='<img class="pa-base" src="'+url+'" alt="avatar"/>';
+  // Capas de items equipados con imagen
+  if(p.equipped){
+    ['armadura','botas','accesorio','arma','casco'].forEach(function(slot){
+      var iid=p.equipped[slot];
+      if(!iid)return;
+      var item=shopItems.find(function(i){return i.id===iid;});
+      if(item&&item.imageUrl){
+        html+='<img class="pa-layer pa-slot-'+slot+'" src="'+item.imageUrl+'" alt="'+item.name+'"/>';
+      }
+    });
+  }
+  html+='</div>';
+  return html;
+}
+
+function updateSidebarAvatar(){
+  var mini=document.getElementById('sidebar-mini-avatar');
+  var dot=document.getElementById('udot-fallback');
+  if(!mini)return;
+  var p=players.find(function(pl){return pl.id===session.playerId;});
+  if(p&&!session.isAdmin){
+    mini.innerHTML=renderAvatar(p,'pixel-avatar-mini');
+    mini.style.display='inline-block';
+    if(dot)dot.style.display='none';
+  }else{
+    mini.style.display='none';
+    if(dot)dot.style.display='inline-block';
+  }
+}
+
+/* ══ EDITOR DE AVATAR ══ */
+var _avatarEditPid=null;
+function openAvatarEditor(pid){
+  var p=players.find(function(pl){return pl.id===pid;});
+  if(!p)return;
+  _avatarEditPid=pid;
+  getPlayerAvatar(p);
+  renderAvatarEditor();
+  document.getElementById('avatar-editor-modal').style.display='flex';
+}
+function closeAvatarEditor(){
+  document.getElementById('avatar-editor-modal').style.display='none';
+  _avatarEditPid=null;
+}
+function renderAvatarEditor(){
+  var p=players.find(function(pl){return pl.id===_avatarEditPid;});
+  if(!p)return;
+  var av=getPlayerAvatar(p);
+  // Preview
+  document.getElementById('avatar-editor-preview').innerHTML=renderAvatar(p,'pixel-avatar-lg');
+  // Controls
+  var html='';
+  // Color swatches
+  [['skinColor','Pell'],['hairColor','Cabell'],['eyesColor','Ulls'],['clothingColor','Roba']].forEach(function(pair){
+    var key=pair[0],label=pair[1];
+    html+='<div class="ava-opt-row"><label>'+label+'</label><div style="display:flex;gap:5px;flex-wrap:wrap;">';
+    AVATAR_OPTS[key].forEach(function(col){
+      html+='<div class="ava-swatch'+(av[key]===col?' selected':'')+'" style="background:#'+col+';" data-key="'+key+'" data-val="'+col+'" onclick="setAvatarOpt(this.dataset.key,this.dataset.val)"></div>';
+    });
+    html+='</div></div>';
+  });
+  // Hair style cycle
+  html+='<div class="ava-opt-row"><label>Pentinat</label>'
+    +'<button class="ava-cycle-btn" onclick="cycleAvatarOpt(\'hair\',-1)">‹</button>'
+    +'<span style="font-size:12px;min-width:60px;text-align:center;">'+(av.hair||'short01')+'</span>'
+    +'<button class="ava-cycle-btn" onclick="cycleAvatarOpt(\'hair\',1)">›</button></div>';
+  // Glasses cycle
+  html+='<div class="ava-opt-row"><label>Ulleres</label>'
+    +'<button class="ava-cycle-btn" onclick="cycleAvatarOpt(\'glasses\',-1)">‹</button>'
+    +'<span style="font-size:12px;min-width:60px;text-align:center;">'+(av.glasses==='none'?'Cap':(av.glasses||'none'))+'</span>'
+    +'<button class="ava-cycle-btn" onclick="cycleAvatarOpt(\'glasses\',1)">›</button></div>';
+  document.getElementById('avatar-editor-controls').innerHTML=html;
+}
+function setAvatarOpt(key,val){
+  var p=players.find(function(pl){return pl.id===_avatarEditPid;});
+  if(!p)return;
+  getPlayerAvatar(p)[key]=val;
+  renderAvatarEditor();
+}
+function cycleAvatarOpt(key,dir){
+  var p=players.find(function(pl){return pl.id===_avatarEditPid;});
+  if(!p)return;
+  var av=getPlayerAvatar(p);
+  var opts=AVATAR_OPTS[key];
+  var idx=opts.indexOf(av[key]);
+  if(idx<0)idx=0;
+  idx=(idx+dir+opts.length)%opts.length;
+  av[key]=opts[idx];
+  renderAvatarEditor();
+}
+function saveAvatar(){
+  var p=players.find(function(pl){return pl.id===_avatarEditPid;});
+  if(!p)return;
+  if(CFG.MODE==='supabase')saveToSupabase();
+  closeAvatarEditor();
+  updateSidebarAvatar();
+  renderHeroProfile(curHero);
+  toast('Avatar desat');
+}
 
 /* ══ PENTAGON ══ */
 function buildPentagon(attrs,color){
@@ -2031,7 +2191,7 @@ function initTheme(){
 
 /* ══ ARRANQUE ══ */
 /* ══ CREAR MISIONES/ARCOS ══ */
-const DIFF_REWARDS={D:{xp:25,gold:10},C:{xp:75,gold:25},B:{xp:150,gold:50},A:{xp:300,gold:100},S:{xp:500,gold:200}};
+const DIFF_REWARDS={D:{xp:25,gold:10,frag:20},C:{xp:75,gold:25,frag:50},B:{xp:150,gold:50,frag:100},A:{xp:300,gold:100,frag:200},S:{xp:500,gold:200,frag:400}};
 const DIFF_ATTRS={D:'Sabiduría',C:'Inteligencia',B:'Agilidad',A:'Fuerza',S:'Carisma'};
 const DIFF_ATTR_PTS={D:1,C:2,B:3,A:5,S:10};
 let selectedDiff='D';
@@ -2075,6 +2235,7 @@ function createMission(){
     diff:isDaily?'D':'C',
     xp:isDaily?25:75,
     gold:isDaily?10:25,
+    frag:isDaily?20:50,
     attr:isDaily?'Sabiduría':'Inteligencia',
     attrPts:isDaily?1:2,
     deadline:isDaily?'':deadline||'',
