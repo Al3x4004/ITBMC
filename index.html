@@ -1284,13 +1284,72 @@ async function deleteCartaFromSupabase(id){
     });
   }catch(e){console.error('Error deleting carta',e);}
 }
+// ══ MISIONES: mapping entre formato JS y Supabase ══
+function missionToRow(m){
+  return {
+    id:m.id,nombre:m.name,descripcion:m.desc||'',arco:m.arc||'',
+    player_id:m.playerId||'',status:m.status||'pending',diff:m.diff||'C',
+    xp:m.xp||0,gold:m.gold||0,attr:m.attr||'',attr_pts:m.attrPts||0,
+    deadline:m.deadline||'',daily:!!m.daily,is_daily_instance:!!m.isDaily_instance,
+    template_id:m.templateId||'',planner_id:m.plannerId||'',
+    from_planner:!!m.fromPlanner,created_by:m.createdBy||''
+  };
+}
+function rowToMission(r){
+  return {
+    id:r.id,name:r.nombre,desc:r.descripcion||'',arc:r.arco||'General',
+    playerId:r.player_id||'',status:r.status||'pending',diff:r.diff||'C',
+    xp:r.xp||0,gold:r.gold||0,attr:r.attr||'',attrPts:r.attr_pts||0,
+    deadline:r.deadline||'',daily:!!r.daily,isDaily_instance:!!r.is_daily_instance,
+    templateId:r.template_id||'',plannerId:r.planner_id||'',
+    fromPlanner:!!r.from_planner,createdBy:r.created_by||''
+  };
+}
+async function saveMissionToSupabase(m){
+  try{
+    const _r=await fetch(CFG.SUPABASE_URL+'/rest/v1/misiones',{
+      method:'POST',
+      headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify(missionToRow(m))
+    });
+    if(!_r.ok){const _e=await _r.text();console.error('Error saving mission:',_r.status,_e);}
+  }catch(e){console.error('Error saving mission',e);}
+}
+async function saveAllMissionsToSupabase(){
+  if(!missions.length)return;
+  try{
+    await fetch(CFG.SUPABASE_URL+'/rest/v1/misiones',{
+      method:'POST',
+      headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify(missions.map(missionToRow))
+    });
+  }catch(e){console.error('Error saving all missions',e);}
+}
+async function deleteMissionFromSupabase(id){
+  try{
+    await fetch(CFG.SUPABASE_URL+'/rest/v1/misiones?id=eq.'+id,{
+      method:'DELETE',
+      headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
+    });
+  }catch(e){console.error('Error deleting mission',e);}
+}
+async function loadMissionsFromSupabase(){
+  try{
+    const _r=await fetch(CFG.SUPABASE_URL+'/rest/v1/misiones?order=creado_at',{
+      headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
+    });
+    const _d=await _r.json();
+    return Array.isArray(_d)?_d.map(rowToMission):null;
+  }catch(e){console.error('Error loading missions',e);return null;}
+}
+
 async function saveToSupabase(){
   try{
     // Save main game data
     await fetch(`${CFG.SUPABASE_URL}/rest/v1/game_data`,{
       method:'POST',
       headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
-      body:JSON.stringify({id:'main',data:{players,missions,arcs,gacha_cards:gachaCards,cal_events:calEvents}})
+      body:JSON.stringify({id:'main',data:{players,arcs,gacha_cards:gachaCards,cal_events:calEvents}})
     });
     // Save each player to players table
     for(const p of players){
@@ -1300,6 +1359,8 @@ async function saveToSupabase(){
         body:JSON.stringify({id:p.id,data:p,updated_at:new Date().toISOString()})
       });
     }
+    // Save all missions to dedicated table
+    await saveAllMissionsToSupabase();
   }catch(e){console.error('Supabase save error',e);}
 }
 
@@ -1335,11 +1396,23 @@ async function loadData(){
         var hasTutorial=missions&&missions.find(function(m){return m.arc==='Tutorial: Primeros Pasos'&&m.playerId===p.id;});
         if(!hasTutorial)createTutorialForPlayer(p);
       });
-      missions=d.missions||[];
+      // Load missions from dedicated table
+      var _sbMissions=await loadMissionsFromSupabase();
+      if(_sbMissions&&_sbMissions.length){
+        missions=_sbMissions;
+      }else if(d.missions&&d.missions.length){
+        // MIGRATION: old missions in game_data → new table
+        missions=d.missions;
+        await saveAllMissionsToSupabase();
+        console.log('Migrated '+missions.length+' missions to dedicated table');
+      }else{
+        missions=[];
+      }
       arcs    =d.arcs    ||[];
     }else{
       players =[];
-      missions=[];
+      var _sbM=await loadMissionsFromSupabase();
+      missions=_sbM&&_sbM.length?_sbM:[];
       arcs    =[];
       try{
         const _eq=await fetch(CFG.SUPABASE_URL+'/rest/v1/equipamiento?activo=eq.true&order=tipo',{
@@ -1640,7 +1713,7 @@ function deleteArc(id){
 function deleteMission(id){
   if(!confirm('¿Eliminar esta misión?'))return;
   missions=missions.filter(function(m){return m.id!==id;});
-  if(CFG.MODE==='supabase')saveToSupabase();
+  if(CFG.MODE==='supabase'){deleteMissionFromSupabase(id);saveToSupabase();}
   renderAll();
 }
 
@@ -2620,7 +2693,7 @@ function parsePlannerFile(file){
 function parsePlannerCSV(text){
   var lines=text.split(/\r\n|\n|\r/).filter(function(l){return l.trim();});
   if(!lines.length){return;}
-  var sep=lines[0].includes('	')?'	':',';
+  var sep=lines[0].includes('	')?'	':(lines[0].split(';').length>lines[0].split(',').length?';':',');
   plannerHeaders=lines[0].split(sep).map(function(h){return h.replace(/^"|"$/g,'').trim();});
   function splitLine(line){
     var cols=[],cur='',inQ=false;
