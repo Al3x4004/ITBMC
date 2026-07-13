@@ -104,8 +104,8 @@
       <div class="crow" id="cp-colors"></div>
       <div class="stitle">Emblema</div>
       <div id="cp-emblems" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;"></div>
-      <div class="stitle">Equipamiento</div>
-      <div class="g3" id="cp-equip"></div>
+      <div class="stitle">Equipament inicial</div>
+      <div class="g3" id="cp-equip" style="gap:8px;"></div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
         <button class="btn" onclick="cGoTo(1)">← Enrere</button>
         <button class="btn btn-p" onclick="cNext(2)">Siguiente →</button>
@@ -140,6 +140,7 @@
       <button class="nb" onclick="showPage('calendario',this)" id="nav-calendario"><span class="nb-icon">📅</span>Calendari</button>
       <button class="nb" onclick="showPage('planner',this)" id="nav-planner"><span class="nb-icon">📋</span>Planner</button>
       <button class="nb admin-only" onclick="showPage('items-admin',this)" id="nav-items-admin" style="display:none;border-top:0.5px solid var(--border);margin-top:4px;"><span class="nb-icon">⚙️</span>Items</button>
+      <button class="nb admin-only" onclick="showPage('classes-admin',this)" id="nav-classes-admin" style="display:none;"><span class="nb-icon">🎭</span>Classes</button>
     </nav>
     <div class="sidebar-bottom">
       <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar tema" style="width:100%;margin-bottom:.5rem;justify-content:flex-start;gap:8px;padding:7px 12px;border-radius:var(--radius);border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s;display:flex;align-items:center;">☀️ <span id="theme-label">Mode clar</span></button>
@@ -150,13 +151,13 @@
         <button class="btn btn-sm btn-g" style="width:100%;text-align:left;margin-bottom:2px;" onclick="exportJSON()">⬇️ Exportar JSON</button>
         <button class="btn btn-sm" style="width:100%;text-align:left;" onclick="doLogout()">← Cerrar sesión</button>
       </div>
-      <div class="upill" onclick="toggleUMenu()" id="upill" style="width:100%;justify-content:flex-start;">
-        <span class="udot"></span><span id="ulabel">—</span>
+      <div class="upill" onclick="toggleUMenu()" id="upill" style="width:100%;justify-content:flex-start;gap:8px;">
+        <span id="sidebar-mini-avatar" style="display:none;"></span>
+        <span class="udot" id="udot-fallback"></span><span id="ulabel">—</span>
       </div>
     </div>
   </aside>
   <div class="app">
-    <div id="mode-ban-wrap"></div>
 
     <!-- MISIONES -->
     <div id="page-misiones" class="page active">
@@ -270,11 +271,11 @@
       <div class="card" style="margin-bottom:1rem;">
         <div class="stitle">Invocación</div>
         <div class="gacha-wrap">
-          <div class="gacha-cost">Coste: <span>100 oro</span> por tirada · <span>900 oro</span> por 10 tiradas</div>
+          <div class="gacha-cost">Cost: <span>100 ✨</span> per tirada · <span>900 ✨</span> per 10 tirades</div>
           <div id="gacha-gold-display" style="font-size:22px;font-weight:700;color:var(--gold);margin-bottom:1rem;">0 oro</div>
           <div class="gacha-btn-wrap">
-            <button class="btn btn-gold" onclick="doPull(1)">✨ Invocar x1 (100 oro)</button>
-            <button class="btn btn-gold" onclick="doPull(10)">✨ Invocar x10 (900 oro)</button>
+            <button class="btn btn-gold" onclick="doPull(1)">✨ Invocar x1 (100 ✨)</button>
+            <button class="btn btn-gold" onclick="doPull(10)">✨ Invocar x10 (900 ✨)</button>
           </div>
           <div class="card-reveal" id="card-reveal"></div>
         </div>
@@ -537,6 +538,16 @@
     </div>
 
     <!-- PLANNER -->
+    <!-- CLASSES ADMIN -->
+    <div id="page-classes-admin" class="page">
+      <div style="margin-bottom:1.25rem;">
+        <div style="font-size:18px;font-weight:500;margin-bottom:4px;">🎭 Gestió de Classes</div>
+        <div style="font-size:13px;color:var(--muted);">Edita el nom, el rol i les estadístiques base de cada classe.</div>
+      </div>
+      <div id="classes-list"></div>
+    </div>
+
+    <!-- PLANNER -->
     <div id="page-planner" class="page">
       <div style="margin-bottom:1.25rem;">
         <div style="font-size:18px;font-weight:500;margin-bottom:4px;">Importar des de Planner</div>
@@ -586,21 +597,8 @@
               <button class="btn btn-sm btn-p" onclick="confirmPlannerImport()">✓ Importar missions</button>
             </div>
           </div>
-          <div style="background:var(--bg3);border-radius:var(--radius);padding:.875rem;margin-bottom:1rem;">
-            <div style="font-size:12px;font-weight:500;margin-bottom:8px;">Mapeo de columnas</div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-              <div class="field" style="margin:0;"><label>Columna "Título"</label><select id="map-title"></select></div>
-              <div class="field" style="margin:0;"><label>Columna "Asignado a"</label><select id="map-assignee"></select></div>
-              <div class="field" style="margin:0;"><label>Columna "Fecha límite"</label><select id="map-deadline"></select></div>
-              <div class="field" style="margin:0;"><label>Columna "Bucket"</label><select id="map-bucket"></select></div>
-              <div class="field" style="margin:0;"><label>Columna "Estado"</label><select id="map-status"></select></div>
-              <div class="field" style="margin:0;"><label>Dificultad por defecto</label>
-                <select id="map-diff">
-                  <option value="D">D — 25 XP</option>
-                  <option value="C" selected>C — 75 XP</option>
-                </select>
-              </div>
-            </div>
+          <div style="background:var(--accent-bg);border:0.5px solid var(--accent-border);border-radius:var(--radius);padding:.75rem;margin-bottom:1rem;font-size:12px;color:var(--muted);line-height:1.6;">
+            ✅ Format detectat automàticament. Cada tasca s'importarà com a <strong>missió solta</strong> amb dificultat <strong>C</strong> per defecte (o segons la prioritat del Planner). Es guardaran el creador, l'assignat, les etiquetes i les notes.
           </div>
           <div style="overflow-x:auto;">
             <table style="width:100%;border-collapse:collapse;font-size:12px;" id="planner-table"></table>
@@ -639,6 +637,7 @@
         <div class="g2">
           <div class="field" style="margin:0;"><label>XP</label><input type="number" id="e-xp"/></div>
           <div class="field" style="margin:0;"><label>Oro</label><input type="number" id="e-gold"/></div>
+          <div class="field" style="margin:0;"><label>Fragments ✨</label><input type="number" id="e-frag"/></div>
         </div>
         <div class="field" style="margin-top:8px;"><label>Clase</label>
           <select id="e-cls"><option>Mago</option><option>Paladín</option><option>Exploradora</option><option>Guerrero</option><option>Pícaro</option><option>Bardo</option></select>
@@ -714,6 +713,22 @@
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem;">
       <button class="btn" onclick="closeAdminEditModal()">Cancel·lar</button>
       <button class="btn btn-p" onclick="saveAdminEdit()">Desar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITOR AVATAR -->
+<div id="avatar-editor-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;padding:1rem;" onclick="closeAvatarEditor()">
+  <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="font-size:15px;font-weight:500;">🎨 Editar avatar</h3>
+      <button class="btn btn-sm" onclick="closeAvatarEditor()">✕</button>
+    </div>
+    <div style="display:flex;justify-content:center;margin-bottom:1rem;" id="avatar-editor-preview"></div>
+    <div id="avatar-editor-controls"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem;">
+      <button class="btn" onclick="closeAvatarEditor()">Cancel·lar</button>
+      <button class="btn btn-p" onclick="saveAvatar()">Desar</button>
     </div>
   </div>
 </div>
