@@ -706,6 +706,13 @@
   </div>
 </div>
 
+<script type="module">
+  import { createAvatar } from 'https://esm.sh/@dicebear/core@9';
+  import { pixelArt } from 'https://esm.sh/@dicebear/collection@9';
+  window.DiceBearCreate = createAvatar;
+  window.DiceBearPixelArt = pixelArt;
+  window.dispatchEvent(new Event('dicebear-ready'));
+</script>
 <script src="app.js"></script>
 </body>
 </html>
