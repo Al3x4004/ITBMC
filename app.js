@@ -1932,12 +1932,12 @@ function cleanOldCompleted(){
 /* ══ AVATAR PIXEL-ART ══ */
 // Opciones disponibles del estilo pixel-art de DiceBear
 const AVATAR_OPTS={
-  skinColor:['ffdbac','f5cfa0','eac393','d9a066','c68642','8d5524','5c3a21'],
-  hairColor:['000000','3b2417','6b4423','a55728','d4a017','e8e1c4','cc4400','7a2e2e','9146ff'],
+  skinColor:['8d5524','c68642','e0ac69','f1c27d','ffdbac'],
+  hairColor:['000000','2c1b18','603a1e','a55728','b58143','d6b370','cb6820','dba3be'],
   hair:['short01','short02','short03','short04','short05','long01','long02','long03','long04','long05'],
-  eyesColor:['5b7c99','3a7d44','8b4513','2f2f2f','6a4c93'],
-  glasses:['none','variant01','variant02','variant03','variant04'],
-  clothingColor:['5b7c99','a34d4d','3a7d44','8a6d3b','5d4a8a','2f2f2f','c9843e']
+  eyesColor:['5b7c8b','647b90','697b94','76778b','588387','876658'],
+  glasses:['none','light01','light02','light03','light04','dark01','dark02'],
+  clothingColor:['00b2ec','5bc0de','44c585','88898a','a9bdd0','d11141','e4b02a','f4a41d']
 };
 // Construye la URL de DiceBear para el avatar base
 function buildAvatarUrl(av){
@@ -1958,8 +1958,16 @@ function buildAvatarUrl(av){
 }
 // Devuelve el objeto avatar del jugador (con defaults)
 function getPlayerAvatar(p){
-  if(!p.avatar)p.avatar={seed:p.id||p.name||'hero',skinColor:'ffdbac',hairColor:'6b4423',hair:'short01',eyesColor:'5b7c99',glasses:'none',clothingColor:'5b7c99'};
-  return p.avatar;
+  if(!p.avatar)p.avatar={seed:p.id||p.name||'hero',skinColor:'f1c27d',hairColor:'603a1e',hair:'short01',eyesColor:'5b7c8b',glasses:'none',clothingColor:'5bc0de'};
+  // Corregir valores inválidos de versiones antiguas (evita error 400 de DiceBear)
+  var a=p.avatar;
+  if(AVATAR_OPTS.skinColor.indexOf(a.skinColor)<0)a.skinColor='f1c27d';
+  if(AVATAR_OPTS.hairColor.indexOf(a.hairColor)<0)a.hairColor='603a1e';
+  if(AVATAR_OPTS.hair.indexOf(a.hair)<0)a.hair='short01';
+  if(AVATAR_OPTS.eyesColor.indexOf(a.eyesColor)<0)a.eyesColor='5b7c8b';
+  if(AVATAR_OPTS.clothingColor.indexOf(a.clothingColor)<0)a.clothingColor='5bc0de';
+  if(AVATAR_OPTS.glasses.indexOf(a.glasses)<0)a.glasses='none';
+  return a;
 }
 // Renderiza el avatar completo (base DiceBear + capas de items equipados)
 function renderAvatar(p,sizeClass){
