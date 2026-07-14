@@ -141,6 +141,7 @@ async function saveItemToSupabase(item){
         req_attrs:item.minAttrs||{fue:0,int:0,agi:0,car:0,sab:0},
         bonus_attrs:item.bonus||{fue:0,int:0,agi:0,car:0,sab:0},
         avatar_pos:item.avatarPos||null,
+        es_cosmetic:item.isCosmetic||false,
         activo:true
       })
     });
@@ -332,7 +333,7 @@ async function loadData(){
           headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
         });
         const _eqd=await _eq.json();
-        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',imageUrl:r.imagen_url||null,desc:r.descripcion||'',slot:r.tipo,rareza:r.rareza||'comun',cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0},avatarPos:r.avatar_pos||null})):[];
+        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',imageUrl:r.imagen_url||null,desc:r.descripcion||'',slot:r.tipo,rareza:r.rareza||'comun',cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0},avatarPos:r.avatar_pos||null,isCosmetic:r.es_cosmetic||false})):[];
       }catch{shopItems=[];}
       if(d.cal_events)calEvents=d.cal_events;
       else calEvents=[];
@@ -373,7 +374,7 @@ async function loadData(){
           headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
         });
         const _eqd=await _eq.json();
-        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',imageUrl:r.imagen_url||null,desc:r.descripcion||'',slot:r.tipo,rareza:r.rareza||'comun',cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0},avatarPos:r.avatar_pos||null})):[];
+        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',imageUrl:r.imagen_url||null,desc:r.descripcion||'',slot:r.tipo,rareza:r.rareza||'comun',cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0},avatarPos:r.avatar_pos||null,isCosmetic:r.es_cosmetic||false})):[];
       }catch{shopItems=[];}
       calEvents=[];
       await saveToSupabase();
@@ -953,7 +954,7 @@ function pullCard(){
 }
 
 function pullResult(){
-  const gachaItems=shopItems.filter(i=>i.via==='gacha'||i.via==='ambas');
+  const gachaItems=shopItems.filter(i=>i.via==='gacha'||i.via==='tienda');
   if(gachaItems.length&&Math.random()<0.3){
     return {type:'item',data:gachaItems[Math.floor(Math.random()*gachaItems.length)]};
   }
@@ -1291,6 +1292,7 @@ function renderAdminItemsPage(){
   var filterRarity=document.getElementById('ai-filter-rarity')?document.getElementById('ai-filter-rarity').value:'';
   var aiSearch=document.getElementById('ai-search')?document.getElementById('ai-search').value.toLowerCase().trim():'';
   var items=shopItems.filter(function(i){
+    if(i.isCosmetic)return false;
     if(filterVia&&i.via!==filterVia)return false;
     if(filterSlot&&i.slot!==filterSlot)return false;
     if(filterRarity&&i.rareza!==filterRarity)return false;
@@ -1406,84 +1408,66 @@ async function saveAdminEdit(){
   closeAdminEditModal();
 }
 function renderCustomTraitsAdmin(){
-  var wrap=document.getElementById('cc-categories');
-  if(!wrap)return;
-  if(!customTraits.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);padding:1rem;">Encara no hi ha categories. Crea\'n una a dalt.</div>';return;}
-  wrap.innerHTML=customTraits.map(function(cat){
-    var opts=(cat.options||[]).map(function(o){
-      return '<div style="display:flex;align-items:center;gap:8px;padding:6px;border:0.5px solid var(--border);border-radius:var(--radius);margin-bottom:6px;">'
-        +(o.imageUrl?'<img src="'+o.imageUrl+'" style="width:36px;height:36px;object-fit:contain;background:var(--bg3);border-radius:var(--radius);"/>':'<div style="width:36px;height:36px;background:var(--bg3);border-radius:var(--radius);"></div>')
-        +'<span style="flex:1;font-size:13px;">'+o.name+'</span>'
-        +'<span style="font-size:11px;color:var(--muted);">x:'+o.pos.x+' y:'+o.pos.y+' w:'+o.pos.w+'</span>'
-        +'<button class="btn btn-sm" onclick="editCustomOption(\''+cat.id+'\',\''+o.id+'\')">✎</button>'
-        +'<button class="btn btn-sm" style="color:var(--coral);border-color:var(--coral-border);" onclick="removeCustomOption(\''+cat.id+'\',\''+o.id+'\')">✕</button>'
-        +'</div>';
-    }).join('');
-    return '<div class="card" style="margin-bottom:1rem;">'
-      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
-      +'<div class="stitle" style="margin:0;">'+cat.name+'</div>'
-      +'<button class="btn btn-sm" style="color:var(--coral);border-color:var(--coral-border);" onclick="removeCustomCategory(\''+cat.id+'\')">Eliminar categoria</button>'
+  // Rellenar select de slots
+  var slotSel=document.getElementById('cu-slot');
+  if(slotSel)slotSel.innerHTML=SLOT_DEFS.map(function(s){return '<option value="'+s.key+'">'+s.icon+' '+s.label+'</option>';}).join('');
+  // Rellenar grids de requisitos y bonus
+  var reqs=document.getElementById('cu-reqs');
+  if(reqs)reqs.innerHTML=attrKeys().map(function(k){return '<div class="field" style="margin:0;"><label>'+attrName(k).slice(0,6)+'</label><input type="number" id="cu-r'+k+'" value="0" min="0"/></div>';}).join('');
+  var bon=document.getElementById('cu-bonus');
+  if(bon)bon.innerHTML=attrKeys().map(function(k){return '<div class="field" style="margin:0;"><label>+'+attrName(k).slice(0,6)+'</label><input type="number" id="cu-b'+k+'" value="0" min="0"/></div>';}).join('');
+  // Lista de cosméticos existentes
+  var list=document.getElementById('cu-list');
+  var cosmetics=shopItems.filter(function(i){return i.isCosmetic;});
+  var cnt=document.getElementById('cu-count');if(cnt)cnt.textContent=cosmetics.length;
+  if(!list)return;
+  if(!cosmetics.length){list.innerHTML='<div style="font-size:13px;color:var(--muted);padding:1rem;">Encara no hi ha cosmètics. Crea\'n un a dalt.</div>';return;}
+  list.innerHTML=cosmetics.map(function(item){
+    var sl=SLOT_DEFS.find(function(s){return s.key===item.slot;});
+    var viaLabel=item.via==='gacha'?'🎲 Només Gacha':item.via==='solo_tienda'?'🛒 Només Botiga':'🛒+🎲 Botiga i Gacha';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px;border:0.5px solid var(--border);border-radius:var(--radius);margin-bottom:6px;">'
+      +(item.imageUrl?'<img src="'+item.imageUrl+'" style="width:40px;height:40px;object-fit:contain;background:var(--bg3);border-radius:var(--radius);flex-shrink:0;"/>':'<span style="font-size:24px;width:40px;text-align:center;">'+(item.icon||'📦')+'</span>')
+      +'<div style="flex:1;min-width:0;">'
+      +'<div style="font-size:13px;font-weight:500;">'+item.name+'</div>'
+      +'<div style="font-size:11px;color:var(--muted);">'+(sl?sl.icon+' '+sl.label:item.slot)+' · '+item.rareza+' · 🪙 '+item.cost+' · '+viaLabel+'</div>'
       +'</div>'
-      +opts
-      +'<button class="btn btn-sm" style="width:100%;margin-top:6px;" onclick="addCustomOption(\''+cat.id+'\')">+ Afegir opció (PNG)</button>'
+      +'<button class="btn btn-sm" onclick="openAdminEditItem(\''+item.id+'\')">✎</button>'
+      +'<button class="btn btn-sm" style="color:var(--coral);border-color:var(--coral-border);" onclick="adminDeleteItemFull(\''+item.id+'\')">✕</button>'
       +'</div>';
   }).join('');
 }
-function addCustomCategory(){
-  var el=document.getElementById('cc-cat-name');
-  var name=el.value.trim();
-  if(!name){toast('Posa un nom a la categoria');return;}
-  customTraits.push({id:'cat'+Date.now(),name:name,options:[]});
-  el.value='';
-  persistCustomTraits();
+async function createCosmetic(){
+  var name=document.getElementById('cu-name').value.trim();
+  if(!name){toast('Posa un nom');return;}
+  var slot=document.getElementById('cu-slot').value;
+  var sl=SLOT_DEFS.find(function(s){return s.key===slot;});
+  var minAttrs={};attrKeys().forEach(function(k){var el=document.getElementById('cu-r'+k);minAttrs[k]=el?(parseInt(el.value)||0):0;});
+  var bonus={};attrKeys().forEach(function(k){var el=document.getElementById('cu-b'+k);bonus[k]=el?(parseInt(el.value)||0):0;});
+  var newItem={
+    id:'cosm'+Date.now(),
+    name:name,
+    icon:document.getElementById('cu-icon').value.trim()||'✨',
+    imageUrl:document.getElementById('cu-imageurl').value.trim()||null,
+    desc:'',
+    slot:slot,
+    rareza:document.getElementById('cu-rarity').value,
+    cost:parseInt(document.getElementById('cu-cost').value)||0,
+    minLevel:parseInt(document.getElementById('cu-lvl').value)||1,
+    via:document.getElementById('cu-via').value,
+    minAttrs:minAttrs,
+    bonus:bonus,
+    avatarPos:sl?Object.assign({},sl.pos):null,
+    isCosmetic:true
+  };
+  shopItems.push(newItem);
+  if(CFG.MODE==='supabase')await saveItemToSupabase(newItem);
+  // Limpiar formulario
+  ['cu-name','cu-icon','cu-imageurl','cu-cost'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('cu-lvl').value='1';
+  attrKeys().forEach(function(k){var r=document.getElementById('cu-r'+k);if(r)r.value='0';var b=document.getElementById('cu-b'+k);if(b)b.value='0';});
   renderCustomTraitsAdmin();
-  toast('Categoria creada');
-}
-function removeCustomCategory(catId){
-  if(!confirm('Eliminar aquesta categoria i totes les seves opcions?'))return;
-  customTraits=customTraits.filter(function(c){return c.id!==catId;});
-  persistCustomTraits();
-  renderCustomTraitsAdmin();
-}
-function addCustomOption(catId){
-  var cat=customTraits.find(function(c){return c.id===catId;});
-  if(!cat)return;
-  var name=prompt('Nom de la opció (ex: Cabell blau):');
-  if(!name)return;
-  var url=prompt('URL de la imatge PNG:');
-  if(!url)return;
-  cat.options.push({id:'opt'+Date.now(),name:name.trim(),imageUrl:url.trim(),pos:{x:20,y:10,w:60,z:8}});
-  persistCustomTraits();
-  renderCustomTraitsAdmin();
-  toast('Opció afegida');
-}
-function editCustomOption(catId,optId){
-  var cat=customTraits.find(function(c){return c.id===catId;});
-  if(!cat)return;
-  var o=cat.options.find(function(x){return x.id===optId;});
-  if(!o)return;
-  var name=prompt('Nom:',o.name);if(name===null)return;
-  var url=prompt('URL imatge PNG:',o.imageUrl);if(url===null)return;
-  var x=prompt('Posició X (%):',o.pos.x);if(x===null)return;
-  var y=prompt('Posició Y (%):',o.pos.y);if(y===null)return;
-  var w=prompt('Amplada (%):',o.pos.w);if(w===null)return;
-  var z=prompt('Capa (z, 0-9):',o.pos.z);if(z===null)return;
-  o.name=name.trim();o.imageUrl=url.trim();
-  o.pos={x:parseFloat(x)||0,y:parseFloat(y)||0,w:parseFloat(w)||60,z:parseInt(z)||8};
-  persistCustomTraits();
-  renderCustomTraitsAdmin();
-  toast('Opció actualitzada');
-}
-function removeCustomOption(catId,optId){
-  var cat=customTraits.find(function(c){return c.id===catId;});
-  if(!cat)return;
-  cat.options=cat.options.filter(function(o){return o.id!==optId;});
-  persistCustomTraits();
-  renderCustomTraitsAdmin();
-}
-function persistCustomTraits(){
-  try{localStorage.setItem('cg_custom_traits',JSON.stringify(customTraits));}catch(e){}
-  if(CFG.MODE==='supabase')saveToSupabase();
+  renderShop();
+  toast('Cosmètic creat');
 }
 function switchAdminTab(btn, tabId){
   document.querySelectorAll('#page-items-admin .ptab').forEach(t=>t.classList.remove('active'));
@@ -2770,3 +2754,4 @@ try{window.renderInlineAvatarEditor=renderInlineAvatarEditor;}catch(e){}
 try{window.saveInlineAvatar=saveInlineAvatar;}catch(e){}
 try{window.setEquipPos=setEquipPos;}catch(e){}
 try{window.resetEquipPos=resetEquipPos;}catch(e){}
+try{window.createCosmetic=createCosmetic;}catch(e){}
