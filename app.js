@@ -1970,10 +1970,11 @@ function renderClassesAdmin(){
         +'</div>'
       +'</div>'
       +'<div class="stitle">Estadístiques base</div>'
-      +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:8px;margin-bottom:1rem;">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-bottom:1rem;">'
         +attrKeys().map(function(k){
-          return '<div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">'+AN[k]+'</label>'
-            +'<input type="number" id="cls-'+k+'-'+idx+'" value="'+(cls.attrs[k]||0)+'" min="0" style="width:100%;padding:6px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);text-align:center;"/></div>';
+          return '<div style="display:flex;align-items:center;gap:8px;min-width:0;">'
+            +'<label style="font-size:11px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+AN[k]+'">'+AN[k]+'</label>'
+            +'<input type="number" id="cls-'+k+'-'+idx+'" value="'+(cls.attrs[k]||0)+'" min="0" style="width:56px;flex-shrink:0;padding:6px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);text-align:center;"/></div>';
         }).join('')
       +'</div>'
       +'<div class="stitle">Equipament inicial (es dóna en crear el personatge)</div>'
