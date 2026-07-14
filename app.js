@@ -2027,8 +2027,12 @@ function getPlayerAvatar(p){
   var a=p.avatar;
   // Rellenar campos que falten (avatares antiguos) y corregir inválidos
   var defs={skinColor:'f5cfa0',hair:'short01',hairColor:'603a14',eyes:'variant01',eyesColor:'5b7c8b',mouth:'happy01',clothing:'variant01',clothingColor:'5bc0de',glasses:'none',glassesColor:'4b4b4b',beard:'none',hat:'none',hatColor:'2663a3',accessories:'none',accessoriesColor:'ffd700'};
+  // Claves de FORMA: deben ser un valor válido de la lista. Las de COLOR son libres.
+  var shapeKeys=['hair','eyes','mouth','clothing','glasses','beard','hat','accessories'];
   Object.keys(defs).forEach(function(k){
-    if(a[k]===undefined||(AVATAR_OPTS[k]&&AVATAR_OPTS[k].indexOf(a[k])<0))a[k]=defs[k];
+    if(a[k]===undefined){a[k]=defs[k];return;}
+    if(shapeKeys.indexOf(k)>=0&&AVATAR_OPTS[k]&&AVATAR_OPTS[k].indexOf(a[k])<0)a[k]=defs[k];
+    // los colores (hex) se dejan tal cual, sean de la lista o elegidos libremente
   });
   return a;
 }
@@ -2123,16 +2127,16 @@ function renderAvatarEditor(){
   var av=getPlayerAvatar(p);
   document.getElementById('avatar-editor-preview').innerHTML=renderAvatar(p,'pixel-avatar-lg');
   var html='';
-  // Colores (swatches)
-  [['skinColor','Pell'],['hairColor','Color cabell'],['eyesColor','Color ulls'],['clothingColor','Color roba']].forEach(function(pair){
-    var key=pair[0],label=pair[1];
-    html+='<div class="ava-opt-row"><label>'+label+'</label><div style="display:flex;gap:5px;flex-wrap:wrap;">';
-    AVATAR_OPTS[key].forEach(function(col){
-      html+='<div class="ava-swatch'+(av[key]===col?' selected':'')+'" style="background:#'+col+';" data-key="'+key+'" data-val="'+col+'" onclick="setAvatarOpt(this.dataset.key,this.dataset.val)"></div>';
-    });
-    html+='</div></div>';
-  });
-  // Cicladores por rasgo (la librería local sí los respeta)
+  // Selector de color nativo (paleta completa) + muestra a la derecha
+  function colorPicker(key,label){
+    var val='#'+(av[key]||'000000');
+    return '<div class="ava-opt-row"><label>'+label+'</label>'
+      +'<div style="display:flex;align-items:center;gap:8px;">'
+      +'<input type="color" value="'+val+'" oninput="setAvatarColor(\''+key+'\',this.value)" style="width:44px;height:32px;padding:0;border:2px solid var(--border2);border-radius:var(--radius);background:none;cursor:pointer;"/>'
+      +'<span style="width:26px;height:26px;border:2px solid var(--border2);border-radius:var(--radius);background:'+val+';display:inline-block;"></span>'
+      +'</div></div>';
+  }
+  // Ciclador de forma (‹ n/total ›)
   function cycler(key,label){
     var val=av[key]||AVATAR_OPTS[key][0];
     var idx=AVATAR_OPTS[key].indexOf(val);if(idx<0)idx=0;
@@ -2143,19 +2147,35 @@ function renderAvatarEditor(){
       +'<span style="font-size:14px;min-width:52px;text-align:center;">'+display+'</span>'
       +'<button class="ava-cycle-btn" onclick="cycleAvatarOpt(\''+key+'\',1)">›</button></div>';
   }
+  // Colores (selector completo)
+  html+=colorPicker('skinColor','Pell');
+  html+=colorPicker('hairColor','Color cabell');
+  html+=colorPicker('eyesColor','Color ulls');
+  html+=colorPicker('clothingColor','Color roba');
+  html+=colorPicker('glassesColor','Color ulleres');
+  html+=colorPicker('hatColor','Color barret');
+  html+=colorPicker('accessoriesColor','Color accessoris');
+  // Formas (cicladores)
+  html+='<div style="border-top:0.5px solid var(--border);margin:10px 0;padding-top:6px;"></div>';
   html+=cycler('hair','Pentinat');
   html+=cycler('eyes','Ulls');
   html+=cycler('mouth','Boca');
   html+=cycler('clothing','Roba');
   html+=cycler('glasses','Ulleres');
-  html+=cycler('glassesColor','Color ulleres');
   html+=cycler('beard','Barba');
   html+=cycler('hat','Barret');
-  html+=cycler('hatColor','Color barret');
   html+=cycler('accessories','Accessoris');
-  html+=cycler('accessoriesColor','Color accessoris');
   html+='<div style="margin-top:12px;"><button class="btn btn-sm" style="width:100%;" onclick="randomizeAvatar()">🎲 Aleatori</button></div>';
   document.getElementById('avatar-editor-controls').innerHTML=html;
+}
+function setAvatarColor(key,hex){
+  var p=players.find(function(pl){return pl.id===_avatarEditPid;});
+  if(!p)return;
+  getPlayerAvatar(p)[key]=hex.replace('#','');
+  // Solo refrescar el preview (no todo el editor) para no cerrar el selector
+  document.getElementById('avatar-editor-preview').innerHTML=renderAvatar(p,'pixel-avatar-lg');
+  // Actualizar la muestra de color junto al picker
+  renderAvatarEditor();
 }
 function randomizeAvatar(){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
@@ -2508,3 +2528,4 @@ try{window.cycleAvatarOpt=cycleAvatarOpt;}catch(e){}
 try{window.addAttr=addAttr;}catch(e){}
 try{window.removeAttr=removeAttr;}catch(e){}
 try{window.persistAttrs=persistAttrs;}catch(e){}
+try{window.setAvatarColor=setAvatarColor;}catch(e){}
