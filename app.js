@@ -751,9 +751,20 @@ function renderHeroTabsOLD(){
 }//legacy
 function selectHero(i){curHero=i;renderHeroTabs();renderHeroProfile(i==='admin'?'admin':i);}
 function goToMyProfile(){
-  (function(){var _x=document.getElementById('umenu-inline');if(_x)_x.style.display='none';})();
+  var _x=document.getElementById('umenu-inline');if(_x)_x.style.display='none';
+  var navBtn=document.getElementById('nav-heroe');
+  if(session.isAdmin){
+    curHero='admin';
+    showPage('heroe',navBtn);
+    renderHeroProfile('admin');
+    return;
+  }
   const idx=players.findIndex(p=>p.id===session.playerId);
-  if(idx>=0){curHero=idx;showPage('heroes',document.querySelector('.nb:nth-child(2)'));renderHeroProfile(idx);}
+  if(idx>=0){
+    curHero=idx;
+    showPage('heroe',navBtn);
+    renderHeroProfile(idx);
+  }
 }
 
 function getAdminProfile(){
@@ -805,7 +816,7 @@ function renderHeroProfile(i){
         <div class="pbody">
           <div>
             <div class="stitle">Atributos</div>
-            ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl">'+AN[k]+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(Math.min(100,ev/99*100))+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
+            ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl">'+AN[k]+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(ev/20*100)+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
             <div class="pentagon-wrap" style="margin-top:1rem;">${buildPentagon(getEffectiveAttrs(p),p.color)}</div>
             <div class="stitle" style="margin-top:1rem;">Equipament</div>
             ${(function(){var eq=Object.values(p.equipped||{}).filter(Boolean);if(!eq.length)return '<div style="font-size:12px;color:var(--muted);">Sense equipament.</div>';var items=eq.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);return '<div class="erow">'+items.map(function(i){return '<span class="epill" style="border-color:var(--gold);color:var(--gold);">'+(i.icon||'')+' '+i.name+'</span>';}).join('')+'</div>';})()}
@@ -1922,7 +1933,7 @@ function cleanOldCompleted(){
 const AVATAR_OPTS={
   skinColor:['ffdbac','f5cfa0','eac393','d9a066','c68642','8d5524','5c3a21'],
   hairColor:['000000','3b2417','6b4423','a55728','d4a017','e8e1c4','cc4400','7a2e2e','9146ff'],
-  hair:['short01','short02','short03','short04','short05','short06','short07','short08','long01','long02','long03','long04','long05','long06'],
+  hair:['short01','short02','short03','short04','short05','long01','long02','long03','long04','long05'],
   eyesColor:['5b7c99','3a7d44','8b4513','2f2f2f','6a4c93'],
   glasses:['none','variant01','variant02','variant03','variant04'],
   clothingColor:['5b7c99','a34d4d','3a7d44','8a6d3b','5d4a8a','2f2f2f','c9843e']
@@ -1952,8 +1963,12 @@ function getPlayerAvatar(p){
 function renderAvatar(p,sizeClass){
   var av=getPlayerAvatar(p);
   var url=buildAvatarUrl(av);
-  var html='<div class="pixel-avatar '+(sizeClass||'pixel-avatar-lg')+'">';
-  html+='<img class="pa-base" src="'+url+'" alt="avatar"/>';
+  var emblem=p.emblem||'🧙';
+  var bg=p.colorBg||'var(--bg3)';
+  var html='<div class="pixel-avatar '+(sizeClass||'pixel-avatar-lg')+'" style="background:'+bg+';">';
+  // Fallback emblem (visible siempre detrás); si el avatar carga, lo tapa
+  html+='<div class="pa-fallback" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:60%;">'+emblem+'</div>';
+  html+='<img class="pa-base" src="'+url+'" alt="" onerror="this.style.display=\'none\'" onload="var f=this.parentNode.querySelector(\'.pa-fallback\');if(f)f.style.display=\'none\'"/>';
   // Capas de items equipados con imagen
   if(p.equipped){
     ['armadura','botas','accesorio','arma','casco'].forEach(function(slot){
@@ -1961,7 +1976,7 @@ function renderAvatar(p,sizeClass){
       if(!iid)return;
       var item=shopItems.find(function(i){return i.id===iid;});
       if(item&&item.imageUrl){
-        html+='<img class="pa-layer pa-slot-'+slot+'" src="'+item.imageUrl+'" alt="'+item.name+'"/>';
+        html+='<img class="pa-layer pa-slot-'+slot+'" src="'+item.imageUrl+'" alt="'+item.name+'" onerror="this.style.display=\'none\'"/>';
       }
     });
   }
