@@ -53,6 +53,21 @@ const COLORS=[
   {hex:'#888780',bg:'rgba(136,135,128,0.15)'},{hex:'#639922',bg:'rgba(99,153,34,0.15)'},
 ];
 const EMBLEMS=['⚔️','🗡️','🏹','🛡️','🔮','📯','🔥','❄️','⚡','🌙','☀️','🐉','🦅','🌿','💎','👁️'];
+// ══ SLOTS DE EQUIPAMIENTO (centralizados) ══
+var SLOT_DEFS=[
+  {key:'arma',label:'Arma',icon:'⚔️',pos:{x:60,y:30,w:46,z:4}},
+  {key:'armadura',label:'Armadura',icon:'🛡️',pos:{x:20,y:42,w:60,z:3}},
+  {key:'accesorio',label:'Accessori',icon:'💎',pos:{x:8,y:22,w:30,z:4}},
+  {key:'casco',label:'Casc',icon:'⛑️',pos:{x:18,y:-2,w:64,z:6}},
+  {key:'botas',label:'Botes',icon:'👟',pos:{x:26,y:78,w:48,z:2}},
+  {key:'gafas',label:'Ulleres',icon:'👓',pos:{x:28,y:28,w:44,z:7}},
+  {key:'sombrero',label:'Barret',icon:'🎩',pos:{x:16,y:-8,w:68,z:6}},
+  {key:'capa',label:'Capa',icon:'🧥',pos:{x:12,y:34,w:76,z:1}},
+  {key:'alas',label:'Ales',icon:'🪽',pos:{x:2,y:28,w:96,z:0}}
+];
+function slotLabel(k){var s=SLOT_DEFS.find(function(x){return x.key===k;});return s?s.label:k;}
+function slotDefaultPos(k){var s=SLOT_DEFS.find(function(x){return x.key===k;});return s?s.pos:{x:20,y:20,w:60,z:4};}
+function emptyEquipped(){var o={};SLOT_DEFS.forEach(function(s){o[s.key]=null;});return o;}
 cpState.color=COLORS[0];/* color por defecto */
 // ══ ATRIBUTOS DINÁMICOS ══
 // ATTRS: array ordenado de {key, name, color}. Se puede añadir/quitar.
@@ -122,6 +137,7 @@ async function saveItemToSupabase(item){
         via_obtencion:item.via||'tienda',
         req_attrs:item.minAttrs||{fue:0,int:0,agi:0,car:0,sab:0},
         bonus_attrs:item.bonus||{fue:0,int:0,agi:0,car:0,sab:0},
+        avatar_pos:item.avatarPos||null,
         activo:true
       })
     });
@@ -313,7 +329,7 @@ async function loadData(){
           headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
         });
         const _eqd=await _eq.json();
-        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',imageUrl:r.imagen_url||null,desc:r.descripcion||'',slot:r.tipo,rareza:r.rareza||'comun',cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0}})):[];
+        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',imageUrl:r.imagen_url||null,desc:r.descripcion||'',slot:r.tipo,rareza:r.rareza||'comun',cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0},avatarPos:r.avatar_pos||null})):[];
       }catch{shopItems=[];}
       if(d.cal_events)calEvents=d.cal_events;
       else calEvents=[];
@@ -353,7 +369,7 @@ async function loadData(){
           headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
         });
         const _eqd=await _eq.json();
-        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',imageUrl:r.imagen_url||null,desc:r.descripcion||'',slot:r.tipo,rareza:r.rareza||'comun',cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0}})):[];
+        shopItems=Array.isArray(_eqd)&&_eqd.length?_eqd.map(r=>({id:r.id,name:r.nombre,icon:r.icono||'📦',imageUrl:r.imagen_url||null,desc:r.descripcion||'',slot:r.tipo,rareza:r.rareza||'comun',cost:r.coste_oro,minLevel:r.nivel_minimo,via:r.via_obtencion||'tienda',minAttrs:r.req_attrs||{fue:0,int:0,agi:0,car:0,sab:0},bonus:r.bonus_attrs||{fue:0,int:0,agi:0,car:0,sab:0},avatarPos:r.avatar_pos||null})):[];
       }catch{shopItems=[];}
       calEvents=[];
       await saveToSupabase();
@@ -365,7 +381,7 @@ async function loadData(){
     if(!p.gallery)p.gallery=[];
     if(!p.lastDaily)p.lastDaily='';
     if(!p.inventory)p.inventory=[];
-    if(!p.equipped)p.equipped={arma:null,armadura:null,accesorio:null,casco:null,botas:null};
+    if(!p.equipped)p.equipped=emptyEquipped();
     if(!p.pendingAttrPts)p.pendingAttrPts=0;
   });
   checkDailyMissions();
@@ -539,7 +555,7 @@ function saveNewChar(){
   if(!cpState.cls){toast('Vuelve al paso 2 y elige una clase.');return;}
   // Items iniciales fijos de la clase
   var startItems=(cpState.cls.startItems||[]).slice();
-  var equipped={arma:null,armadura:null,accesorio:null,casco:null,botas:null};
+  var equipped=emptyEquipped();
   startItems.forEach(function(iid){
     var item=shopItems.find(function(i){return i.id===iid;});
     if(item&&equipped.hasOwnProperty(item.slot)&&!equipped[item.slot])equipped[item.slot]=iid;
@@ -835,7 +851,7 @@ function renderHeroProfile(i){
         <div class="pbody">
           <div>
             <div class="stitle">Atributos</div>
-            ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl">'+AN[k]+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(ev/20*100)+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
+            ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl">'+AN[k]+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(Math.min(100,ev/99*100))+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
             <div class="pentagon-wrap" style="margin-top:1rem;">${buildPentagon(getEffectiveAttrs(p),p.color)}</div>
             <div class="stitle" style="margin-top:1rem;">Equipament</div>
             ${(function(){var eq=Object.values(p.equipped||{}).filter(Boolean);if(!eq.length)return '<div style="font-size:12px;color:var(--muted);">Sense equipament.</div>';var items=eq.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);return '<div class="erow">'+items.map(function(i){return '<span class="epill" style="border-color:var(--gold);color:var(--gold);">'+(i.icon||'')+' '+i.name+'</span>';}).join('')+'</div>';})()}
@@ -1199,7 +1215,7 @@ function equipItem(itemId){
   var p=players.find(function(pl){return pl.id===session.playerId;});
   var item=shopItems.find(function(i){return i.id===itemId;});
   if(!p||!item)return;
-  if(!p.equipped)p.equipped={arma:null,armadura:null,accesorio:null,casco:null,botas:null};
+  if(!p.equipped)p.equipped=emptyEquipped();
   p.equipped[item.slot]=itemId;
   if(CFG.MODE==='supabase')saveToSupabase();
   renderShop();renderHeroProfile(curHero);
@@ -1295,6 +1311,7 @@ function renderAdminItemsPage(){
 }
 
 var _adminEditType=null, _adminEditId=null;
+function defaultSlotPos(slot){return slotDefaultPos(slot);}
 function openAdminEditItem(itemId){
   var item=shopItems.find(function(i){return i.id===itemId;});
   if(!item)return;
@@ -1305,8 +1322,15 @@ function openAdminEditItem(itemId){
     +'<div class="field"><label>Icona (emoji)</label><input type="text" id="aem-icon" value="'+(item.icon||'')+'" maxlength="2"/></div>'
     +'<div class="field"><label>URL Imatge</label><input type="text" id="aem-imageurl" value="'+(item.imageUrl||'')+'"/></div>'
     +'<div class="field"><label>Descripció</label><input type="text" id="aem-desc" value="'+(item.desc||'')+'"/></div>'
+    +'<div class="stitle" style="margin-top:10px;">Posició i mida al avatar (%)</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">'
+    +'<div class="field" style="margin:0;"><label>X (esq.)</label><input type="number" id="aem-px" value="'+((item.avatarPos&&item.avatarPos.x)!=null?item.avatarPos.x:defaultSlotPos(item.slot).x)+'"/></div>'
+    +'<div class="field" style="margin:0;"><label>Y (dalt)</label><input type="number" id="aem-py" value="'+((item.avatarPos&&item.avatarPos.y)!=null?item.avatarPos.y:defaultSlotPos(item.slot).y)+'"/></div>'
+    +'<div class="field" style="margin:0;"><label>Amplada</label><input type="number" id="aem-pw" value="'+((item.avatarPos&&item.avatarPos.w)!=null?item.avatarPos.w:defaultSlotPos(item.slot).w)+'"/></div>'
+    +'</div>'
+    +'<div style="font-size:11px;color:var(--muted);margin-top:2px;">X/Y=posició des de dalt-esquerra, Amplada=mida. Deixa buit per usar la posició del slot.</div>'
     +'<div class="g2">'
-    +'<div class="field"><label>Slot</label><select id="aem-slot"><option value="arma"'+(item.slot==='arma'?' selected':'')+'>Arma</option><option value="armadura"'+(item.slot==='armadura'?' selected':'')+'>Armadura</option><option value="accesorio"'+(item.slot==='accesorio'?' selected':'')+'>Accessori</option><option value="casco"'+(item.slot==='casco'?' selected':'')+'>Casc</option><option value="botas"'+(item.slot==='botas'?' selected':'')+'>Botes</option></select></div>'
+    +'<div class="field"><label>Slot</label><select id="aem-slot">'+SLOT_DEFS.map(function(s){return '<option value="'+s.key+'"'+(item.slot===s.key?' selected':'')+'>'+s.icon+' '+s.label+'</option>';}).join('')+'</select></div>'
     +'<div class="field"><label>Raresa</label><select id="aem-rarity"><option value="comun"'+(item.rareza==='comun'?' selected':'')+'>Comú</option><option value="rara"'+(item.rareza==='rara'?' selected':'')+'>Rara</option><option value="epica"'+(item.rareza==='epica'?' selected':'')+'>Èpica</option><option value="legendaria"'+(item.rareza==='legendaria'?' selected':'')+'>Llegendària</option></select></div>'
     +'<div class="field"><label>Cost (or)</label><input type="number" id="aem-cost" value="'+(item.cost||0)+'"/></div>'
     +'<div class="field"><label>Nivell mínim</label><input type="number" id="aem-lvl" value="'+(item.minLevel||1)+'"/></div>'
@@ -1351,6 +1375,8 @@ async function saveAdminEdit(){
     item.cost=parseInt(document.getElementById('aem-cost').value)||0;
     item.minLevel=parseInt(document.getElementById('aem-lvl').value)||1;
     item.via=document.getElementById('aem-via').value;
+    var _px=document.getElementById('aem-px'),_py=document.getElementById('aem-py'),_pw=document.getElementById('aem-pw');
+    item.avatarPos={x:parseFloat(_px.value)||0,y:parseFloat(_py.value)||0,w:parseFloat(_pw.value)||60};
     item.minAttrs={};attrKeys().forEach(function(k){var el=document.getElementById('aem-r'+k);item.minAttrs[k]=el?(parseInt(el.value)||0):0;});
     item.bonus={};attrKeys().forEach(function(k){var el=document.getElementById('aem-b'+k);item.bonus[k]=el?(parseInt(el.value)||0):0;});
     if(CFG.MODE==='supabase')saveItemToSupabase(item);
@@ -2022,11 +2048,11 @@ function buildAvatarUrl(av){
 }
 // Devuelve el objeto avatar del jugador (con defaults)
 function getPlayerAvatar(p){
-  if(!p.avatar)p.avatar={seed:p.id||p.name||'hero',skinColor:'f5cfa0',hair:'short01',hairColor:'603a14',eyes:'variant01',eyesColor:'5b7c8b',mouth:'happy01',clothing:'variant01',clothingColor:'5bc0de',glasses:'none',glassesColor:'4b4b4b',beard:'none',hat:'none',hatColor:'2663a3',accessories:'none',accessoriesColor:'ffd700'};
+  if(!p.avatar)p.avatar={seed:p.id||p.name||'hero',skinColor:'f5cfa0',hair:'short01',hairColor:'603a14',beardColor:'603a14',eyes:'variant01',eyesColor:'5b7c8b',mouth:'happy01',clothing:'variant01',clothingColor:'5bc0de',glasses:'none',glassesColor:'4b4b4b',beard:'none',hat:'none',hatColor:'2663a3',accessories:'none',accessoriesColor:'ffd700'};
   // Corregir valores inválidos de versiones antiguas (evita error 400 de DiceBear)
   var a=p.avatar;
   // Rellenar campos que falten (avatares antiguos) y corregir inválidos
-  var defs={skinColor:'f5cfa0',hair:'short01',hairColor:'603a14',eyes:'variant01',eyesColor:'5b7c8b',mouth:'happy01',clothing:'variant01',clothingColor:'5bc0de',glasses:'none',glassesColor:'4b4b4b',beard:'none',hat:'none',hatColor:'2663a3',accessories:'none',accessoriesColor:'ffd700'};
+  var defs={skinColor:'f5cfa0',hair:'short01',hairColor:'603a14',beardColor:'603a14',eyes:'variant01',eyesColor:'5b7c8b',mouth:'happy01',clothing:'variant01',clothingColor:'5bc0de',glasses:'none',glassesColor:'4b4b4b',beard:'none',hat:'none',hatColor:'2663a3',accessories:'none',accessoriesColor:'ffd700'};
   // Claves de FORMA: deben ser un valor válido de la lista. Las de COLOR son libres.
   var shapeKeys=['hair','eyes','mouth','clothing','glasses','beard','hat','accessories'];
   Object.keys(defs).forEach(function(k){
@@ -2037,6 +2063,23 @@ function getPlayerAvatar(p){
   return a;
 }
 // Renderiza el avatar completo (base DiceBear + capas de items equipados)
+function recolorBeard(svg,hairHex,beardHex){
+  // La barba está en <mask id="beardVariantXX-a">...</mask><g mask="url(#beardVariantXX-a)">...</g>
+  // Dentro de esos bloques, el color del pelo se usa para la barba. Los recoloreamos.
+  try{
+    var hh='#'+hairHex.replace('#','');
+    var bh='#'+beardHex.replace('#','');
+    // Recolorear el <mask> de la barba
+    svg=svg.replace(/(<mask id="beardVariant[^"]*"[\s\S]*?<\/mask>)/gi,function(m){
+      return m.split(hh).join(bh);
+    });
+    // Recolorear el <g mask="url(#beardVariant...)"> ... </g>
+    svg=svg.replace(/(<g mask="url\(#beardVariant[^)]*\)">[\s\S]*?<\/g>)/gi,function(m){
+      return m.split(hh).join(bh);
+    });
+    return svg;
+  }catch(e){return svg;}
+}
 function buildAvatarSvg(av){
   // Genera el SVG localmente con la librería DiceBear (respeta cada rasgo)
   if(!window.DiceBearCreate||!window.DiceBearPixelArt)return null;
@@ -2058,7 +2101,12 @@ function buildAvatarSvg(av){
     else opts.hatProbability=0;
     if(av.accessories&&av.accessories!=='none'){opts.accessories=[av.accessories];opts.accessoriesProbability=100;if(av.accessoriesColor)opts.accessoriesColor=[av.accessoriesColor];}
     else opts.accessoriesProbability=0;
-    return window.DiceBearCreate(window.DiceBearPixelArt,opts).toString();
+    var svg=window.DiceBearCreate(window.DiceBearPixelArt,opts).toString();
+    // Recolorear la barba con beardColor (DiceBear la pinta con hairColor)
+    if(av.beard&&av.beard!=='none'&&av.beardColor&&av.hairColor&&av.beardColor!==av.hairColor){
+      svg=recolorBeard(svg,av.hairColor,av.beardColor);
+    }
+    return svg;
   }catch(e){console.error('DiceBear local error',e);return null;}
 }
 function renderAvatar(p,sizeClass){
@@ -2077,14 +2125,16 @@ function renderAvatar(p,sizeClass){
     html+='<img class="pa-base" src="'+url+'" alt="" onerror="this.style.display=\'none\'" onload="var f=this.parentNode.querySelector(\'.pa-fallback\');if(f)f.style.display=\'none\'"/>';
   }
   if(svg){var _f='';}
-  // Capas de items equipados
+  // Capas de items equipados (todos los slots, ordenados por z)
   if(p.equipped){
-    ['armadura','botas','accesorio','arma','casco'].forEach(function(slot){
-      var iid=p.equipped[slot];
+    SLOT_DEFS.slice().sort(function(a,b){return (a.pos.z||0)-(b.pos.z||0);}).forEach(function(sl){
+      var iid=p.equipped[sl.key];
       if(!iid)return;
       var item=shopItems.find(function(i){return i.id===iid;});
       if(item&&item.imageUrl){
-        html+='<img class="pa-layer pa-slot-'+slot+'" src="'+item.imageUrl+'" alt="'+item.name+'" onerror="this.style.display=\'none\'"/>';
+        var ps=item.avatarPos||sl.pos;
+        var z=(ps.z!=null?ps.z:(sl.pos.z||4));
+        html+='<img class="pa-layer" style="position:absolute;left:'+ps.x+'%;top:'+ps.y+'%;width:'+ps.w+'%;height:auto;z-index:'+z+';" src="'+item.imageUrl+'" alt="'+item.name+'" onerror="this.style.display=\'none\'"/>';
       }
     });
   }
@@ -2127,7 +2177,6 @@ function renderAvatarEditor(){
   var av=getPlayerAvatar(p);
   document.getElementById('avatar-editor-preview').innerHTML=renderAvatar(p,'pixel-avatar-lg');
   var html='';
-  // Selector de color nativo (paleta completa) + muestra a la derecha
   function colorPicker(key,label){
     var val='#'+(av[key]||'000000');
     return '<div class="ava-opt-row"><label>'+label+'</label>'
@@ -2136,37 +2185,44 @@ function renderAvatarEditor(){
       +'<span style="width:26px;height:26px;border:2px solid var(--border2);border-radius:var(--radius);background:'+val+';display:inline-block;"></span>'
       +'</div></div>';
   }
-  // Ciclador de forma (‹ n/total ›)
-  function cycler(key,label){
-    var val=av[key]||AVATAR_OPTS[key][0];
-    var idx=AVATAR_OPTS[key].indexOf(val);if(idx<0)idx=0;
-    var total=AVATAR_OPTS[key].length;
-    var display=val==='none'?'Cap':(idx+1)+'/'+total;
+  // Menú desplegable con todas las opciones de forma
+  function selector(key,label){
+    var cur=av[key]||AVATAR_OPTS[key][0];
+    var opts=AVATAR_OPTS[key].map(function(v,i){
+      var name=v==='none'?'Cap':(i+(AVATAR_OPTS[key][0]==='none'?0:1))+' — '+v;
+      return '<option value="'+v+'"'+(v===cur?' selected':'')+'>'+name+'</option>';
+    }).join('');
     return '<div class="ava-opt-row"><label>'+label+'</label>'
-      +'<button class="ava-cycle-btn" onclick="cycleAvatarOpt(\''+key+'\',-1)">‹</button>'
-      +'<span style="font-size:14px;min-width:52px;text-align:center;">'+display+'</span>'
-      +'<button class="ava-cycle-btn" onclick="cycleAvatarOpt(\''+key+'\',1)">›</button></div>';
+      +'<select onchange="setAvatarShape(\''+key+'\',this.value)" style="flex:1;padding:6px 8px;font-size:13px;border:2px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);cursor:pointer;">'+opts+'</select>'
+      +'</div>';
   }
-  // Colores (selector completo)
+  // Colores
   html+=colorPicker('skinColor','Pell');
   html+=colorPicker('hairColor','Color cabell');
+  html+=colorPicker('beardColor','Color barba');
   html+=colorPicker('eyesColor','Color ulls');
   html+=colorPicker('clothingColor','Color roba');
   html+=colorPicker('glassesColor','Color ulleres');
   html+=colorPicker('hatColor','Color barret');
   html+=colorPicker('accessoriesColor','Color accessoris');
-  // Formas (cicladores)
   html+='<div style="border-top:0.5px solid var(--border);margin:10px 0;padding-top:6px;"></div>';
-  html+=cycler('hair','Pentinat');
-  html+=cycler('eyes','Ulls');
-  html+=cycler('mouth','Boca');
-  html+=cycler('clothing','Roba');
-  html+=cycler('glasses','Ulleres');
-  html+=cycler('beard','Barba');
-  html+=cycler('hat','Barret');
-  html+=cycler('accessories','Accessoris');
+  // Formas (desplegables)
+  html+=selector('hair','Pentinat');
+  html+=selector('eyes','Ulls');
+  html+=selector('mouth','Boca');
+  html+=selector('clothing','Roba');
+  html+=selector('glasses','Ulleres');
+  html+=selector('beard','Barba');
+  html+=selector('hat','Barret');
+  html+=selector('accessories','Accessoris');
   html+='<div style="margin-top:12px;"><button class="btn btn-sm" style="width:100%;" onclick="randomizeAvatar()">🎲 Aleatori</button></div>';
   document.getElementById('avatar-editor-controls').innerHTML=html;
+}
+function setAvatarShape(key,val){
+  var p=players.find(function(pl){return pl.id===_avatarEditPid;});
+  if(!p)return;
+  getPlayerAvatar(p)[key]=val;
+  document.getElementById('avatar-editor-preview').innerHTML=renderAvatar(p,'pixel-avatar-lg');
 }
 function setAvatarColor(key,hex){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
@@ -2237,14 +2293,8 @@ function renderInventario(){
   var sw=document.getElementById('inv-slots'),gw=document.getElementById('inv-grid');
   if(!sw||!gw)return;
   if(!p){sw.innerHTML='<div style="color:var(--muted);font-size:13px;">Inicia sesión.</div>';gw.innerHTML='';return;}
-  if(!p.equipped)p.equipped={arma:null,armadura:null,accesorio:null,casco:null,botas:null};
-  var slotDefs=[
-    {key:'arma',label:'Arma',icon:'⚔️'},
-    {key:'armadura',label:'Armadura',icon:'🛡️'},
-    {key:'accesorio',label:'Accesorio',icon:'💎'},
-    {key:'casco',label:'Casco',icon:'⛑️'},
-    {key:'botas',label:'Botas',icon:'👟'}
-  ];
+  if(!p.equipped)p.equipped=emptyEquipped();
+  var slotDefs=SLOT_DEFS;
   sw.innerHTML=slotDefs.map(function(sl){
     var iid=p.equipped[sl.key];
     var item=shopItems.find(function(i){return i.id===iid;});
@@ -2529,3 +2579,5 @@ try{window.addAttr=addAttr;}catch(e){}
 try{window.removeAttr=removeAttr;}catch(e){}
 try{window.persistAttrs=persistAttrs;}catch(e){}
 try{window.setAvatarColor=setAvatarColor;}catch(e){}
+try{window.setAvatarShape=setAvatarShape;}catch(e){}
+try{window.recolorBeard=recolorBeard;}catch(e){}
