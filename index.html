@@ -375,6 +375,7 @@
       <div style="display:flex;gap:0;border-bottom:0.5px solid var(--border);margin-bottom:1.25rem;">
         <div class="ptab active" onclick="switchAdminTab(this,'tab-items')" id="admin-tab-items">Ítems</div>
         <div class="ptab" onclick="switchAdminTab(this,'tab-cartas')" id="admin-tab-cartas">Cartes Gacha</div>
+        <div class="ptab" onclick="switchAdminTab(this,'tab-custom')" id="admin-tab-custom">Customitzables</div>
       </div>
       <div id="tab-items">
       <!-- Crear item -->
@@ -498,6 +499,18 @@
           <div id="ac-list"></div>
         </div>
       </div><!-- end tab-cartas -->
+
+      <div id="tab-custom" style="display:none;">
+        <div class="card" style="margin-bottom:1.25rem;">
+          <div class="stitle">Nova categoria de rasgo</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Crea categories (ex: "Pentinats custom", "Ulleres custom"). Cada una apareixerà com a selector al editor d'avatar.</div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="cc-cat-name" placeholder="Nom de la categoria" style="flex:1;padding:7px 10px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);"/>
+            <button class="btn btn-p" onclick="addCustomCategory()">+ Categoria</button>
+          </div>
+        </div>
+        <div id="cc-categories"></div>
+      </div><!-- end tab-custom -->
 
     </div>
 
