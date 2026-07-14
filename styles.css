@@ -364,8 +364,11 @@ body.admin-mode .nb-edit-btn{display:inline-flex;}
 .pa-slot-accesorio{top:22%;  left:8%;  width:30%; height:auto;z-index:4;}
 .pa-slot-botas    {top:78%;  left:26%; width:48%; height:auto;z-index:2;}
 .pixel-avatar-lg{width:180px;height:180px;}
+.pixel-avatar-lg .pa-fallback{font-size:90px !important;}
 .pixel-avatar-sm{width:38px;height:38px;}
+.pixel-avatar-sm .pa-fallback{font-size:20px !important;}
 .pixel-avatar-mini{width:30px;height:30px;}
+.pixel-avatar-mini .pa-fallback{font-size:16px !important;}
 /* Editor de avatar */
 .avatar-editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;}
 .ava-opt-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
