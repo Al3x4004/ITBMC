@@ -1932,12 +1932,21 @@ function cleanOldCompleted(){
 /* ══ AVATAR PIXEL-ART ══ */
 // Opciones disponibles del estilo pixel-art de DiceBear
 const AVATAR_OPTS={
-  skinColor:['8d5524','c68642','e0ac69','f1c27d','ffdbac'],
-  hairColor:['000000','2c1b18','603a1e','a55728','b58143','d6b370','cb6820','dba3be'],
-  hair:['short01','short02','short03','short04','short05','long01','long02','long03','long04','long05'],
-  eyesColor:['5b7c8b','647b90','697b94','76778b','588387','876658'],
-  glasses:['none','light01','light02','light03','light04','dark01','dark02'],
-  clothingColor:['00b2ec','5bc0de','44c585','88898a','a9bdd0','d11141','e4b02a','f4a41d']
+  skinColor:['ffdbac','f5cfa0','eac393','e0b687','cb9e6e','b68655','a26d3d','8d5524'],
+  hair:['short01','short02','short03','short04','short05','short06','short07','short08','short09','short10','short11','short12','short13','short14','short15','short16','short17','short18','short19','short20','short21','short22','short23','short24','long01','long02','long03','long04','long05','long06','long07','long08','long09','long10','long11','long12','long13','long14','long15','long16','long17','long18','long19','long20','long21'],
+  hairColor:['cab188','603a14','83623b','a78961','611c17','603015','612616','28150a','009bbd','bd1700','91cb15'],
+  eyes:['variant01','variant02','variant03','variant04','variant05','variant06','variant07','variant08','variant09','variant10','variant11','variant12'],
+  eyesColor:['76778b','697b94','647b90','5b7c8b','588387','876658'],
+  mouth:['happy01','happy02','happy03','happy04','happy05','happy06','happy07','happy08','happy09','happy10','happy11','happy12','happy13','sad01','sad02','sad03','sad04','sad05','sad06','sad07','sad08','sad09','sad10'],
+  clothing:['variant01','variant02','variant03','variant04','variant05','variant06','variant07','variant08','variant09','variant10','variant11','variant12','variant13','variant14','variant15','variant16','variant17','variant18','variant19','variant20','variant21','variant22','variant23'],
+  clothingColor:['5bc0de','428bca','03396c','88d8b0','44c585','00b159','ff6f69','d11141','ae0001','ffeead','ffd969','ffc425'],
+  glasses:['none','dark01','dark02','dark03','dark04','dark05','dark06','dark07','light01','light02','light03','light04','light05','light06','light07'],
+  glassesColor:['4b4b4b','323232','191919','43677d','5f705c','a04b5d'],
+  beard:['none','variant01','variant02','variant03','variant04','variant05','variant06','variant07','variant08'],
+  hat:['none','variant01','variant02','variant03','variant04','variant05','variant06','variant07','variant08','variant09','variant10'],
+  hatColor:['2e1e05','2663a3','989789','3d8a6b','cc6192','614f8a','a62116'],
+  accessories:['none','variant01','variant02','variant03','variant04'],
+  accessoriesColor:['daa520','ffd700','fafad2','d3d3d3','a9a9a9']
 };
 // Construye la URL de DiceBear para el avatar base
 function buildAvatarUrl(av){
@@ -1946,40 +1955,78 @@ function buildAvatarUrl(av){
   var params=[];
   params.push('seed='+encodeURIComponent(av.seed||'hero'));
   if(av.skinColor)params.push('skinColor='+av.skinColor);
+  if(av.hair)params.push('hair='+av.hair);
   if(av.hairColor)params.push('hairColor='+av.hairColor);
-  if(av.hair)params.push('hairVariant='+av.hair);
+  if(av.eyes)params.push('eyes='+av.eyes);
   if(av.eyesColor)params.push('eyesColor='+av.eyesColor);
+  if(av.mouth)params.push('mouth='+av.mouth);
+  if(av.clothing)params.push('clothing='+av.clothing);
   if(av.clothingColor)params.push('clothingColor='+av.clothingColor);
-  if(av.glasses&&av.glasses!=='none'){params.push('glasses='+av.glasses);params.push('glassesProbability=100');}
+  if(av.glasses&&av.glasses!=='none'){params.push('glasses='+av.glasses);params.push('glassesProbability=100');if(av.glassesColor)params.push('glassesColor='+av.glassesColor);}
   else params.push('glassesProbability=0');
-  params.push('backgroundColor=transparent');
+  if(av.beard&&av.beard!=='none'){params.push('beard='+av.beard);params.push('beardProbability=100');}
+  else params.push('beardProbability=0');
+  if(av.hat&&av.hat!=='none'){params.push('hat='+av.hat);params.push('hatProbability=100');if(av.hatColor)params.push('hatColor='+av.hatColor);}
+  else params.push('hatProbability=0');
+  if(av.accessories&&av.accessories!=='none'){params.push('accessories='+av.accessories);params.push('accessoriesProbability=100');if(av.accessoriesColor)params.push('accessoriesColor='+av.accessoriesColor);}
+  else params.push('accessoriesProbability=0');
   params.push('size=180');
   return base+'?'+params.join('&');
 }
 // Devuelve el objeto avatar del jugador (con defaults)
 function getPlayerAvatar(p){
-  if(!p.avatar)p.avatar={seed:p.id||p.name||'hero',skinColor:'f1c27d',hairColor:'603a1e',hair:'short01',eyesColor:'5b7c8b',glasses:'none',clothingColor:'5bc0de'};
+  if(!p.avatar)p.avatar={seed:p.id||p.name||'hero',skinColor:'f5cfa0',hair:'short01',hairColor:'603a14',eyes:'variant01',eyesColor:'5b7c8b',mouth:'happy01',clothing:'variant01',clothingColor:'5bc0de',glasses:'none',glassesColor:'4b4b4b',beard:'none',hat:'none',hatColor:'2663a3',accessories:'none',accessoriesColor:'ffd700'};
   // Corregir valores inválidos de versiones antiguas (evita error 400 de DiceBear)
   var a=p.avatar;
-  if(AVATAR_OPTS.skinColor.indexOf(a.skinColor)<0)a.skinColor='f1c27d';
-  if(AVATAR_OPTS.hairColor.indexOf(a.hairColor)<0)a.hairColor='603a1e';
-  if(AVATAR_OPTS.hair.indexOf(a.hair)<0)a.hair='short01';
-  if(AVATAR_OPTS.eyesColor.indexOf(a.eyesColor)<0)a.eyesColor='5b7c8b';
-  if(AVATAR_OPTS.clothingColor.indexOf(a.clothingColor)<0)a.clothingColor='5bc0de';
-  if(AVATAR_OPTS.glasses.indexOf(a.glasses)<0)a.glasses='none';
+  // Rellenar campos que falten (avatares antiguos) y corregir inválidos
+  var defs={skinColor:'f5cfa0',hair:'short01',hairColor:'603a14',eyes:'variant01',eyesColor:'5b7c8b',mouth:'happy01',clothing:'variant01',clothingColor:'5bc0de',glasses:'none',glassesColor:'4b4b4b',beard:'none',hat:'none',hatColor:'2663a3',accessories:'none',accessoriesColor:'ffd700'};
+  Object.keys(defs).forEach(function(k){
+    if(a[k]===undefined||(AVATAR_OPTS[k]&&AVATAR_OPTS[k].indexOf(a[k])<0))a[k]=defs[k];
+  });
   return a;
 }
 // Renderiza el avatar completo (base DiceBear + capas de items equipados)
+function buildAvatarSvg(av){
+  // Genera el SVG localmente con la librería DiceBear (respeta cada rasgo)
+  if(!window.DiceBearCreate||!window.DiceBearPixelArt)return null;
+  try{
+    var opts={seed:av.seed||'hero',size:180};
+    if(av.skinColor)opts.skinColor=[av.skinColor];
+    if(av.hair)opts.hair=[av.hair];
+    if(av.hairColor)opts.hairColor=[av.hairColor];
+    if(av.eyes)opts.eyes=[av.eyes];
+    if(av.eyesColor)opts.eyesColor=[av.eyesColor];
+    if(av.mouth)opts.mouth=[av.mouth];
+    if(av.clothing)opts.clothing=[av.clothing];
+    if(av.clothingColor)opts.clothingColor=[av.clothingColor];
+    if(av.glasses&&av.glasses!=='none'){opts.glasses=[av.glasses];opts.glassesProbability=100;if(av.glassesColor)opts.glassesColor=[av.glassesColor];}
+    else opts.glassesProbability=0;
+    if(av.beard&&av.beard!=='none'){opts.beard=[av.beard];opts.beardProbability=100;}
+    else opts.beardProbability=0;
+    if(av.hat&&av.hat!=='none'){opts.hat=[av.hat];opts.hatProbability=100;if(av.hatColor)opts.hatColor=[av.hatColor];}
+    else opts.hatProbability=0;
+    if(av.accessories&&av.accessories!=='none'){opts.accessories=[av.accessories];opts.accessoriesProbability=100;if(av.accessoriesColor)opts.accessoriesColor=[av.accessoriesColor];}
+    else opts.accessoriesProbability=0;
+    return window.DiceBearCreate(window.DiceBearPixelArt,opts).toString();
+  }catch(e){console.error('DiceBear local error',e);return null;}
+}
 function renderAvatar(p,sizeClass){
   var av=getPlayerAvatar(p);
-  var url=buildAvatarUrl(av);
   var emblem=p.emblem||'🧙';
   var bg=p.colorBg||'var(--bg3)';
   var html='<div class="pixel-avatar '+(sizeClass||'pixel-avatar-lg')+'" style="background:'+bg+';">';
-  // Fallback emblem (visible siempre detrás); si el avatar carga, lo tapa
   html+='<div class="pa-fallback" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:60%;">'+emblem+'</div>';
-  html+='<img class="pa-base" src="'+url+'" alt="" onerror="this.style.display=\'none\'" onload="var f=this.parentNode.querySelector(\'.pa-fallback\');if(f)f.style.display=\'none\'"/>';
-  // Capas de items equipados con imagen
+  // Preferir SVG local (control total de rasgos); fallback a la API HTTP
+  var svg=buildAvatarSvg(av);
+  if(svg){
+    html=html.replace('display:flex;align-items:center','display:none;align-items:center');
+    html+='<div class="pa-base" style="position:absolute;inset:0;">'+svg+'</div>';
+  }else{
+    var url=buildAvatarUrl(av);
+    html+='<img class="pa-base" src="'+url+'" alt="" onerror="this.style.display=\'none\'" onload="var f=this.parentNode.querySelector(\'.pa-fallback\');if(f)f.style.display=\'none\'"/>';
+  }
+  if(svg){var _f='';}
+  // Capas de items equipados
   if(p.equipped){
     ['armadura','botas','accesorio','arma','casco'].forEach(function(slot){
       var iid=p.equipped[slot];
@@ -2027,12 +2074,10 @@ function renderAvatarEditor(){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
   if(!p)return;
   var av=getPlayerAvatar(p);
-  // Preview
   document.getElementById('avatar-editor-preview').innerHTML=renderAvatar(p,'pixel-avatar-lg');
-  // Controls
   var html='';
-  // Color swatches
-  [['skinColor','Pell'],['hairColor','Cabell'],['eyesColor','Ulls'],['clothingColor','Roba']].forEach(function(pair){
+  // Colores (swatches)
+  [['skinColor','Pell'],['hairColor','Color cabell'],['eyesColor','Color ulls'],['clothingColor','Color roba']].forEach(function(pair){
     var key=pair[0],label=pair[1];
     html+='<div class="ava-opt-row"><label>'+label+'</label><div style="display:flex;gap:5px;flex-wrap:wrap;">';
     AVATAR_OPTS[key].forEach(function(col){
@@ -2040,22 +2085,39 @@ function renderAvatarEditor(){
     });
     html+='</div></div>';
   });
-  // Hair style cycle
-  html+='<div class="ava-opt-row"><label>Pentinat</label>'
-    +'<button class="ava-cycle-btn" onclick="cycleAvatarOpt(\'hair\',-1)">‹</button>'
-    +'<span style="font-size:12px;min-width:60px;text-align:center;">'+(av.hair||'short01')+'</span>'
-    +'<button class="ava-cycle-btn" onclick="cycleAvatarOpt(\'hair\',1)">›</button></div>';
-  // Glasses cycle
-  html+='<div class="ava-opt-row"><label>Ulleres</label>'
-    +'<button class="ava-cycle-btn" onclick="cycleAvatarOpt(\'glasses\',-1)">‹</button>'
-    +'<span style="font-size:12px;min-width:60px;text-align:center;">'+(av.glasses==='none'?'Cap':(av.glasses||'none'))+'</span>'
-    +'<button class="ava-cycle-btn" onclick="cycleAvatarOpt(\'glasses\',1)">›</button></div>';
+  // Cicladores por rasgo (la librería local sí los respeta)
+  function cycler(key,label){
+    var val=av[key]||AVATAR_OPTS[key][0];
+    var idx=AVATAR_OPTS[key].indexOf(val);if(idx<0)idx=0;
+    var total=AVATAR_OPTS[key].length;
+    var display=val==='none'?'Cap':(idx+1)+'/'+total;
+    return '<div class="ava-opt-row"><label>'+label+'</label>'
+      +'<button class="ava-cycle-btn" onclick="cycleAvatarOpt(\''+key+'\',-1)">‹</button>'
+      +'<span style="font-size:14px;min-width:52px;text-align:center;">'+display+'</span>'
+      +'<button class="ava-cycle-btn" onclick="cycleAvatarOpt(\''+key+'\',1)">›</button></div>';
+  }
+  html+=cycler('hair','Pentinat');
+  html+=cycler('eyes','Ulls');
+  html+=cycler('mouth','Boca');
+  html+=cycler('clothing','Roba');
+  html+=cycler('glasses','Ulleres');
+  html+=cycler('glassesColor','Color ulleres');
+  html+=cycler('beard','Barba');
+  html+=cycler('hat','Barret');
+  html+=cycler('hatColor','Color barret');
+  html+=cycler('accessories','Accessoris');
+  html+=cycler('accessoriesColor','Color accessoris');
+  html+='<div style="margin-top:12px;"><button class="btn btn-sm" style="width:100%;" onclick="randomizeAvatar()">🎲 Aleatori</button></div>';
   document.getElementById('avatar-editor-controls').innerHTML=html;
 }
-function setAvatarOpt(key,val){
+function randomizeAvatar(){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
   if(!p)return;
-  getPlayerAvatar(p)[key]=val;
+  var av=getPlayerAvatar(p);
+  Object.keys(AVATAR_OPTS).forEach(function(k){
+    var opts=AVATAR_OPTS[k];
+    av[k]=opts[Math.floor(Math.random()*opts.length)];
+  });
   renderAvatarEditor();
 }
 function cycleAvatarOpt(key,dir){
@@ -2063,12 +2125,18 @@ function cycleAvatarOpt(key,dir){
   if(!p)return;
   var av=getPlayerAvatar(p);
   var opts=AVATAR_OPTS[key];
-  var idx=opts.indexOf(av[key]);
-  if(idx<0)idx=0;
+  var idx=opts.indexOf(av[key]);if(idx<0)idx=0;
   idx=(idx+dir+opts.length)%opts.length;
   av[key]=opts[idx];
   renderAvatarEditor();
 }
+function setAvatarOpt(key,val){
+  var p=players.find(function(pl){return pl.id===_avatarEditPid;});
+  if(!p)return;
+  getPlayerAvatar(p)[key]=val;
+  renderAvatarEditor();
+}
+
 function saveAvatar(){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
   if(!p)return;
@@ -2371,9 +2439,22 @@ function createArc(){
   showScreen('screen-welcome');
 })();
 
+// Cuando la librería DiceBear termina de cargar (asíncrono), refrescar avatares
+window.addEventListener('dicebear-ready',function(){
+  try{
+    updateSidebarAvatar();
+    var hp=document.getElementById('page-heroe');
+    if(hp&&hp.classList.contains('active')&&typeof curHero!=='undefined')renderHeroProfile(curHero);
+    var am=document.getElementById('avatar-editor-modal');
+    if(am&&am.style.display==='flex')renderAvatarEditor();
+  }catch(e){}
+});
+
 /* ══ EXPONER FUNCIONES EN WINDOW (para onclick del HTML) ══ */
 // Necesario al tener el JS en archivo externo: garantiza que los onclick="fn()" encuentren las funciones.
-try{window.addAttrPt=addAttrPt;}catch(e){}try{window.applyMenuNames=applyMenuNames;}catch(e){}try{window.assignMission=assignMission;}catch(e){}try{window.buildAttrBars=buildAttrBars;}catch(e){}try{window.buildAvatarUrl=buildAvatarUrl;}catch(e){}try{window.buildCreatorCls=buildCreatorCls;}catch(e){}try{window.buildCreatorColors=buildCreatorColors;}catch(e){}try{window.buildCreatorEmblems=buildCreatorEmblems;}catch(e){}try{window.buildPentagon=buildPentagon;}catch(e){}try{window.buildStartItemsPreview=buildStartItemsPreview;}catch(e){}try{window.buyItem=buyItem;}catch(e){}try{window.cGoTo=cGoTo;}catch(e){}try{window.cNext=cNext;}catch(e){}try{window.calNav=calNav;}catch(e){}try{window.canBuyItem=canBuyItem;}catch(e){}try{window.checkDailyMissions=checkDailyMissions;}catch(e){}try{window.checkLevelUp=checkLevelUp;}catch(e){}try{window.classToRow=classToRow;}catch(e){}try{window.cleanOldCompleted=cleanOldCompleted;}catch(e){}try{window.clearPlannerImport=clearPlannerImport;}catch(e){}try{window.closeAdminEditModal=closeAdminEditModal;}catch(e){}try{window.closeAvatarEditor=closeAvatarEditor;}catch(e){}try{window.closeEdit=closeEdit;}catch(e){}try{window.closeEventModal=closeEventModal;}catch(e){}try{window.closeMissionModal=closeMissionModal;}catch(e){}try{window.closeReward=closeReward;}catch(e){}try{window.completeMission=completeMission;}catch(e){}try{window.computeClassBonus=computeClassBonus;}catch(e){}try{window.confirmLevelUp=confirmLevelUp;}catch(e){}try{window.confirmPlannerImport=confirmPlannerImport;}catch(e){}try{window.createArc=createArc;}catch(e){}try{window.createMission=createMission;}catch(e){}try{window.createTutorialForPlayer=createTutorialForPlayer;}catch(e){}try{window.createWelcomeArc=createWelcomeArc;}catch(e){}try{window.cycleAvatarOpt=cycleAvatarOpt;}catch(e){}try{window.deleteArc=deleteArc;}catch(e){}try{window.deleteEvent=deleteEvent;}catch(e){}try{window.deleteMission=deleteMission;}catch(e){}try{window.deletePlayer=deletePlayer;}catch(e){}try{window.doAdminLogin=doAdminLogin;}catch(e){}try{window.doLogout=doLogout;}catch(e){}try{window.doPull=doPull;}catch(e){}try{window.enterApp=enterApp;}catch(e){}try{window.equipItem=equipItem;}catch(e){}try{window.eventItemHTML=eventItemHTML;}catch(e){}try{window.exportJSON=exportJSON;}catch(e){}try{window.formatDate=formatDate;}catch(e){}try{window.getAdminProfile=getAdminProfile;}catch(e){}try{window.getEffectiveAttrs=getEffectiveAttrs;}catch(e){}try{window.getFilteredEvents=getFilteredEvents;}catch(e){}try{window.getPlayerAvatar=getPlayerAvatar;}catch(e){}try{window.getRarityByChance=getRarityByChance;}catch(e){}try{window.goToMyProfile=goToMyProfile;}catch(e){}try{window.initCalFilterBtns=initCalFilterBtns;}catch(e){}try{window.initTheme=initTheme;}catch(e){}try{window.invEquipSlot=invEquipSlot;}catch(e){}try{window.loadMenuNames=loadMenuNames;}catch(e){}try{window.mCard=mCard;}catch(e){}try{window.meetsReqs=meetsReqs;}catch(e){}try{window.missionToRow=missionToRow;}catch(e){}try{window.openAdminEditCarta=openAdminEditCarta;}catch(e){}try{window.openAdminEditItem=openAdminEditItem;}catch(e){}try{window.openAvatarEditor=openAvatarEditor;}catch(e){}try{window.openEditModal=openEditModal;}catch(e){}try{window.openEventModal=openEventModal;}catch(e){}try{window.openMissionModal=openMissionModal;}catch(e){}try{window.openShowcaseSelector=openShowcaseSelector;}catch(e){}try{window.parsePlannerCSV=parsePlannerCSV;}catch(e){}try{window.parsePlannerExcel=parsePlannerExcel;}catch(e){}try{window.parsePlannerFile=parsePlannerFile;}catch(e){}try{window.plannerDragOver=plannerDragOver;}catch(e){}try{window.plannerDrop=plannerDrop;}catch(e){}try{window.plannerFileSelected=plannerFileSelected;}catch(e){}try{window.populateArcSelect=populateArcSelect;}catch(e){}try{window.promptRenameMenu=promptRenameMenu;}catch(e){}try{window.pullCard=pullCard;}catch(e){}try{window.pullResult=pullResult;}catch(e){}try{window.renderAdminCartasPage=renderAdminCartasPage;}catch(e){}try{window.renderAdminItemsPage=renderAdminItemsPage;}catch(e){}try{window.renderAll=renderAll;}catch(e){}try{window.renderArcs=renderArcs;}catch(e){}try{window.renderAvatar=renderAvatar;}catch(e){}try{window.renderAvatarEditor=renderAvatarEditor;}catch(e){}try{window.renderCalendar=renderCalendar;}catch(e){}try{window.renderClassesAdmin=renderClassesAdmin;}catch(e){}try{window.renderDayEvents=renderDayEvents;}catch(e){}try{window.renderGachaGold=renderGachaGold;}catch(e){}try{window.renderGalleryCards=renderGalleryCards;}catch(e){}try{window.renderGalleryTabs=renderGalleryTabs;}catch(e){}try{window.renderHeroProfile=renderHeroProfile;}catch(e){}try{window.renderHeroTabs=renderHeroTabs;}catch(e){}try{window.renderHeroTabsOLD=renderHeroTabsOLD;}catch(e){}try{window.renderInventario=renderInventario;}catch(e){}try{window.renderMStats=renderMStats;}catch(e){}try{window.renderMissions=renderMissions;}catch(e){}try{window.renderMyGallery=renderMyGallery;}catch(e){}try{window.renderPlannerImported=renderPlannerImported;}catch(e){}try{window.renderRanking=renderRanking;}catch(e){}try{window.renderShop=renderShop;}catch(e){}try{window.renderUpcoming=renderUpcoming;}catch(e){}try{window.rowToClass=rowToClass;}catch(e){}try{window.rowToMission=rowToMission;}catch(e){}try{window.saveAvatar=saveAvatar;}catch(e){}try{window.saveEdit=saveEdit;}catch(e){}try{window.saveEvent=saveEvent;}catch(e){}try{window.saveNewChar=saveNewChar;}catch(e){}try{window.selectCalDay=selectCalDay;}catch(e){}try{window.selectDiff=selectDiff;}catch(e){}try{window.selectGalleryHero=selectGalleryHero;}catch(e){}try{window.selectHero=selectHero;}catch(e){}try{window.setAvatarOpt=setAvatarOpt;}catch(e){}try{window.setCalFilter=setCalFilter;}catch(e){}try{window.showLevelUpPopup=showLevelUpPopup;}catch(e){}try{window.showPage=showPage;}catch(e){}try{window.showPage_planner=showPage_planner;}catch(e){}try{window.showPlannerPreview=showPlannerPreview;}catch(e){}try{window.showRewardPopup=showRewardPopup;}catch(e){}try{window.showScreen=showScreen;}catch(e){}try{window.switchAdminTab=switchAdminTab;}catch(e){}try{window.switchPTab=switchPTab;}catch(e){}try{window.toast=toast;}catch(e){}try{window.toggleDailyFields=toggleDailyFields;}catch(e){}try{window.toggleTheme=toggleTheme;}catch(e){}try{window.toggleUMenu=toggleUMenu;}catch(e){}try{window.unequipItem=unequipItem;}catch(e){}try{window.updateArcCounts=updateArcCounts;}catch(e){}try{window.updateSidebarAvatar=updateSidebarAvatar;}catch(e){}
+try{window.addAttrPt=addAttrPt;}catch(e){}try{window.applyMenuNames=applyMenuNames;}catch(e){}try{window.assignMission=assignMission;}catch(e){}try{window.buildAttrBars=buildAttrBars;}catch(e){}try{window.buildAvatarUrl=buildAvatarUrl;}catch(e){}try{window.buildCreatorCls=buildCreatorCls;}catch(e){}try{window.buildCreatorColors=buildCreatorColors;}catch(e){}try{window.buildCreatorEmblems=buildCreatorEmblems;}catch(e){}try{window.buildPentagon=buildPentagon;}catch(e){}try{window.buildStartItemsPreview=buildStartItemsPreview;}catch(e){}try{window.buyItem=buyItem;}catch(e){}try{window.cGoTo=cGoTo;}catch(e){}try{window.cNext=cNext;}catch(e){}try{window.calNav=calNav;}catch(e){}try{window.canBuyItem=canBuyItem;}catch(e){}try{window.checkDailyMissions=checkDailyMissions;}catch(e){}try{window.checkLevelUp=checkLevelUp;}catch(e){}try{window.classToRow=classToRow;}catch(e){}try{window.cleanOldCompleted=cleanOldCompleted;}catch(e){}try{window.clearPlannerImport=clearPlannerImport;}catch(e){}try{window.closeAdminEditModal=closeAdminEditModal;}catch(e){}try{window.closeAvatarEditor=closeAvatarEditor;}catch(e){}try{window.closeEdit=closeEdit;}catch(e){}try{window.closeEventModal=closeEventModal;}catch(e){}try{window.closeMissionModal=closeMissionModal;}catch(e){}try{window.closeReward=closeReward;}catch(e){}try{window.completeMission=completeMission;}catch(e){}try{window.computeClassBonus=computeClassBonus;}catch(e){}try{window.confirmLevelUp=confirmLevelUp;}catch(e){}try{window.confirmPlannerImport=confirmPlannerImport;}catch(e){}try{window.createArc=createArc;}catch(e){}try{window.createMission=createMission;}catch(e){}try{window.createTutorialForPlayer=createTutorialForPlayer;}catch(e){}try{window.createWelcomeArc=createWelcomeArc;}catch(e){}try{window.deleteArc=deleteArc;}catch(e){}try{window.deleteEvent=deleteEvent;}catch(e){}try{window.deleteMission=deleteMission;}catch(e){}try{window.deletePlayer=deletePlayer;}catch(e){}try{window.doAdminLogin=doAdminLogin;}catch(e){}try{window.doLogout=doLogout;}catch(e){}try{window.doPull=doPull;}catch(e){}try{window.enterApp=enterApp;}catch(e){}try{window.equipItem=equipItem;}catch(e){}try{window.eventItemHTML=eventItemHTML;}catch(e){}try{window.exportJSON=exportJSON;}catch(e){}try{window.formatDate=formatDate;}catch(e){}try{window.getAdminProfile=getAdminProfile;}catch(e){}try{window.getEffectiveAttrs=getEffectiveAttrs;}catch(e){}try{window.getFilteredEvents=getFilteredEvents;}catch(e){}try{window.getPlayerAvatar=getPlayerAvatar;}catch(e){}try{window.getRarityByChance=getRarityByChance;}catch(e){}try{window.goToMyProfile=goToMyProfile;}catch(e){}try{window.initCalFilterBtns=initCalFilterBtns;}catch(e){}try{window.initTheme=initTheme;}catch(e){}try{window.invEquipSlot=invEquipSlot;}catch(e){}try{window.loadMenuNames=loadMenuNames;}catch(e){}try{window.mCard=mCard;}catch(e){}try{window.meetsReqs=meetsReqs;}catch(e){}try{window.missionToRow=missionToRow;}catch(e){}try{window.openAdminEditCarta=openAdminEditCarta;}catch(e){}try{window.openAdminEditItem=openAdminEditItem;}catch(e){}try{window.openAvatarEditor=openAvatarEditor;}catch(e){}try{window.openEditModal=openEditModal;}catch(e){}try{window.openEventModal=openEventModal;}catch(e){}try{window.openMissionModal=openMissionModal;}catch(e){}try{window.openShowcaseSelector=openShowcaseSelector;}catch(e){}try{window.parsePlannerCSV=parsePlannerCSV;}catch(e){}try{window.parsePlannerExcel=parsePlannerExcel;}catch(e){}try{window.parsePlannerFile=parsePlannerFile;}catch(e){}try{window.plannerDragOver=plannerDragOver;}catch(e){}try{window.plannerDrop=plannerDrop;}catch(e){}try{window.plannerFileSelected=plannerFileSelected;}catch(e){}try{window.populateArcSelect=populateArcSelect;}catch(e){}try{window.promptRenameMenu=promptRenameMenu;}catch(e){}try{window.pullCard=pullCard;}catch(e){}try{window.pullResult=pullResult;}catch(e){}try{window.renderAdminCartasPage=renderAdminCartasPage;}catch(e){}try{window.renderAdminItemsPage=renderAdminItemsPage;}catch(e){}try{window.renderAll=renderAll;}catch(e){}try{window.renderArcs=renderArcs;}catch(e){}try{window.renderAvatar=renderAvatar;}catch(e){}try{window.renderAvatarEditor=renderAvatarEditor;}catch(e){}try{window.renderCalendar=renderCalendar;}catch(e){}try{window.renderClassesAdmin=renderClassesAdmin;}catch(e){}try{window.renderDayEvents=renderDayEvents;}catch(e){}try{window.renderGachaGold=renderGachaGold;}catch(e){}try{window.renderGalleryCards=renderGalleryCards;}catch(e){}try{window.renderGalleryTabs=renderGalleryTabs;}catch(e){}try{window.renderHeroProfile=renderHeroProfile;}catch(e){}try{window.renderHeroTabs=renderHeroTabs;}catch(e){}try{window.renderHeroTabsOLD=renderHeroTabsOLD;}catch(e){}try{window.renderInventario=renderInventario;}catch(e){}try{window.renderMStats=renderMStats;}catch(e){}try{window.renderMissions=renderMissions;}catch(e){}try{window.renderMyGallery=renderMyGallery;}catch(e){}try{window.renderPlannerImported=renderPlannerImported;}catch(e){}try{window.renderRanking=renderRanking;}catch(e){}try{window.renderShop=renderShop;}catch(e){}try{window.renderUpcoming=renderUpcoming;}catch(e){}try{window.rowToClass=rowToClass;}catch(e){}try{window.rowToMission=rowToMission;}catch(e){}try{window.saveAvatar=saveAvatar;}catch(e){}try{window.saveEdit=saveEdit;}catch(e){}try{window.saveEvent=saveEvent;}catch(e){}try{window.saveNewChar=saveNewChar;}catch(e){}try{window.selectCalDay=selectCalDay;}catch(e){}try{window.selectDiff=selectDiff;}catch(e){}try{window.selectGalleryHero=selectGalleryHero;}catch(e){}try{window.selectHero=selectHero;}catch(e){}try{window.setAvatarOpt=setAvatarOpt;}catch(e){}try{window.setCalFilter=setCalFilter;}catch(e){}try{window.showLevelUpPopup=showLevelUpPopup;}catch(e){}try{window.showPage=showPage;}catch(e){}try{window.showPage_planner=showPage_planner;}catch(e){}try{window.showPlannerPreview=showPlannerPreview;}catch(e){}try{window.showRewardPopup=showRewardPopup;}catch(e){}try{window.showScreen=showScreen;}catch(e){}try{window.switchAdminTab=switchAdminTab;}catch(e){}try{window.switchPTab=switchPTab;}catch(e){}try{window.toast=toast;}catch(e){}try{window.toggleDailyFields=toggleDailyFields;}catch(e){}try{window.toggleTheme=toggleTheme;}catch(e){}try{window.toggleUMenu=toggleUMenu;}catch(e){}try{window.unequipItem=unequipItem;}catch(e){}try{window.updateArcCounts=updateArcCounts;}catch(e){}try{window.updateSidebarAvatar=updateSidebarAvatar;}catch(e){}
 try{window.adminChangeVia=adminChangeVia;}catch(e){}try{window.adminCreateCarta=adminCreateCarta;}catch(e){}try{window.adminCreateItemFull=adminCreateItemFull;}catch(e){}try{window.adminDeleteCarta=adminDeleteCarta;}catch(e){}try{window.adminDeleteItemFull=adminDeleteItemFull;}catch(e){}try{window.deleteCartaFromSupabase=deleteCartaFromSupabase;}catch(e){}try{window.deleteItemFromSupabase=deleteItemFromSupabase;}catch(e){}try{window.deleteMissionFromSupabase=deleteMissionFromSupabase;}catch(e){}try{window.doLogin=doLogin;}catch(e){}try{window.loadClassesFromSupabase=loadClassesFromSupabase;}catch(e){}try{window.loadData=loadData;}catch(e){}try{window.loadFromSupabase=loadFromSupabase;}catch(e){}try{window.loadMissionsFromSupabase=loadMissionsFromSupabase;}catch(e){}try{window.saveAdminEdit=saveAdminEdit;}catch(e){}try{window.saveAllMissionsToSupabase=saveAllMissionsToSupabase;}catch(e){}try{window.saveCartaToSupabase=saveCartaToSupabase;}catch(e){}try{window.saveClassEdit=saveClassEdit;}catch(e){}try{window.saveClassToSupabase=saveClassToSupabase;}catch(e){}try{window.saveItemToSupabase=saveItemToSupabase;}catch(e){}try{window.saveMissionToSupabase=saveMissionToSupabase;}catch(e){}try{window.saveToSupabase=saveToSupabase;}catch(e){}
 try{window.saveAttrNames=saveAttrNames;}catch(e){}
 try{window.attrKeyFromName=attrKeyFromName;}catch(e){}
+try{window.randomizeAvatar=randomizeAvatar;}catch(e){}
+try{window.cycleAvatarOpt=cycleAvatarOpt;}catch(e){}
