@@ -54,18 +54,30 @@ const COLORS=[
 ];
 const EMBLEMS=['⚔️','🗡️','🏹','🛡️','🔮','📯','🔥','❄️','⚡','🌙','☀️','🐉','🦅','🌿','💎','👁️'];
 cpState.color=COLORS[0];/* color por defecto */
-const AC={fue:'#d85a30',int:'#7f77dd',agi:'#1d9e75',car:'#378add',sab:'#e4a428'};
-var AN={fue:'Força',int:'Intel·ligència',agi:'Agilitat',car:'Carisma',sab:'Saviesa'};
+// ══ ATRIBUTOS DINÁMICOS ══
+// ATTRS: array ordenado de {key, name, color}. Se puede añadir/quitar.
+var ATTR_COLORS=['#d85a30','#7f77dd','#1d9e75','#378add','#e4a428','#d4537e','#639922','#0f6e56','#993c1d','#534ab7'];
+var ATTRS=[
+  {key:'fue',name:'Força',color:'#d85a30'},
+  {key:'int',name:'Intel·ligència',color:'#7f77dd'},
+  {key:'agi',name:'Agilitat',color:'#1d9e75'},
+  {key:'car',name:'Carisma',color:'#378add'},
+  {key:'sab',name:'Saviesa',color:'#e4a428'}
+];
+function attrKeys(){return ATTRS.map(function(a){return a.key;});}
+try{var _sa=localStorage.getItem('cg_attrs');if(_sa){var _pa=JSON.parse(_sa);if(Array.isArray(_pa)&&_pa.length)ATTRS=_pa;}}catch(e){}
+function attrName(k){var a=ATTRS.find(function(x){return x.key===k;});return a?a.name:k;}
+function attrColor(k){var a=ATTRS.find(function(x){return x.key===k;});return a?a.color:'#888';}
+// Proxies de compatibilidad: AN[k] y AC[k] siguen funcionando como antes
+var AN=new Proxy({},{get:function(t,k){return attrName(k);},set:function(t,k,v){var a=ATTRS.find(function(x){return x.key===k;});if(a)a.name=v;return true;},ownKeys:function(){return attrKeys();},getOwnPropertyDescriptor:function(){return {enumerable:true,configurable:true};}});
+var AC=new Proxy({},{get:function(t,k){return attrColor(k);}});
 // Nombres históricos/legacy de atributos para no perder el match si se renombran
 var AN_LEGACY={fue:['Força','Fuerza','FUE'],int:['Intel·ligència','Inteligencia','Intel.','INT'],agi:['Agilitat','Agilidad','AGI'],car:['Carisma','CAR'],sab:['Saviesa','Sabiduría','SAB']};
 function attrKeyFromName(name){
   if(!name)return null;
-  // 1. coincidencia con nombre actual
-  var k=Object.keys(AN).find(function(k){return AN[k]===name;});
-  if(k)return k;
-  // 2. si ya es una clave directa
-  if(AN[name])return name;
-  // 3. nombres legacy
+  var k=ATTRS.find(function(a){return a.name===name;});
+  if(k)return k.key;
+  if(ATTRS.find(function(a){return a.key===name;}))return name;
   var low=(''+name).toLowerCase();
   return Object.keys(AN_LEGACY).find(function(k){
     return AN_LEGACY[k].some(function(n){return n.toLowerCase()===low;});
@@ -216,7 +228,7 @@ function rowToClass(r){
   if(typeof attrs==='string'){try{attrs=JSON.parse(attrs);}catch(e){attrs=null;}}
   if(!attrs||typeof attrs!=='object')attrs={fue:1,int:1,agi:1,car:1,sab:1};
   // Asegurar las 5 claves y valores numéricos
-  ['fue','int','agi','car','sab'].forEach(function(k){attrs[k]=parseInt(attrs[k])||0;});
+  attrKeys().forEach(function(k){attrs[k]=parseInt(attrs[k])||0;});
   var items=r.items_iniciales;
   if(typeof items==='string'){try{items=JSON.parse(items);}catch(e){items=[];}}
   if(!Array.isArray(items))items=[];
@@ -257,7 +269,7 @@ async function saveToSupabase(){
     await fetch(`${CFG.SUPABASE_URL}/rest/v1/game_data`,{
       method:'POST',
       headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
-      body:JSON.stringify({id:'main',data:{players,arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_names:AN}})
+      body:JSON.stringify({id:'main',data:{players,arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS}})
     });
     // Save each player to players table
     for(const p of players){
@@ -305,7 +317,13 @@ async function loadData(){
       }catch{shopItems=[];}
       if(d.cal_events)calEvents=d.cal_events;
       else calEvents=[];
-      if(d.attr_names&&typeof d.attr_names==='object'){['fue','int','agi','car','sab'].forEach(function(k){if(d.attr_names[k])AN[k]=d.attr_names[k];});}
+      if(Array.isArray(d.attr_defs)&&d.attr_defs.length){
+        ATTRS=d.attr_defs.map(function(a){return {key:a.key,name:a.name,color:a.color||'#888'};});
+      }else if(d.attr_names&&typeof d.attr_names==='object'){
+        ATTRS.forEach(function(a){if(d.attr_names[a.key])a.name=d.attr_names[a.key];});
+      }
+      // Asegurar que todos los players tienen todas las claves de atributo
+      players.forEach(function(p){if(p.attrs){attrKeys().forEach(function(k){if(p.attrs[k]===undefined)p.attrs[k]=10;});}});
 
       // Ensure tutorial missions exist for each player
       players.forEach(function(p){
@@ -475,7 +493,7 @@ function buildAttrBars(cid,attrs){
   var el=document.getElementById(cid);if(!el)return;
   attrs=attrs||{};
   // Solo las 5 claves conocidas, en orden fijo
-  var keys=['fue','int','agi','car','sab'];
+  var keys=attrKeys();
   el.innerHTML=keys.map(function(k){
     var v=parseInt(attrs[k])||0;
     var maxv=Math.max(6,v);
@@ -1022,11 +1040,10 @@ function openEditModal(pid){
     document.getElementById('e-gold').value=p.gold;
     document.getElementById('e-frag').value=p.fragments||0;
     document.getElementById('e-cls').value=p.cls;
-    document.getElementById('e-fue').value=p.attrs.fue||0;
-    document.getElementById('e-int').value=p.attrs.int||0;
-    document.getElementById('e-agi').value=p.attrs.agi||0;
-    document.getElementById('e-car').value=p.attrs.car||0;
-    document.getElementById('e-sab').value=p.attrs.sab||0;
+    var _ag=document.getElementById('e-attrs-grid');
+    if(_ag)_ag.innerHTML=attrKeys().map(function(k){
+      return '<div class="field" style="margin:0;"><label>'+attrName(k).slice(0,6)+'</label><input type="number" id="e-attr-'+k+'" min="0" value="'+(p.attrs[k]||0)+'"/></div>';
+    }).join('');
   }else{ae.style.display='none';ad.style.display='none';}
   document.getElementById('modal-edit').style.display='block';
 }
@@ -1070,11 +1087,10 @@ function saveEdit(){
     var cls=CLASSES.find(c=>c.name===p.cls);
     if(cls){p.role=cls.role;if(clsChanged)p.attrs={...cls.attrs};}
     // Stats manuales (siempre se aplican, después del posible reset por cambio de clase)
-    p.attrs.fue=parseInt(document.getElementById('e-fue').value)||0;
-    p.attrs.int=parseInt(document.getElementById('e-int').value)||0;
-    p.attrs.agi=parseInt(document.getElementById('e-agi').value)||0;
-    p.attrs.car=parseInt(document.getElementById('e-car').value)||0;
-    p.attrs.sab=parseInt(document.getElementById('e-sab').value)||0;
+    attrKeys().forEach(function(k){
+      var el=document.getElementById('e-attr-'+k);
+      if(el)p.attrs[k]=parseInt(el.value)||0;
+    });
   }
   if(CFG.MODE==='supabase')saveToSupabase();
   closeEdit();renderAll();
@@ -1298,11 +1314,11 @@ function openAdminEditItem(itemId){
     +'<div class="field"><label>Disponible a</label><select id="aem-via"><option value="tienda"'+(item.via==='tienda'?' selected':'')+'>Botiga+Gacha</option><option value="gacha"'+(item.via==='gacha'?' selected':'')+'>Només Gacha</option><option value="solo_tienda"'+(item.via==='solo_tienda'?' selected':'')+'>Només Botiga</option></select></div>'
     +'<div class="stitle" style="margin-top:10px;">Requisits mínims per comprar (0 = sense requisit)</div>'
     +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">'
-    +['fue','int','agi','car','sab'].map(function(k){return '<div class="field" style="margin:0;"><label>'+k.toUpperCase()+'</label><input type="number" id="aem-r'+k+'" value="'+((item.minAttrs&&item.minAttrs[k])||0)+'" min="0"/></div>';}).join('')
+    +attrKeys().map(function(k){return '<div class="field" style="margin:0;"><label>'+k.toUpperCase()+'</label><input type="number" id="aem-r'+k+'" value="'+((item.minAttrs&&item.minAttrs[k])||0)+'" min="0"/></div>';}).join('')
     +'</div>'
     +'<div class="stitle" style="margin-top:10px;">Bonus d\'atributs en equipar (0 = sense bonus)</div>'
     +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">'
-    +['fue','int','agi','car','sab'].map(function(k){return '<div class="field" style="margin:0;"><label>+'+k.toUpperCase()+'</label><input type="number" id="aem-b'+k+'" value="'+((item.bonus&&item.bonus[k])||0)+'" min="0"/></div>';}).join('')
+    +attrKeys().map(function(k){return '<div class="field" style="margin:0;"><label>+'+k.toUpperCase()+'</label><input type="number" id="aem-b'+k+'" value="'+((item.bonus&&item.bonus[k])||0)+'" min="0"/></div>';}).join('')
     +'</div>';
   document.getElementById('modal-admin-edit').style.display='flex';
 }
@@ -1335,8 +1351,8 @@ async function saveAdminEdit(){
     item.cost=parseInt(document.getElementById('aem-cost').value)||0;
     item.minLevel=parseInt(document.getElementById('aem-lvl').value)||1;
     item.via=document.getElementById('aem-via').value;
-    item.minAttrs={fue:parseInt(document.getElementById('aem-rfue').value)||0,int:parseInt(document.getElementById('aem-rint').value)||0,agi:parseInt(document.getElementById('aem-ragi').value)||0,car:parseInt(document.getElementById('aem-rcar').value)||0,sab:parseInt(document.getElementById('aem-rsab').value)||0};
-    item.bonus={fue:parseInt(document.getElementById('aem-bfue').value)||0,int:parseInt(document.getElementById('aem-bint').value)||0,agi:parseInt(document.getElementById('aem-bagi').value)||0,car:parseInt(document.getElementById('aem-bcar').value)||0,sab:parseInt(document.getElementById('aem-bsab').value)||0};
+    item.minAttrs={};attrKeys().forEach(function(k){var el=document.getElementById('aem-r'+k);item.minAttrs[k]=el?(parseInt(el.value)||0):0;});
+    item.bonus={};attrKeys().forEach(function(k){var el=document.getElementById('aem-b'+k);item.bonus[k]=el?(parseInt(el.value)||0):0;});
     if(CFG.MODE==='supabase')saveItemToSupabase(item);
     renderAdminItemsPage();renderShop();
   }else if(_adminEditType==='carta'){
@@ -1767,30 +1783,61 @@ function clearPlannerImport(){
 }
 
 function saveAttrNames(){
-  ['fue','int','agi','car','sab'].forEach(function(k){
-    var el=document.getElementById('an-'+k);
-    if(el&&el.value.trim())AN[k]=el.value.trim();
+  ATTRS.forEach(function(a){
+    var el=document.getElementById('an-'+a.key);
+    if(el&&el.value.trim())a.name=el.value.trim();
   });
+  persistAttrs();
   if(CFG.MODE==='supabase')saveToSupabase();
+  try{renderClassesAdmin();renderAll();}catch(e){console.error(e);}
+  toast('Atributs actualitzats');
+}
+function addAttr(){
+  // Guardar nombres actuales antes de re-render
+  ATTRS.forEach(function(a){var el=document.getElementById('an-'+a.key);if(el&&el.value.trim())a.name=el.value.trim();});
+  var n=1;var key;
+  do{key='a'+n;n++;}while(ATTRS.some(function(a){return a.key===key;}));
+  var color=ATTR_COLORS[ATTRS.length%ATTR_COLORS.length];
+  ATTRS.push({key:key,name:'Nou atribut',color:color});
+  // Añadir el campo a todos los jugadores y clases con valor base
+  players.forEach(function(p){if(p.attrs&&p.attrs[key]===undefined)p.attrs[key]=10;});
+  CLASSES.forEach(function(cl){if(cl.attrs&&cl.attrs[key]===undefined)cl.attrs[key]=1;});
+  persistAttrs();
   renderClassesAdmin();
-  renderAll();
-  toast('Noms dels atributs actualitzats');
+  toast('Atribut afegit');
+}
+function removeAttr(key){
+  if(ATTRS.length<=1){toast('Ha d\'haver almenys un atribut');return;}
+  if(!confirm('Segur que vols treure aquest atribut? Es perdrà a tots els personatges.'))return;
+  ATTRS=ATTRS.filter(function(a){return a.key!==key;});
+  players.forEach(function(p){if(p.attrs)delete p.attrs[key];});
+  CLASSES.forEach(function(cl){if(cl.attrs)delete cl.attrs[key];});
+  persistAttrs();
+  if(CFG.MODE==='supabase')saveToSupabase();
+  try{renderClassesAdmin();renderAll();}catch(e){console.error(e);}
+  toast('Atribut tret');
+}
+function persistAttrs(){
+  // Guarda la definición de atributos para recargarla
+  try{localStorage.setItem('cg_attrs',JSON.stringify(ATTRS));}catch(e){}
 }
 function renderClassesAdmin(){
   var wrap=document.getElementById('classes-list');
   if(!wrap)return;
-  // Editor de noms d'atributs (a dalt del tot)
+  // Editor de atributs (renombrar + afegir/treure)
   var attrEditor='<div class="card" style="margin-bottom:1rem;">'
-    +'<div class="stitle">Noms dels atributs</div>'
-    +'<div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Canvia com es diuen els 5 atributs a tota l\'app.</div>'
-    +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">'
-    +['fue','int','agi','car','sab'].map(function(k){
-      return '<div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">'+k.toUpperCase()+'</label>'
-        +'<input type="text" id="an-'+k+'" value="'+(AN[k]||'')+'" style="width:100%;padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);"/></div>';
-    }).join('')
-    +'</div>'
-    +'<div style="display:flex;justify-content:flex-end;margin-top:10px;">'
-    +'<button class="btn btn-p btn-sm" onclick="saveAttrNames()">Desar noms</button>'
+    +'<div class="stitle">Atributs</div>'
+    +'<div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Renombra, afegeix o treu atributs. S\'apliquen a tota l\'app.</div>';
+  attrEditor+=ATTRS.map(function(a,i){
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'
+      +'<div style="width:22px;height:22px;border-radius:var(--radius);flex-shrink:0;background:'+a.color+';"></div>'
+      +'<input type="text" id="an-'+a.key+'" value="'+(a.name||'')+'" style="flex:1;padding:6px 8px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);"/>'
+      +(ATTRS.length>1?'<button class="btn btn-sm" style="flex-shrink:0;color:var(--coral);border-color:var(--coral-border);" onclick="removeAttr(\''+a.key+'\')">✕</button>':'')
+      +'</div>';
+  }).join('');
+  attrEditor+='<div style="display:flex;justify-content:space-between;margin-top:12px;">'
+    +'<button class="btn btn-sm" onclick="addAttr()">＋ Afegir atribut</button>'
+    +'<button class="btn btn-p btn-sm" onclick="saveAttrNames()">Desar</button>'
     +'</div>'
     +'</div>';
   // Group shop items by slot for the selectors
@@ -1813,8 +1860,8 @@ function renderClassesAdmin(){
         +'</div>'
       +'</div>'
       +'<div class="stitle">Estadístiques base</div>'
-      +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:1rem;">'
-        +['fue','int','agi','car','sab'].map(function(k){
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:8px;margin-bottom:1rem;">'
+        +attrKeys().map(function(k){
           return '<div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">'+AN[k]+'</label>'
             +'<input type="number" id="cls-'+k+'-'+idx+'" value="'+(cls.attrs[k]||0)+'" min="0" style="width:100%;padding:6px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);text-align:center;"/></div>';
         }).join('')
@@ -1838,7 +1885,7 @@ async function saveClassEdit(idx){
   cls.name=newName;
   cls.role=document.getElementById('cls-role-'+idx).value.trim();
   cls.icon=document.getElementById('cls-icon-'+idx).value.trim()||'⚔️';
-  ['fue','int','agi','car','sab'].forEach(function(k){
+  attrKeys().forEach(function(k){
     cls.attrs[k]=parseInt(document.getElementById('cls-'+k+'-'+idx).value)||0;
   });
   // Collect selected start items
@@ -2149,9 +2196,9 @@ function saveAvatar(){
 
 /* ══ PENTAGON ══ */
 function buildPentagon(attrs,color){
-  var keys=['fue','int','agi','car','sab'];
-  var labels=keys.map(function(k){var n=AN[k]||k;return n.length>8?n.slice(0,7)+'.':n;});
-  var cx=100,cy=100,r=75,n=5;
+  var keys=attrKeys();
+  var labels=keys.map(function(k){var n=attrName(k)||k;return n.length>8?n.slice(0,7)+'.':n;});
+  var cx=100,cy=100,r=75,n=keys.length||1;
   var bgLvls=[0.25,0.5,0.75,1.0];
   var bgSvg=bgLvls.map(function(lv){
     var pts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;return (cx+r*lv*Math.cos(a)).toFixed(1)+','+(cy+r*lv*Math.sin(a)).toFixed(1);}).join(' ');
@@ -2458,3 +2505,6 @@ try{window.saveAttrNames=saveAttrNames;}catch(e){}
 try{window.attrKeyFromName=attrKeyFromName;}catch(e){}
 try{window.randomizeAvatar=randomizeAvatar;}catch(e){}
 try{window.cycleAvatarOpt=cycleAvatarOpt;}catch(e){}
+try{window.addAttr=addAttr;}catch(e){}
+try{window.removeAttr=removeAttr;}catch(e){}
+try{window.persistAttrs=persistAttrs;}catch(e){}
