@@ -58,7 +58,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
 /* ══ STAT BARS ══ */
 .srow{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
-.slbl{font-size:12px;color:var(--muted);width:110px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.slbl{font-size:12px;color:var(--muted);width:150px;flex-shrink:0;line-height:1.2;}
 .strk{flex:1;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;}
 .sfill{height:100%;border-radius:2px;transition:width .4s;}
 .snum{font-size:12px;font-weight:500;color:var(--text);width:24px;text-align:right;}
@@ -407,7 +407,7 @@ body{
 .stitle{font-family:var(--font-pixel);font-size:8px;letter-spacing:0;}
 .badge{font-family:var(--font-pixel);font-size:7px;padding:4px 7px;border-radius:0;letter-spacing:0;}
 .snum{font-family:var(--font-pixel);font-size:9px;}
-.slbl{font-family:var(--font-pixel);font-size:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.slbl{font-family:var(--font-pixel);font-size:7px;line-height:1.4;}
 .xpl{font-family:var(--font-pixel);font-size:7px;}
 .btn{font-family:var(--font-pixel);font-size:8px;line-height:1.5;border-radius:0;border-width:2px;border-style:solid;letter-spacing:0;transition:all .1s;}
 
