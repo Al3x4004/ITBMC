@@ -2064,21 +2064,33 @@ function getPlayerAvatar(p){
 }
 // Renderiza el avatar completo (base DiceBear + capas de items equipados)
 function recolorBeard(svg,hairHex,beardHex){
-  // La barba está en <mask id="beardVariantXX-a">...</mask><g mask="url(#beardVariantXX-a)">...</g>
-  // Dentro de esos bloques, el color del pelo se usa para la barba. Los recoloreamos.
+  // Recolorea SOLO los elementos de la barba usando el DOM (fiable, sin regex frágil).
   try{
-    var hh='#'+hairHex.replace('#','');
+    if(typeof DOMParser==='undefined')return svg;
+    var hh=('#'+hairHex.replace('#','')).toLowerCase();
     var bh='#'+beardHex.replace('#','');
-    // Recolorear el <mask> de la barba
-    svg=svg.replace(/(<mask id="beardVariant[^"]*"[\s\S]*?<\/mask>)/gi,function(m){
-      return m.split(hh).join(bh);
+    var doc=new DOMParser().parseFromString(svg,'image/svg+xml');
+    if(doc.querySelector('parsererror'))return svg;
+    // Buscar los grupos de barba: <g mask="url(#beardVariantXX-a)"> y su <mask>
+    var recolor=function(root){
+      root.querySelectorAll('[fill]').forEach(function(el){
+        if((el.getAttribute('fill')||'').toLowerCase()===hh)el.setAttribute('fill',bh);
+      });
+      // fill como atributo del propio nodo
+      if((root.getAttribute&&(root.getAttribute('fill')||'').toLowerCase())===hh)root.setAttribute('fill',bh);
+    };
+    // Grupos que referencian la máscara de barba
+    doc.querySelectorAll('g[mask]').forEach(function(g){
+      var mk=g.getAttribute('mask')||'';
+      if(mk.indexOf('beardVariant')>=0)recolor(g);
     });
-    // Recolorear el <g mask="url(#beardVariant...)"> ... </g>
-    svg=svg.replace(/(<g mask="url\(#beardVariant[^)]*\)">[\s\S]*?<\/g>)/gi,function(m){
-      return m.split(hh).join(bh);
+    // Las propias máscaras de barba
+    doc.querySelectorAll('mask[id]').forEach(function(mk){
+      if((mk.getAttribute('id')||'').indexOf('beardVariant')>=0)recolor(mk);
     });
-    return svg;
-  }catch(e){return svg;}
+    var out=new XMLSerializer().serializeToString(doc.documentElement);
+    return out;
+  }catch(e){console.error('recolorBeard error',e);return svg;}
 }
 function buildAvatarSvg(av){
   // Genera el SVG localmente con la librería DiceBear (respeta cada rasgo)
