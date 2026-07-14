@@ -15,6 +15,18 @@ window.showScreen=function(id){
   }
 };
 
+/* ══ ESTADO GLOBAL (inicializado en window para que los onclick del HTML lo vean) ══ */
+var session={loggedIn:false,isAdmin:false,playerId:null};
+var players=[];
+var missions=[];
+var arcs=[];
+var shopItems=[];
+var gachaCards=[];
+var calEvents=[];
+var curHero=0;
+var editPid=null;
+var cpState={cls:null,color:null,emblem:'⚔️'};/* color se fija a COLORS[0] tras definir COLORS */
+
 /* ══ CONFIG ══ */
 const CFG={
   MODE:'supabase',
@@ -40,6 +52,7 @@ const COLORS=[
   {hex:'#888780',bg:'rgba(136,135,128,0.15)'},{hex:'#639922',bg:'rgba(99,153,34,0.15)'},
 ];
 const EMBLEMS=['⚔️','🗡️','🏹','🛡️','🔮','📯','🔥','❄️','⚡','🌙','☀️','🐉','🦅','🌿','💎','👁️'];
+cpState.color=COLORS[0];/* color por defecto */
 const AC={fue:'#d85a30',int:'#7f77dd',agi:'#1d9e75',car:'#378add',sab:'#e4a428'};
 const AN={fue:'Força',int:'Intel·ligència',agi:'Agilitat',car:'Carisma',sab:'Saviesa'};
 const RARITY_ORDER=['legendaria','epica','rara','comun'];
@@ -434,7 +447,9 @@ function buildCreatorCls(){
     d.onclick=()=>{
       document.querySelectorAll('.copt').forEach(x=>x.classList.remove('selected'));d.classList.add('selected');
       cpState.cls=c;
-      buildAttrBars('cp-abars',c.attrs);document.getElementById('cp-cstats').style.display='block';buildStartItemsPreview(c);
+      try{buildAttrBars('cp-abars',c.attrs);}catch(e){console.error('buildAttrBars error',e);}
+      try{var cs=document.getElementById('cp-cstats');if(cs)cs.style.display='block';}catch(e){}
+      try{buildStartItemsPreview(c);}catch(e){console.error('buildStartItemsPreview error',e);}
     };
     g.appendChild(d);
   });
@@ -451,8 +466,9 @@ function buildAttrBars(cid,attrs){
   }).join('');
 }
 function buildCreatorColors(cid){
-  const c=document.getElementById(cid);c.innerHTML='';
-  COLORS.forEach((col,i)=>{const d=document.createElement('div');d.className='cdot'+(i===0?' selected':'');d.style.background=col.hex;d.onclick=()=>{c.querySelectorAll('.cdot').forEach(x=>x.classList.remove('selected'));d.classList.add('selected');cpState.color=col;};c.appendChild(d);});
+  const c=document.getElementById(cid);if(!c)return;c.innerHTML='';
+  if(!cpState.color)cpState.color=COLORS[0];
+  COLORS.forEach((col,i)=>{const d=document.createElement('div');d.className='cdot'+(col.hex===cpState.color.hex?' selected':'');d.style.background=col.hex;d.onclick=()=>{c.querySelectorAll('.cdot').forEach(x=>x.classList.remove('selected'));d.classList.add('selected');cpState.color=col;};c.appendChild(d);});
 }
 function buildCreatorEmblems(cid){
   const c=document.getElementById(cid);c.innerHTML='';
