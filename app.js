@@ -25,7 +25,8 @@ var gachaCards=[];
 var calEvents=[];
 var curHero=0;
 var editPid=null;
-var cpState={cls:null,color:null,emblem:'⚔️'};/* color se fija a COLORS[0] tras definir COLORS */
+var cpState={cls:null,color:null,emblem:'⚔️'};
+var calState={year:new Date().getFullYear(),month:new Date().getMonth(),selectedDate:null,filter:'all',editingEventId:null};/* color se fija a COLORS[0] tras definir COLORS */
 
 /* ══ CONFIG ══ */
 const CFG={
@@ -1941,7 +1942,7 @@ const AVATAR_OPTS={
 // Construye la URL de DiceBear para el avatar base
 function buildAvatarUrl(av){
   av=av||{};
-  var base='https://api.dicebear.com/10.x/pixel-art/svg';
+  var base='https://api.dicebear.com/10.x/pixel-art/png';
   var params=[];
   params.push('seed='+encodeURIComponent(av.seed||'hero'));
   if(av.skinColor)params.push('skinColor='+av.skinColor);
@@ -1952,6 +1953,7 @@ function buildAvatarUrl(av){
   if(av.glasses&&av.glasses!=='none'){params.push('glasses='+av.glasses);params.push('glassesProbability=100');}
   else params.push('glassesProbability=0');
   params.push('backgroundColor=transparent');
+  params.push('size=180');
   return base+'?'+params.join('&');
 }
 // Devuelve el objeto avatar del jugador (con defaults)
