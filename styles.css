@@ -374,3 +374,90 @@ body.admin-mode .nb-edit-btn{display:inline-flex;}
 .ava-swatch.selected{border-color:var(--text);transform:scale(1.12);}
 .ava-cycle-btn{width:26px;height:26px;border-radius:6px;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
 .ava-cycle-btn:hover{background:var(--bg3);}
+
+/* ═══════════════════════════════════════════════════════════
+   ██ CAPA RETRO / ARCADE ██  (híbrido: pixel en UI, legible en textos)
+   ═══════════════════════════════════════════════════════════ */
+
+/* Fuentes: Press Start 2P (títulos/UI) · VT323 (texto largo legible) */
+:root{
+  --font-pixel:'Press Start 2P',monospace;
+  --font-read:'VT323',monospace;
+  --radius:0px;--radius-lg:0px;
+}
+
+/* Fondo con patrón de rejilla sutil tipo CRT */
+body{
+  font-family:var(--font-read),'Segoe UI',sans-serif;
+  font-size:18px;
+  image-rendering:pixelated;
+  background-image:linear-gradient(rgba(127,119,221,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(127,119,221,.03) 1px,transparent 1px);
+  background-size:24px 24px;
+}
+
+/* ── Tipografía pixel en elementos de UI ── */
+.sidebar-logo-mark{font-family:var(--font-pixel);font-size:16px;color:var(--accent);text-shadow:2px 2px 0 var(--accent2);letter-spacing:0;}
+.sidebar-logo-sub{font-family:var(--font-pixel);font-size:7px;letter-spacing:0;}
+.nb{font-family:var(--font-pixel);font-size:9px;line-height:1.6;border-radius:0;}
+.nb .nb-icon{font-size:12px;}
+.stitle{font-family:var(--font-pixel);font-size:8px;letter-spacing:0;}
+.badge{font-family:var(--font-pixel);font-size:7px;padding:4px 7px;border-radius:0;letter-spacing:0;}
+.snum{font-family:var(--font-pixel);font-size:9px;}
+.slbl{font-family:var(--font-pixel);font-size:7px;}
+.xpl{font-family:var(--font-pixel);font-size:7px;}
+.btn{font-family:var(--font-pixel);font-size:8px;line-height:1.5;border-radius:0;border-width:2px;border-style:solid;letter-spacing:0;transition:all .1s;}
+
+/* ── Bordes duros + sombras 8-bit ── */
+.card{border-radius:0;border:3px solid var(--accent-border);box-shadow:5px 5px 0 rgba(0,0,0,.15);}
+[data-theme="dark"] .card{box-shadow:5px 5px 0 rgba(0,0,0,.4);}
+.csm{border-radius:0;border:2px solid var(--border2);}
+.upill{border-radius:0;border-width:2px;font-family:var(--font-pixel);font-size:8px;}
+.theme-btn{border-radius:0;border-width:2px;}
+
+/* ── Botones estilo arcade con relieve ── */
+.btn{box-shadow:3px 3px 0 rgba(0,0,0,.25);}
+.btn:hover{transform:translate(1px,1px);box-shadow:2px 2px 0 rgba(0,0,0,.25);}
+.btn:active{transform:translate(3px,3px);box-shadow:0 0 0 rgba(0,0,0,.25);}
+.btn-p{background:var(--accent);color:#fff;border-color:var(--accent2);}
+.btn-gold{background:var(--gold);color:#fff;border-color:var(--gold-border);}
+.btn-g{background:var(--teal);color:#fff;border-color:var(--teal-border);}
+.btn-sm{font-size:7px;padding:6px 10px;}
+
+/* ── Barras de atributos estilo HP (con contorno pixel) ── */
+.strk{height:12px;background:var(--bg);border:2px solid var(--border3);border-radius:0;padding:1px;}
+.sfill{border-radius:0;transition:width .3s steps(10);}
+.xpt{height:12px;background:var(--bg);border:2px solid var(--border3);border-radius:0;padding:1px;}
+.xpf{border-radius:0;}
+
+/* ── Difficulty badges y dots ── */
+.dD,.dC,.dB,.dA,.dS{border-radius:0;font-family:var(--font-pixel);font-size:8px;}
+
+/* ── Inputs con estética retro ── */
+input,select,textarea{border-radius:0 !important;font-family:var(--font-read) !important;font-size:17px !important;border-width:2px !important;}
+label{font-family:var(--font-pixel);font-size:8px;letter-spacing:0;}
+
+/* ── Avatares y marcos cuadrados ── */
+.av,.av-lg,.av-sm{border-radius:0 !important;border-width:3px !important;image-rendering:pixelated;}
+.pixel-avatar{image-rendering:pixelated;}
+
+/* ── Textos largos legibles (VT323 más grande, no Press Start) ── */
+p,.lore,.quote,textarea,.item-desc,.mission-desc,.epill{font-family:var(--font-read);font-size:17px;line-height:1.4;}
+
+/* ── Títulos de sección grandes en pixel ── */
+h1,h2,h3{font-family:var(--font-pixel) !important;letter-spacing:0;line-height:1.5;}
+h1{font-size:18px !important;}
+h2{font-size:14px !important;}
+h3{font-size:11px !important;}
+
+/* ── Cartas del gacha con marco arcade ── */
+.gacha-card{border-radius:0 !important;border:3px solid var(--accent-border) !important;image-rendering:pixelated;}
+.gacha-card-name{font-family:var(--font-pixel);font-size:8px;}
+.gacha-card-rarity{font-family:var(--font-pixel);font-size:7px;}
+
+/* ── Efecto scanline CRT muy sutil sobre toda la pantalla ── */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:9998;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.03) 0px,rgba(0,0,0,.03) 1px,transparent 1px,transparent 3px);
+  mix-blend-mode:multiply;
+}
+[data-theme="dark"] body::after{background:repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0px,rgba(255,255,255,.02) 1px,transparent 1px,transparent 3px);mix-blend-mode:screen;}
