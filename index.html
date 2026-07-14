@@ -296,45 +296,6 @@
 
     <!-- TIENDA -->
     <div id="page-tienda" class="page">
-      <div id="admin-shop-panel" style="display:none;">
-        <div class="admin-panel-wrap">
-          <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:1rem;">👑 Panel Admin — Crear Item</div>
-          <div class="admin-item-form">
-            <div class="field"><label>Nombre</label><input type="text" id="si-name" placeholder="Espada del Abismo"/></div>
-            <div class="field"><label>Icono (emoji)</label><input type="text" id="si-icon" placeholder="⚔️" maxlength="2"/></div>
-            <div class="field"><label>Descripció</label><input type="text" id="si-desc" placeholder="Forjada en las sombras..."/></div>
-            <div class="field"><label>Slot</label>
-              <select id="si-slot"><option value="arma">Arma</option><option value="armadura">Armadura</option><option value="accesorio">Accesorio</option><option value="especial">Especial</option></select>
-            </div>
-            <div class="field"><label>Coste (oro)</label><input type="number" id="si-cost" placeholder="500" min="0"/></div>
-            <div class="field"><label>Nivel mínimo</label><input type="number" id="si-lvl" placeholder="1" min="1"/></div>
-            <div style="grid-column:1/-1;">
-              <div class="stitle">Requisitos de atributos (0 = sin requisito)</div>
-              <div class="g3" style="gap:8px;">
-                <div class="field" style="margin:0;"><label>Fuerza mín.</label><input type="number" id="si-rfue" value="0" min="0"/></div>
-                <div class="field" style="margin:0;"><label>Int. mín.</label><input type="number" id="si-rint" value="0" min="0"/></div>
-                <div class="field" style="margin:0;"><label>Agi. mín.</label><input type="number" id="si-ragi" value="0" min="0"/></div>
-                <div class="field" style="margin:0;"><label>Car. mín.</label><input type="number" id="si-rcar" value="0" min="0"/></div>
-                <div class="field" style="margin:0;"><label>Sab. mín.</label><input type="number" id="si-rsab" value="0" min="0"/></div>
-              </div>
-            </div>
-            <div style="grid-column:1/-1;">
-              <div class="stitle">Bonus de atributos al equipar (0 = sin bonus)</div>
-              <div class="g3" style="gap:8px;">
-                <div class="field" style="margin:0;"><label>+Fuerza</label><input type="number" id="si-bfue" value="0" min="0"/></div>
-                <div class="field" style="margin:0;"><label>+Int.</label><input type="number" id="si-bint" value="0" min="0"/></div>
-                <div class="field" style="margin:0;"><label>+Agi.</label><input type="number" id="si-bagi" value="0" min="0"/></div>
-                <div class="field" style="margin:0;"><label>+Car.</label><input type="number" id="si-bcar" value="0" min="0"/></div>
-                <div class="field" style="margin:0;"><label>+Sab.</label><input type="number" id="si-bsab" value="0" min="0"/></div>
-              </div>
-            </div>
-          </div>
-          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
-            <button class="btn btn-gold" onclick="adminCreateItem()">+ Crear item</button>
-          </div>
-          <div id="admin-items-list" style="margin-top:1rem;"></div>
-        </div>
-      </div>
       <div id="my-equipped"></div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:1rem;margin-top:.5rem;">
         <input type="text" id="shop-search" placeholder="🔍 Cercar ítem..." oninput="renderShop()" style="flex:1;min-width:160px;padding:7px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);outline:none;"/>
@@ -636,8 +597,17 @@
         <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:8px;">OPCIONES ADMIN</div>
         <div class="g2">
           <div class="field" style="margin:0;"><label>XP</label><input type="number" id="e-xp"/></div>
+          <div class="field" style="margin:0;"><label>Nivell</label><input type="number" id="e-level" min="1"/></div>
           <div class="field" style="margin:0;"><label>Oro</label><input type="number" id="e-gold"/></div>
           <div class="field" style="margin:0;"><label>Fragments ✨</label><input type="number" id="e-frag"/></div>
+        </div>
+        <div class="stitle" style="margin-top:10px;">Estadístiques base</div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">
+          <div class="field" style="margin:0;"><label>FUE</label><input type="number" id="e-fue" min="0"/></div>
+          <div class="field" style="margin:0;"><label>INT</label><input type="number" id="e-int" min="0"/></div>
+          <div class="field" style="margin:0;"><label>AGI</label><input type="number" id="e-agi" min="0"/></div>
+          <div class="field" style="margin:0;"><label>CAR</label><input type="number" id="e-car" min="0"/></div>
+          <div class="field" style="margin:0;"><label>SAB</label><input type="number" id="e-sab" min="0"/></div>
         </div>
         <div class="field" style="margin-top:8px;"><label>Clase</label>
           <select id="e-cls"><option>Mago</option><option>Paladín</option><option>Exploradora</option><option>Guerrero</option><option>Pícaro</option><option>Bardo</option></select>
