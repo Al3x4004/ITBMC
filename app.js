@@ -828,6 +828,7 @@ function renderHeroProfile(i){
       <div class="profile-tabs">
         <div class="ptab active" onclick="switchPTab(this,'pinfo')">Ficha</div>
         <div class="ptab" onclick="switchPTab(this,'pgallery')">Galería (${(p.gallery||[]).length})</div>
+        ${canEdit?`<div class="ptab" onclick="switchPTab(this,'pcustom');renderInlineAvatarEditor('${p.id}')">🎨 Personalització</div>`:''}
       </div>
       <div class="ptab-panel active" id="pinfo">
         <div class="phead">
@@ -853,7 +854,7 @@ function renderHeroProfile(i){
         <div class="pbody">
           <div>
             <div class="stitle">Atributos</div>
-            ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl" title="'+attrName(k)+'">'+attrIcon(k)+' '+attrName(k)+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(Math.min(100,ev/99*100))+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
+            ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl" title="'+attrName(k)+'">'+attrName(k)+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(Math.min(100,ev/99*100))+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
             <div class="pentagon-wrap" style="margin-top:1rem;">${buildPentagon(getEffectiveAttrs(p),p.color)}</div>
             <div class="stitle" style="margin-top:1rem;">Equipament</div>
             ${(function(){var eq=Object.values(p.equipped||{}).filter(Boolean);if(!eq.length)return '<div style="font-size:12px;color:var(--muted);">Sense equipament.</div>';var items=eq.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);return '<div class="erow">'+items.map(function(i){return '<span class="epill" style="border-color:var(--gold);color:var(--gold);">'+(i.icon||'')+' '+i.name+'</span>';}).join('')+'</div>';})()}
@@ -871,6 +872,15 @@ function renderHeroProfile(i){
         <div class="stitle">Cartas obtenidas</div>
         ${renderGalleryCards(p.gallery||[],'view')}
       </div>
+      ${canEdit?`<div class="ptab-panel" id="pcustom">
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:1.5rem;align-items:start;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+            <div id="inline-avatar-preview"></div>
+            <button class="btn btn-p btn-sm" onclick="saveInlineAvatar('${p.id}')">💾 Desar avatar</button>
+          </div>
+          <div id="inline-avatar-controls"></div>
+        </div>
+      </div>`:''}
     </div>`;
 }
 
@@ -2235,24 +2245,13 @@ function renderAvatar(p,sizeClass){
       if(!iid)return;
       var item=shopItems.find(function(i){return i.id===iid;});
       if(item&&item.imageUrl){
-        var ps=item.avatarPos||sl.pos;
+        var ps=(p.equipPos&&p.equipPos[sl.key])||item.avatarPos||sl.pos;
         var z=(ps.z!=null?ps.z:(sl.pos.z||4));
         html+='<img class="pa-layer" style="position:absolute;left:'+ps.x+'%;top:'+ps.y+'%;width:'+ps.w+'%;height:auto;z-index:'+z+';" src="'+item.imageUrl+'" alt="'+item.name+'" onerror="this.style.display=\'none\'"/>';
       }
     });
   }
-  // Capas de rasgos custom elegidos por el jugador
-  if(av.custom&&customTraits.length){
-    customTraits.forEach(function(cat){
-      var optId=av.custom[cat.id];
-      if(!optId)return;
-      var o=(cat.options||[]).find(function(x){return x.id===optId;});
-      if(o&&o.imageUrl){
-        var z=(o.pos&&o.pos.z!=null)?o.pos.z:8;
-        html+='<img class="pa-layer" style="position:absolute;left:'+o.pos.x+'%;top:'+o.pos.y+'%;width:'+o.pos.w+'%;height:auto;z-index:'+z+';" src="'+o.imageUrl+'" alt="'+o.name+'" onerror="this.style.display=\'none\'"/>';
-      }
-    });
-  }
+
   html+='</div>';
   return html;
 }
@@ -2274,6 +2273,16 @@ function updateSidebarAvatar(){
 
 /* ══ EDITOR DE AVATAR ══ */
 var _avatarEditPid=null;
+function renderInlineAvatarEditor(pid){
+  _avatarEditPid=pid;
+  renderAvatarEditor('inline-avatar-preview','inline-avatar-controls');
+}
+function saveInlineAvatar(pid){
+  _avatarEditPid=pid;
+  if(CFG.MODE==='supabase')saveToSupabase();
+  updateSidebarAvatar();
+  toast('Avatar desat');
+}
 function openAvatarEditor(pid){
   var p=players.find(function(pl){return pl.id===pid;});
   if(!p)return;
@@ -2286,12 +2295,15 @@ function closeAvatarEditor(){
   document.getElementById('avatar-editor-modal').style.display='none';
   _avatarEditPid=null;
 }
-function renderAvatarEditor(){
+function renderAvatarEditor(previewId,controlsId){
+  previewId=previewId||'avatar-editor-preview';
+  controlsId=controlsId||'avatar-editor-controls';
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
   if(!p)return;
   var av=getPlayerAvatar(p);
-  document.getElementById('avatar-editor-preview').innerHTML=renderAvatar(p,'pixel-avatar-lg');
+  var pv=document.getElementById(previewId);if(pv)pv.innerHTML=renderAvatar(p,'pixel-avatar-lg');
   var html='';
+  window._avaTargets={preview:previewId,controls:controlsId};
   function colorPicker(key,label){
     var val='#'+(av[key]||'000000');
     return '<div class="ava-opt-row"><label>'+label+'</label>'
@@ -2330,29 +2342,57 @@ function renderAvatarEditor(){
   html+=selector('beard','Barba');
   html+=selector('hat','Barret');
   html+=selector('accessories','Accessoris');
-  // Categorías de rasgos custom (creadas por el admin)
-  if(customTraits.length){
-    html+='<div style="border-top:0.5px solid var(--border);margin:10px 0;padding-top:6px;"></div>';
-    if(!av.custom)av.custom={};
-    customTraits.forEach(function(cat){
-      var cur=av.custom[cat.id]||'none';
-      var opts='<option value="none"'+(cur==='none'?' selected':'')+'>Cap</option>';
-      opts+=(cat.options||[]).map(function(o){
-        return '<option value="'+o.id+'"'+(cur===o.id?' selected':'')+'>'+o.name+'</option>';
-      }).join('');
-      html+='<div class="ava-opt-row"><label>'+cat.name+'</label>'
-        +'<select onchange="setCustomTrait(\''+cat.id+'\',this.value)" style="flex:1;padding:6px 8px;font-size:13px;border:2px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);cursor:pointer;">'+opts+'</select>'
-        +'</div>';
+  // Ajustar posición de items equipados con imagen (el jugador coloca sus cosméticos)
+  if(p.equipped){
+    var equippedImgs=SLOT_DEFS.filter(function(sl){
+      var iid=p.equipped[sl.key];if(!iid)return false;
+      var it=shopItems.find(function(i){return i.id===iid;});
+      return it&&it.imageUrl;
     });
+    if(equippedImgs.length){
+      html+='<div style="border-top:0.5px solid var(--border);margin:10px 0;padding-top:6px;"></div>';
+      html+='<div class="stitle">Posició dels objectes</div>';
+      if(!p.equipPos)p.equipPos={};
+      equippedImgs.forEach(function(sl){
+        var it=shopItems.find(function(i){return i.id===p.equipped[sl.key];});
+        var ps=p.equipPos[sl.key]||it.avatarPos||sl.pos;
+        html+='<div style="margin-bottom:10px;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px;">'
+          +'<div style="font-size:12px;font-weight:500;margin-bottom:6px;">'+(it.icon||'')+' '+it.name+'</div>'
+          +'<div style="display:grid;grid-template-columns:auto 1fr auto;gap:6px 8px;align-items:center;font-size:11px;">'
+          +'<span>X</span><input type="range" min="-30" max="100" value="'+ps.x+'" oninput="setEquipPos(\''+sl.key+'\',\'x\',this.value)"/><span id="eqp-x-'+sl.key+'">'+ps.x+'</span>'
+          +'<span>Y</span><input type="range" min="-30" max="100" value="'+ps.y+'" oninput="setEquipPos(\''+sl.key+'\',\'y\',this.value)"/><span id="eqp-y-'+sl.key+'">'+ps.y+'</span>'
+          +'<span>Mida</span><input type="range" min="10" max="120" value="'+ps.w+'" oninput="setEquipPos(\''+sl.key+'\',\'w\',this.value)"/><span id="eqp-w-'+sl.key+'">'+ps.w+'</span>'
+          +'</div>'
+          +'<button class="btn btn-sm" style="width:100%;margin-top:6px;" onclick="resetEquipPos(\''+sl.key+'\')">↺ Restaurar</button>'
+          +'</div>';
+      });
+    }
   }
   html+='<div style="margin-top:12px;"><button class="btn btn-sm" style="width:100%;" onclick="randomizeAvatar()">🎲 Aleatori</button></div>';
-  document.getElementById('avatar-editor-controls').innerHTML=html;
+  var cc=document.getElementById(controlsId);if(cc)cc.innerHTML=html;
 }
 function setAvatarShape(key,val){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
   if(!p)return;
   getPlayerAvatar(p)[key]=val;
-  document.getElementById('avatar-editor-preview').innerHTML=renderAvatar(p,'pixel-avatar-lg');
+  var t=window._avaTargets||{};var pv=document.getElementById(t.preview||'avatar-editor-preview');if(pv)pv.innerHTML=renderAvatar(p,'pixel-avatar-lg');
+}
+function setEquipPos(slot,axis,val){
+  var p=players.find(function(pl){return pl.id===_avatarEditPid;});
+  if(!p)return;
+  if(!p.equipPos)p.equipPos={};
+  var it=shopItems.find(function(i){return i.id===(p.equipped&&p.equipped[slot]);});
+  var sl=SLOT_DEFS.find(function(x){return x.key===slot;});
+  if(!p.equipPos[slot])p.equipPos[slot]=Object.assign({},(it&&it.avatarPos)||(sl&&sl.pos)||{x:20,y:20,w:60,z:4});
+  p.equipPos[slot][axis]=parseFloat(val);
+  var lbl=document.getElementById('eqp-'+axis+'-'+slot);if(lbl)lbl.textContent=val;
+  var t=window._avaTargets||{};var pv=document.getElementById(t.preview||'avatar-editor-preview');if(pv)pv.innerHTML=renderAvatar(p,'pixel-avatar-lg');
+}
+function resetEquipPos(slot){
+  var p=players.find(function(pl){return pl.id===_avatarEditPid;});
+  if(!p||!p.equipPos)return;
+  delete p.equipPos[slot];
+  var t=window._avaTargets||{};renderAvatarEditor(t.preview,t.controls);
 }
 function setCustomTrait(catId,optId){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
@@ -2361,16 +2401,14 @@ function setCustomTrait(catId,optId){
   if(!av.custom)av.custom={};
   if(optId==='none')delete av.custom[catId];
   else av.custom[catId]=optId;
-  document.getElementById('avatar-editor-preview').innerHTML=renderAvatar(p,'pixel-avatar-lg');
+  var t=window._avaTargets||{};var pv=document.getElementById(t.preview||'avatar-editor-preview');if(pv)pv.innerHTML=renderAvatar(p,'pixel-avatar-lg');
 }
 function setAvatarColor(key,hex){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
   if(!p)return;
   getPlayerAvatar(p)[key]=hex.replace('#','');
   // Solo refrescar el preview (no todo el editor) para no cerrar el selector
-  document.getElementById('avatar-editor-preview').innerHTML=renderAvatar(p,'pixel-avatar-lg');
-  // Actualizar la muestra de color junto al picker
-  renderAvatarEditor();
+  var t=window._avaTargets||{};renderAvatarEditor(t.preview,t.controls);
 }
 function randomizeAvatar(){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
@@ -2380,7 +2418,7 @@ function randomizeAvatar(){
     var opts=AVATAR_OPTS[k];
     av[k]=opts[Math.floor(Math.random()*opts.length)];
   });
-  renderAvatarEditor();
+  var t=window._avaTargets||{};renderAvatarEditor(t.preview,t.controls);
 }
 function cycleAvatarOpt(key,dir){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
@@ -2728,3 +2766,7 @@ try{window.editCustomOption=editCustomOption;}catch(e){}
 try{window.removeCustomOption=removeCustomOption;}catch(e){}
 try{window.persistCustomTraits=persistCustomTraits;}catch(e){}
 try{window.setCustomTrait=setCustomTrait;}catch(e){}
+try{window.renderInlineAvatarEditor=renderInlineAvatarEditor;}catch(e){}
+try{window.saveInlineAvatar=saveInlineAvatar;}catch(e){}
+try{window.setEquipPos=setEquipPos;}catch(e){}
+try{window.resetEquipPos=resetEquipPos;}catch(e){}
