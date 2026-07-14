@@ -26,7 +26,8 @@ var calEvents=[];
 var curHero=0;
 var editPid=null;
 var cpState={cls:null,color:null,emblem:'⚔️'};
-var calState={year:new Date().getFullYear(),month:new Date().getMonth(),selectedDate:null,filter:'all',editingEventId:null};/* color se fija a COLORS[0] tras definir COLORS */
+var calState={year:new Date().getFullYear(),month:new Date().getMonth(),selectedDate:null,filter:'all',editingEventId:null};
+var customTraits=[];/* categorías de rasgos custom: {id,name,options:[{id,name,imageUrl,pos:{x,y,w,z}}]} *//* color se fija a COLORS[0] tras definir COLORS */
 
 /* ══ CONFIG ══ */
 const CFG={
@@ -81,6 +82,7 @@ var ATTRS=[
 ];
 function attrKeys(){return ATTRS.map(function(a){return a.key;});}
 try{var _sa=localStorage.getItem('cg_attrs');if(_sa){var _pa=JSON.parse(_sa);if(Array.isArray(_pa)&&_pa.length)ATTRS=_pa;}}catch(e){}
+try{var _sc=localStorage.getItem('cg_custom_traits');if(_sc){var _pc=JSON.parse(_sc);if(Array.isArray(_pc))customTraits=_pc;}}catch(e){}
 function attrName(k){var a=ATTRS.find(function(x){return x.key===k;});return a?a.name:k;}
 function attrColor(k){var a=ATTRS.find(function(x){return x.key===k;});return a?a.color:'#888';}
 // Proxies de compatibilidad: AN[k] y AC[k] siguen funcionando como antes
@@ -285,7 +287,7 @@ async function saveToSupabase(){
     await fetch(`${CFG.SUPABASE_URL}/rest/v1/game_data`,{
       method:'POST',
       headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
-      body:JSON.stringify({id:'main',data:{players,arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS}})
+      body:JSON.stringify({id:'main',data:{players,arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits}})
     });
     // Save each player to players table
     for(const p of players){
@@ -333,6 +335,7 @@ async function loadData(){
       }catch{shopItems=[];}
       if(d.cal_events)calEvents=d.cal_events;
       else calEvents=[];
+      if(Array.isArray(d.custom_traits))customTraits=d.custom_traits;
       if(Array.isArray(d.attr_defs)&&d.attr_defs.length){
         ATTRS=d.attr_defs.map(function(a){return {key:a.key,name:a.name,color:a.color||'#888'};});
       }else if(d.attr_names&&typeof d.attr_names==='object'){
@@ -1393,14 +1396,95 @@ async function saveAdminEdit(){
   }
   closeAdminEditModal();
 }
+function renderCustomTraitsAdmin(){
+  var wrap=document.getElementById('cc-categories');
+  if(!wrap)return;
+  if(!customTraits.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);padding:1rem;">Encara no hi ha categories. Crea\'n una a dalt.</div>';return;}
+  wrap.innerHTML=customTraits.map(function(cat){
+    var opts=(cat.options||[]).map(function(o){
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px;border:0.5px solid var(--border);border-radius:var(--radius);margin-bottom:6px;">'
+        +(o.imageUrl?'<img src="'+o.imageUrl+'" style="width:36px;height:36px;object-fit:contain;background:var(--bg3);border-radius:var(--radius);"/>':'<div style="width:36px;height:36px;background:var(--bg3);border-radius:var(--radius);"></div>')
+        +'<span style="flex:1;font-size:13px;">'+o.name+'</span>'
+        +'<span style="font-size:11px;color:var(--muted);">x:'+o.pos.x+' y:'+o.pos.y+' w:'+o.pos.w+'</span>'
+        +'<button class="btn btn-sm" onclick="editCustomOption(\''+cat.id+'\',\''+o.id+'\')">✎</button>'
+        +'<button class="btn btn-sm" style="color:var(--coral);border-color:var(--coral-border);" onclick="removeCustomOption(\''+cat.id+'\',\''+o.id+'\')">✕</button>'
+        +'</div>';
+    }).join('');
+    return '<div class="card" style="margin-bottom:1rem;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
+      +'<div class="stitle" style="margin:0;">'+cat.name+'</div>'
+      +'<button class="btn btn-sm" style="color:var(--coral);border-color:var(--coral-border);" onclick="removeCustomCategory(\''+cat.id+'\')">Eliminar categoria</button>'
+      +'</div>'
+      +opts
+      +'<button class="btn btn-sm" style="width:100%;margin-top:6px;" onclick="addCustomOption(\''+cat.id+'\')">+ Afegir opció (PNG)</button>'
+      +'</div>';
+  }).join('');
+}
+function addCustomCategory(){
+  var el=document.getElementById('cc-cat-name');
+  var name=el.value.trim();
+  if(!name){toast('Posa un nom a la categoria');return;}
+  customTraits.push({id:'cat'+Date.now(),name:name,options:[]});
+  el.value='';
+  persistCustomTraits();
+  renderCustomTraitsAdmin();
+  toast('Categoria creada');
+}
+function removeCustomCategory(catId){
+  if(!confirm('Eliminar aquesta categoria i totes les seves opcions?'))return;
+  customTraits=customTraits.filter(function(c){return c.id!==catId;});
+  persistCustomTraits();
+  renderCustomTraitsAdmin();
+}
+function addCustomOption(catId){
+  var cat=customTraits.find(function(c){return c.id===catId;});
+  if(!cat)return;
+  var name=prompt('Nom de la opció (ex: Cabell blau):');
+  if(!name)return;
+  var url=prompt('URL de la imatge PNG:');
+  if(!url)return;
+  cat.options.push({id:'opt'+Date.now(),name:name.trim(),imageUrl:url.trim(),pos:{x:20,y:10,w:60,z:8}});
+  persistCustomTraits();
+  renderCustomTraitsAdmin();
+  toast('Opció afegida');
+}
+function editCustomOption(catId,optId){
+  var cat=customTraits.find(function(c){return c.id===catId;});
+  if(!cat)return;
+  var o=cat.options.find(function(x){return x.id===optId;});
+  if(!o)return;
+  var name=prompt('Nom:',o.name);if(name===null)return;
+  var url=prompt('URL imatge PNG:',o.imageUrl);if(url===null)return;
+  var x=prompt('Posició X (%):',o.pos.x);if(x===null)return;
+  var y=prompt('Posició Y (%):',o.pos.y);if(y===null)return;
+  var w=prompt('Amplada (%):',o.pos.w);if(w===null)return;
+  var z=prompt('Capa (z, 0-9):',o.pos.z);if(z===null)return;
+  o.name=name.trim();o.imageUrl=url.trim();
+  o.pos={x:parseFloat(x)||0,y:parseFloat(y)||0,w:parseFloat(w)||60,z:parseInt(z)||8};
+  persistCustomTraits();
+  renderCustomTraitsAdmin();
+  toast('Opció actualitzada');
+}
+function removeCustomOption(catId,optId){
+  var cat=customTraits.find(function(c){return c.id===catId;});
+  if(!cat)return;
+  cat.options=cat.options.filter(function(o){return o.id!==optId;});
+  persistCustomTraits();
+  renderCustomTraitsAdmin();
+}
+function persistCustomTraits(){
+  try{localStorage.setItem('cg_custom_traits',JSON.stringify(customTraits));}catch(e){}
+  if(CFG.MODE==='supabase')saveToSupabase();
+}
 function switchAdminTab(btn, tabId){
   document.querySelectorAll('#page-items-admin .ptab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
-  ['tab-items','tab-cartas'].forEach(function(id){
+  ['tab-items','tab-cartas','tab-custom'].forEach(function(id){
     var el=document.getElementById(id);
     if(el)el.style.display=id===tabId?'block':'none';
   });
   if(tabId==='tab-cartas')renderAdminCartasPage();
+  if(tabId==='tab-custom')renderCustomTraitsAdmin();
 }
 async function adminCreateCarta(){
   var name=document.getElementById('ac-name').value.trim();
@@ -2150,6 +2234,18 @@ function renderAvatar(p,sizeClass){
       }
     });
   }
+  // Capas de rasgos custom elegidos por el jugador
+  if(av.custom&&customTraits.length){
+    customTraits.forEach(function(cat){
+      var optId=av.custom[cat.id];
+      if(!optId)return;
+      var o=(cat.options||[]).find(function(x){return x.id===optId;});
+      if(o&&o.imageUrl){
+        var z=(o.pos&&o.pos.z!=null)?o.pos.z:8;
+        html+='<img class="pa-layer" style="position:absolute;left:'+o.pos.x+'%;top:'+o.pos.y+'%;width:'+o.pos.w+'%;height:auto;z-index:'+z+';" src="'+o.imageUrl+'" alt="'+o.name+'" onerror="this.style.display=\'none\'"/>';
+      }
+    });
+  }
   html+='</div>';
   return html;
 }
@@ -2227,6 +2323,21 @@ function renderAvatarEditor(){
   html+=selector('beard','Barba');
   html+=selector('hat','Barret');
   html+=selector('accessories','Accessoris');
+  // Categorías de rasgos custom (creadas por el admin)
+  if(customTraits.length){
+    html+='<div style="border-top:0.5px solid var(--border);margin:10px 0;padding-top:6px;"></div>';
+    if(!av.custom)av.custom={};
+    customTraits.forEach(function(cat){
+      var cur=av.custom[cat.id]||'none';
+      var opts='<option value="none"'+(cur==='none'?' selected':'')+'>Cap</option>';
+      opts+=(cat.options||[]).map(function(o){
+        return '<option value="'+o.id+'"'+(cur===o.id?' selected':'')+'>'+o.name+'</option>';
+      }).join('');
+      html+='<div class="ava-opt-row"><label>'+cat.name+'</label>'
+        +'<select onchange="setCustomTrait(\''+cat.id+'\',this.value)" style="flex:1;padding:6px 8px;font-size:13px;border:2px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);cursor:pointer;">'+opts+'</select>'
+        +'</div>';
+    });
+  }
   html+='<div style="margin-top:12px;"><button class="btn btn-sm" style="width:100%;" onclick="randomizeAvatar()">🎲 Aleatori</button></div>';
   document.getElementById('avatar-editor-controls').innerHTML=html;
 }
@@ -2234,6 +2345,15 @@ function setAvatarShape(key,val){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
   if(!p)return;
   getPlayerAvatar(p)[key]=val;
+  document.getElementById('avatar-editor-preview').innerHTML=renderAvatar(p,'pixel-avatar-lg');
+}
+function setCustomTrait(catId,optId){
+  var p=players.find(function(pl){return pl.id===_avatarEditPid;});
+  if(!p)return;
+  var av=getPlayerAvatar(p);
+  if(!av.custom)av.custom={};
+  if(optId==='none')delete av.custom[catId];
+  else av.custom[catId]=optId;
   document.getElementById('avatar-editor-preview').innerHTML=renderAvatar(p,'pixel-avatar-lg');
 }
 function setAvatarColor(key,hex){
@@ -2593,3 +2713,11 @@ try{window.persistAttrs=persistAttrs;}catch(e){}
 try{window.setAvatarColor=setAvatarColor;}catch(e){}
 try{window.setAvatarShape=setAvatarShape;}catch(e){}
 try{window.recolorBeard=recolorBeard;}catch(e){}
+try{window.renderCustomTraitsAdmin=renderCustomTraitsAdmin;}catch(e){}
+try{window.addCustomCategory=addCustomCategory;}catch(e){}
+try{window.removeCustomCategory=removeCustomCategory;}catch(e){}
+try{window.addCustomOption=addCustomOption;}catch(e){}
+try{window.editCustomOption=editCustomOption;}catch(e){}
+try{window.removeCustomOption=removeCustomOption;}catch(e){}
+try{window.persistCustomTraits=persistCustomTraits;}catch(e){}
+try{window.setCustomTrait=setCustomTrait;}catch(e){}
