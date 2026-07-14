@@ -54,7 +54,22 @@ const COLORS=[
 const EMBLEMS=['⚔️','🗡️','🏹','🛡️','🔮','📯','🔥','❄️','⚡','🌙','☀️','🐉','🦅','🌿','💎','👁️'];
 cpState.color=COLORS[0];/* color por defecto */
 const AC={fue:'#d85a30',int:'#7f77dd',agi:'#1d9e75',car:'#378add',sab:'#e4a428'};
-const AN={fue:'Força',int:'Intel·ligència',agi:'Agilitat',car:'Carisma',sab:'Saviesa'};
+var AN={fue:'Força',int:'Intel·ligència',agi:'Agilitat',car:'Carisma',sab:'Saviesa'};
+// Nombres históricos/legacy de atributos para no perder el match si se renombran
+var AN_LEGACY={fue:['Força','Fuerza','FUE'],int:['Intel·ligència','Inteligencia','Intel.','INT'],agi:['Agilitat','Agilidad','AGI'],car:['Carisma','CAR'],sab:['Saviesa','Sabiduría','SAB']};
+function attrKeyFromName(name){
+  if(!name)return null;
+  // 1. coincidencia con nombre actual
+  var k=Object.keys(AN).find(function(k){return AN[k]===name;});
+  if(k)return k;
+  // 2. si ya es una clave directa
+  if(AN[name])return name;
+  // 3. nombres legacy
+  var low=(''+name).toLowerCase();
+  return Object.keys(AN_LEGACY).find(function(k){
+    return AN_LEGACY[k].some(function(n){return n.toLowerCase()===low;});
+  })||null;
+}
 const RARITY_ORDER=['legendaria','epica','rara','comun'];
 const RARITY_PROB={comun:60,rara:25,epica:12,legendaria:3};
 const GACHA_COST_SINGLE=100;
@@ -241,7 +256,7 @@ async function saveToSupabase(){
     await fetch(`${CFG.SUPABASE_URL}/rest/v1/game_data`,{
       method:'POST',
       headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
-      body:JSON.stringify({id:'main',data:{players,arcs,gacha_cards:gachaCards,cal_events:calEvents}})
+      body:JSON.stringify({id:'main',data:{players,arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_names:AN}})
     });
     // Save each player to players table
     for(const p of players){
@@ -289,6 +304,7 @@ async function loadData(){
       }catch{shopItems=[];}
       if(d.cal_events)calEvents=d.cal_events;
       else calEvents=[];
+      if(d.attr_names&&typeof d.attr_names==='object'){['fue','int','agi','car','sab'].forEach(function(k){if(d.attr_names[k])AN[k]=d.attr_names[k];});}
 
       // Ensure tutorial missions exist for each player
       players.forEach(function(p){
@@ -548,7 +564,7 @@ function renderMStats(){
     <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">En curso</div><div style="font-size:22px;font-weight:700;">${act}</div></div>
     <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Completades</div><div style="font-size:22px;font-weight:700;">${don}</div></div>
     <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">XP del equipo</div><div style="font-size:22px;font-weight:700;">${txp.toLocaleString()}</div></div>
-    <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Oro del equipo</div><div style="font-size:22px;font-weight:700;">${tg.toLocaleString()}</div></div>`;
+    <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">🪙 Oro del equipo</div><div style="font-size:22px;font-weight:700;">${tg.toLocaleString()}</div></div>`;
 }
 
 /* ── misiones ── */
@@ -583,7 +599,7 @@ function mCard(m){
     </div>
     <div class="mrews">
       <span class="rchip"><span>${m.xp}</span> XP</span>
-      <span class="rchip"><span>${m.gold}</span> oro</span>
+      <span class="rchip"><span>🪙 ${m.gold}</span></span>
       <span class="badge dS" style="display:none"></span>
       <span class="badge d${m.diff}">${m.diff}</span>
       ${statusBadge}
@@ -628,7 +644,7 @@ function completeMission(id){
   if(p){
     var mFrag=m.frag||({D:20,C:50,B:100,A:200,S:400}[m.diff]||50);
     p.xp+=m.xp;p.gold+=m.gold;p.fragments=(p.fragments||0)+mFrag;p.missions++;
-    if(m.attrPts&&m.attr){const k=Object.keys(AN).find(k=>AN[k]===m.attr);if(k)p.attrs[k]=(p.attrs[k]||0)+m.attrPts;}
+    if(m.attrPts&&m.attr){var k=attrKeyFromName(m.attr);if(k)p.attrs[k]=(p.attrs[k]||0)+m.attrPts;}
     p.level=Math.floor(p.xp/100)+1;
     showRewardPopup(m,p);
   }
@@ -712,7 +728,7 @@ function showRewardPopup(m,p){
   var mFrag=m.frag||({D:20,C:50,B:100,A:200,S:400}[m.diff]||0);
   document.getElementById('rp-chips').innerHTML=`
     <span class="badge b-purple">+${m.xp} XP</span>
-    <span class="badge b-gold">+${m.gold} or</span>
+    <span class="badge b-gold">🪙 +${m.gold}</span>
     ${mFrag?`<span class="badge b-purple" style="background:var(--accent-bg);">+${mFrag} ✨</span>`:''}
     ${m.attr?`<span class="badge b-teal">+${m.attrPts} ${m.attr}</span>`:''}`;
   document.getElementById('reward-pop').classList.add('show');
@@ -782,14 +798,14 @@ function renderHeroProfile(i){
         </div>
         <div class="g4" style="margin-bottom:1.25rem;">
           <div class="smini"><div class="v">${p.xp.toLocaleString()}</div><div class="l">XP total</div></div>
-          <div class="smini"><div class="v">${p.gold}</div><div class="l">Or</div></div>
+          <div class="smini"><div class="v">🪙 ${p.gold}</div><div class="l">Or</div></div>
           <div class="smini"><div class="v">${p.fragments||0} ✨</div><div class="l">Fragments</div></div>
           <div class="smini"><div class="v">${p.missions}</div><div class="l">Missions</div></div>
         </div>
         <div class="pbody">
           <div>
             <div class="stitle">Atributos</div>
-            ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl">'+AN[k]+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(ev/20*100)+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
+            ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl">'+AN[k]+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(Math.min(100,ev/99*100))+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
             <div class="pentagon-wrap" style="margin-top:1rem;">${buildPentagon(getEffectiveAttrs(p),p.color)}</div>
             <div class="stitle" style="margin-top:1rem;">Equipament</div>
             ${(function(){var eq=Object.values(p.equipped||{}).filter(Boolean);if(!eq.length)return '<div style="font-size:12px;color:var(--muted);">Sense equipament.</div>';var items=eq.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);return '<div class="erow">'+items.map(function(i){return '<span class="epill" style="border-color:var(--gold);color:var(--gold);">'+(i.icon||'')+' '+i.name+'</span>';}).join('')+'</div>';})()}
@@ -853,7 +869,7 @@ function renderRanking(){
       <div class="av av-sm" style="background:${p.colorBg};border-color:${p.color};">${p.emblem}</div>
       <div style="flex:1;"><div style="font-size:13px;font-weight:500;">${p.name}</div><div style="font-size:11px;color:var(--muted);">${p.cls} · Nv.${p.level}</div></div>
       <div class="lbxp">${p.xp.toLocaleString()} XP</div>
-      <span style="font-size:13px;color:var(--gold);width:70px;text-align:right;">${p.gold} oro</span>
+      <span style="font-size:13px;color:var(--gold);width:70px;text-align:right;">🪙 ${p.gold}</span>
     </div>`;
   }).join('');
 }
@@ -1125,9 +1141,9 @@ function renderShop(){
     var btn='';
     if(equipped)btn='<button class="btn btn-sm" style="margin-top:auto;" onclick="unequipItem(\''+item.id+'\')">Desequipar</button>';
     else if(owned)btn='<button class="btn btn-sm btn-p" style="margin-top:auto;" onclick="equipItem(\''+item.id+'\')">Equipar</button>';
-    else if(canBuy)btn='<button class="btn btn-sm btn-gold" style="margin-top:auto;" onclick="buyItem(\''+item.id+'\')">Comprar '+item.cost+' oro</button>';
+    else if(canBuy)btn='<button class="btn btn-sm btn-gold" style="margin-top:auto;" onclick="buyItem(\''+item.id+'\')">Comprar 🪙 '+item.cost+'</button>';
     else if(!meetsR)btn='<div style="font-size:11px;color:var(--coral);margin-top:auto;">🔒 Requisitos no cumplidos</div>';
-    else btn='<div style="font-size:11px;color:var(--coral);margin-top:auto;">Oro insuficiente</div>';
+    else btn='<div style="font-size:11px;color:var(--coral);margin-top:auto;">🪙 Oro insuficiente</div>';
     return '<div class="shop-item '+cls+'">'
       +(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'" style="width:100%;height:120px;object-fit:cover;border-radius:var(--radius);margin-bottom:4px;">':'<div class="item-icon">'+item.icon+'</div>')
       +'<div class="item-name">'+item.name+'</div>'
@@ -1135,7 +1151,7 @@ function renderShop(){
       +'<div class="item-desc">'+item.desc+'</div>'
       +(bonusStr?'<div class="item-bonus">⬆️ '+bonusStr+'</div>':'')
       +(reqStr?'<div class="item-reqs">📋 Req: '+reqStr+' · Nv.'+item.minLevel+'+'+'</div>':'')
-      +'<div class="item-cost">'+(owned?'✅ Comprado':'💰 '+item.cost+' oro')+'</div>'
+      +'<div class="item-cost">'+(owned?'✅ Comprado':'🪙 '+item.cost)+'</div>'
       +btn+'</div>';
   }).join('')+'</div>';
 }
@@ -1738,11 +1754,35 @@ function clearPlannerImport(){
   if(drop)drop.innerHTML='<div style="font-size:32px;margin-bottom:8px;">📂</div><div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px;">Arrossega el teu fitxer aquí</div><div style="font-size:12px;color:var(--muted);">o haz clic para seleccionar — .xlsx, .csv</div><input type="file" id="planner-file" accept=".csv,.xlsx,.xls" style="display:none;" onchange="plannerFileSelected(this)"/>';
 }
 
+function saveAttrNames(){
+  ['fue','int','agi','car','sab'].forEach(function(k){
+    var el=document.getElementById('an-'+k);
+    if(el&&el.value.trim())AN[k]=el.value.trim();
+  });
+  if(CFG.MODE==='supabase')saveToSupabase();
+  renderClassesAdmin();
+  renderAll();
+  toast('Noms dels atributs actualitzats');
+}
 function renderClassesAdmin(){
   var wrap=document.getElementById('classes-list');
   if(!wrap)return;
+  // Editor de noms d'atributs (a dalt del tot)
+  var attrEditor='<div class="card" style="margin-bottom:1rem;">'
+    +'<div class="stitle">Noms dels atributs</div>'
+    +'<div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Canvia com es diuen els 5 atributs a tota l\'app.</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">'
+    +['fue','int','agi','car','sab'].map(function(k){
+      return '<div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">'+k.toUpperCase()+'</label>'
+        +'<input type="text" id="an-'+k+'" value="'+(AN[k]||'')+'" style="width:100%;padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);"/></div>';
+    }).join('')
+    +'</div>'
+    +'<div style="display:flex;justify-content:flex-end;margin-top:10px;">'
+    +'<button class="btn btn-p btn-sm" onclick="saveAttrNames()">Desar noms</button>'
+    +'</div>'
+    +'</div>';
   // Group shop items by slot for the selectors
-  wrap.innerHTML=CLASSES.map(function(cls,idx){
+  wrap.innerHTML=attrEditor+CLASSES.map(function(cls,idx){
     var startItems=cls.startItems||[];
     // Build item checklist
     var itemsHtml=shopItems.map(function(item){
@@ -1882,7 +1922,7 @@ function cleanOldCompleted(){
 const AVATAR_OPTS={
   skinColor:['ffdbac','f5cfa0','eac393','d9a066','c68642','8d5524','5c3a21'],
   hairColor:['000000','3b2417','6b4423','a55728','d4a017','e8e1c4','cc4400','7a2e2e','9146ff'],
-  hair:['short01','short02','short03','short04','short05','long01','long02','long03','long04','long05'],
+  hair:['short01','short02','short03','short04','short05','short06','short07','short08','long01','long02','long03','long04','long05','long06'],
   eyesColor:['5b7c99','3a7d44','8b4513','2f2f2f','6a4c93'],
   glasses:['none','variant01','variant02','variant03','variant04'],
   clothingColor:['5b7c99','a34d4d','3a7d44','8a6d3b','5d4a8a','2f2f2f','c9843e']
@@ -1895,7 +1935,7 @@ function buildAvatarUrl(av){
   params.push('seed='+encodeURIComponent(av.seed||'hero'));
   if(av.skinColor)params.push('skinColor='+av.skinColor);
   if(av.hairColor)params.push('hairColor='+av.hairColor);
-  if(av.hair)params.push('hair='+av.hair);
+  if(av.hair)params.push('hairVariant='+av.hair);
   if(av.eyesColor)params.push('eyesColor='+av.eyesColor);
   if(av.clothingColor)params.push('clothingColor='+av.clothingColor);
   if(av.glasses&&av.glasses!=='none'){params.push('glasses='+av.glasses);params.push('glassesProbability=100');}
@@ -2017,7 +2057,7 @@ function saveAvatar(){
 /* ══ PENTAGON ══ */
 function buildPentagon(attrs,color){
   var keys=['fue','int','agi','car','sab'];
-  var labels=['Fuerza','Intel.','Agilidad','Carisma','Sabiduría'];
+  var labels=keys.map(function(k){var n=AN[k]||k;return n.length>8?n.slice(0,7)+'.':n;});
   var cx=100,cy=100,r=75,n=5;
   var bgLvls=[0.25,0.5,0.75,1.0];
   var bgSvg=bgLvls.map(function(lv){
@@ -2132,7 +2172,7 @@ function openMissionModal(id){
   document.getElementById('mm-desc').textContent=m.desc||m.name+' — Completa esta misión para obtener recompensas.';
   document.getElementById('mm-stats').innerHTML=
     `<div class="smini"><div class="v">${m.xp}</div><div class="l">XP</div></div>`
-    +`<div class="smini"><div class="v">${m.gold}</div><div class="l">Oro</div></div>`
+    +`<div class="smini"><div class="v">🪙 ${m.gold}</div><div class="l">Oro</div></div>`
     +`<div class="smini"><div class="v">${m.diff||'C'}</div><div class="l">Dificultad</div></div>`;
   const canComplete=(session.isAdmin||(session.playerId===m.playerId))&&m.status!=='done';
   const canDel=session.isAdmin||(m.createdBy===session.playerId);
@@ -2310,3 +2350,5 @@ function createArc(){
 // Necesario al tener el JS en archivo externo: garantiza que los onclick="fn()" encuentren las funciones.
 try{window.addAttrPt=addAttrPt;}catch(e){}try{window.applyMenuNames=applyMenuNames;}catch(e){}try{window.assignMission=assignMission;}catch(e){}try{window.buildAttrBars=buildAttrBars;}catch(e){}try{window.buildAvatarUrl=buildAvatarUrl;}catch(e){}try{window.buildCreatorCls=buildCreatorCls;}catch(e){}try{window.buildCreatorColors=buildCreatorColors;}catch(e){}try{window.buildCreatorEmblems=buildCreatorEmblems;}catch(e){}try{window.buildPentagon=buildPentagon;}catch(e){}try{window.buildStartItemsPreview=buildStartItemsPreview;}catch(e){}try{window.buyItem=buyItem;}catch(e){}try{window.cGoTo=cGoTo;}catch(e){}try{window.cNext=cNext;}catch(e){}try{window.calNav=calNav;}catch(e){}try{window.canBuyItem=canBuyItem;}catch(e){}try{window.checkDailyMissions=checkDailyMissions;}catch(e){}try{window.checkLevelUp=checkLevelUp;}catch(e){}try{window.classToRow=classToRow;}catch(e){}try{window.cleanOldCompleted=cleanOldCompleted;}catch(e){}try{window.clearPlannerImport=clearPlannerImport;}catch(e){}try{window.closeAdminEditModal=closeAdminEditModal;}catch(e){}try{window.closeAvatarEditor=closeAvatarEditor;}catch(e){}try{window.closeEdit=closeEdit;}catch(e){}try{window.closeEventModal=closeEventModal;}catch(e){}try{window.closeMissionModal=closeMissionModal;}catch(e){}try{window.closeReward=closeReward;}catch(e){}try{window.completeMission=completeMission;}catch(e){}try{window.computeClassBonus=computeClassBonus;}catch(e){}try{window.confirmLevelUp=confirmLevelUp;}catch(e){}try{window.confirmPlannerImport=confirmPlannerImport;}catch(e){}try{window.createArc=createArc;}catch(e){}try{window.createMission=createMission;}catch(e){}try{window.createTutorialForPlayer=createTutorialForPlayer;}catch(e){}try{window.createWelcomeArc=createWelcomeArc;}catch(e){}try{window.cycleAvatarOpt=cycleAvatarOpt;}catch(e){}try{window.deleteArc=deleteArc;}catch(e){}try{window.deleteEvent=deleteEvent;}catch(e){}try{window.deleteMission=deleteMission;}catch(e){}try{window.deletePlayer=deletePlayer;}catch(e){}try{window.doAdminLogin=doAdminLogin;}catch(e){}try{window.doLogout=doLogout;}catch(e){}try{window.doPull=doPull;}catch(e){}try{window.enterApp=enterApp;}catch(e){}try{window.equipItem=equipItem;}catch(e){}try{window.eventItemHTML=eventItemHTML;}catch(e){}try{window.exportJSON=exportJSON;}catch(e){}try{window.formatDate=formatDate;}catch(e){}try{window.getAdminProfile=getAdminProfile;}catch(e){}try{window.getEffectiveAttrs=getEffectiveAttrs;}catch(e){}try{window.getFilteredEvents=getFilteredEvents;}catch(e){}try{window.getPlayerAvatar=getPlayerAvatar;}catch(e){}try{window.getRarityByChance=getRarityByChance;}catch(e){}try{window.goToMyProfile=goToMyProfile;}catch(e){}try{window.initCalFilterBtns=initCalFilterBtns;}catch(e){}try{window.initTheme=initTheme;}catch(e){}try{window.invEquipSlot=invEquipSlot;}catch(e){}try{window.loadMenuNames=loadMenuNames;}catch(e){}try{window.mCard=mCard;}catch(e){}try{window.meetsReqs=meetsReqs;}catch(e){}try{window.missionToRow=missionToRow;}catch(e){}try{window.openAdminEditCarta=openAdminEditCarta;}catch(e){}try{window.openAdminEditItem=openAdminEditItem;}catch(e){}try{window.openAvatarEditor=openAvatarEditor;}catch(e){}try{window.openEditModal=openEditModal;}catch(e){}try{window.openEventModal=openEventModal;}catch(e){}try{window.openMissionModal=openMissionModal;}catch(e){}try{window.openShowcaseSelector=openShowcaseSelector;}catch(e){}try{window.parsePlannerCSV=parsePlannerCSV;}catch(e){}try{window.parsePlannerExcel=parsePlannerExcel;}catch(e){}try{window.parsePlannerFile=parsePlannerFile;}catch(e){}try{window.plannerDragOver=plannerDragOver;}catch(e){}try{window.plannerDrop=plannerDrop;}catch(e){}try{window.plannerFileSelected=plannerFileSelected;}catch(e){}try{window.populateArcSelect=populateArcSelect;}catch(e){}try{window.promptRenameMenu=promptRenameMenu;}catch(e){}try{window.pullCard=pullCard;}catch(e){}try{window.pullResult=pullResult;}catch(e){}try{window.renderAdminCartasPage=renderAdminCartasPage;}catch(e){}try{window.renderAdminItemsPage=renderAdminItemsPage;}catch(e){}try{window.renderAll=renderAll;}catch(e){}try{window.renderArcs=renderArcs;}catch(e){}try{window.renderAvatar=renderAvatar;}catch(e){}try{window.renderAvatarEditor=renderAvatarEditor;}catch(e){}try{window.renderCalendar=renderCalendar;}catch(e){}try{window.renderClassesAdmin=renderClassesAdmin;}catch(e){}try{window.renderDayEvents=renderDayEvents;}catch(e){}try{window.renderGachaGold=renderGachaGold;}catch(e){}try{window.renderGalleryCards=renderGalleryCards;}catch(e){}try{window.renderGalleryTabs=renderGalleryTabs;}catch(e){}try{window.renderHeroProfile=renderHeroProfile;}catch(e){}try{window.renderHeroTabs=renderHeroTabs;}catch(e){}try{window.renderHeroTabsOLD=renderHeroTabsOLD;}catch(e){}try{window.renderInventario=renderInventario;}catch(e){}try{window.renderMStats=renderMStats;}catch(e){}try{window.renderMissions=renderMissions;}catch(e){}try{window.renderMyGallery=renderMyGallery;}catch(e){}try{window.renderPlannerImported=renderPlannerImported;}catch(e){}try{window.renderRanking=renderRanking;}catch(e){}try{window.renderShop=renderShop;}catch(e){}try{window.renderUpcoming=renderUpcoming;}catch(e){}try{window.rowToClass=rowToClass;}catch(e){}try{window.rowToMission=rowToMission;}catch(e){}try{window.saveAvatar=saveAvatar;}catch(e){}try{window.saveEdit=saveEdit;}catch(e){}try{window.saveEvent=saveEvent;}catch(e){}try{window.saveNewChar=saveNewChar;}catch(e){}try{window.selectCalDay=selectCalDay;}catch(e){}try{window.selectDiff=selectDiff;}catch(e){}try{window.selectGalleryHero=selectGalleryHero;}catch(e){}try{window.selectHero=selectHero;}catch(e){}try{window.setAvatarOpt=setAvatarOpt;}catch(e){}try{window.setCalFilter=setCalFilter;}catch(e){}try{window.showLevelUpPopup=showLevelUpPopup;}catch(e){}try{window.showPage=showPage;}catch(e){}try{window.showPage_planner=showPage_planner;}catch(e){}try{window.showPlannerPreview=showPlannerPreview;}catch(e){}try{window.showRewardPopup=showRewardPopup;}catch(e){}try{window.showScreen=showScreen;}catch(e){}try{window.switchAdminTab=switchAdminTab;}catch(e){}try{window.switchPTab=switchPTab;}catch(e){}try{window.toast=toast;}catch(e){}try{window.toggleDailyFields=toggleDailyFields;}catch(e){}try{window.toggleTheme=toggleTheme;}catch(e){}try{window.toggleUMenu=toggleUMenu;}catch(e){}try{window.unequipItem=unequipItem;}catch(e){}try{window.updateArcCounts=updateArcCounts;}catch(e){}try{window.updateSidebarAvatar=updateSidebarAvatar;}catch(e){}
 try{window.adminChangeVia=adminChangeVia;}catch(e){}try{window.adminCreateCarta=adminCreateCarta;}catch(e){}try{window.adminCreateItemFull=adminCreateItemFull;}catch(e){}try{window.adminDeleteCarta=adminDeleteCarta;}catch(e){}try{window.adminDeleteItemFull=adminDeleteItemFull;}catch(e){}try{window.deleteCartaFromSupabase=deleteCartaFromSupabase;}catch(e){}try{window.deleteItemFromSupabase=deleteItemFromSupabase;}catch(e){}try{window.deleteMissionFromSupabase=deleteMissionFromSupabase;}catch(e){}try{window.doLogin=doLogin;}catch(e){}try{window.loadClassesFromSupabase=loadClassesFromSupabase;}catch(e){}try{window.loadData=loadData;}catch(e){}try{window.loadFromSupabase=loadFromSupabase;}catch(e){}try{window.loadMissionsFromSupabase=loadMissionsFromSupabase;}catch(e){}try{window.saveAdminEdit=saveAdminEdit;}catch(e){}try{window.saveAllMissionsToSupabase=saveAllMissionsToSupabase;}catch(e){}try{window.saveCartaToSupabase=saveCartaToSupabase;}catch(e){}try{window.saveClassEdit=saveClassEdit;}catch(e){}try{window.saveClassToSupabase=saveClassToSupabase;}catch(e){}try{window.saveItemToSupabase=saveItemToSupabase;}catch(e){}try{window.saveMissionToSupabase=saveMissionToSupabase;}catch(e){}try{window.saveToSupabase=saveToSupabase;}catch(e){}
+try{window.saveAttrNames=saveAttrNames;}catch(e){}
+try{window.attrKeyFromName=attrKeyFromName;}catch(e){}
