@@ -183,11 +183,18 @@ function classToRow(cls,idx){
   };
 }
 function rowToClass(r){
+  var attrs=r.attrs;
+  if(typeof attrs==='string'){try{attrs=JSON.parse(attrs);}catch(e){attrs=null;}}
+  if(!attrs||typeof attrs!=='object')attrs={fue:1,int:1,agi:1,car:1,sab:1};
+  // Asegurar las 5 claves y valores numéricos
+  ['fue','int','agi','car','sab'].forEach(function(k){attrs[k]=parseInt(attrs[k])||0;});
+  var items=r.items_iniciales;
+  if(typeof items==='string'){try{items=JSON.parse(items);}catch(e){items=[];}}
+  if(!Array.isArray(items))items=[];
   return {
     id:r.id,name:r.nombre,role:r.rol||'',icon:r.icono||'⚔️',
-    attrs:r.attrs||{fue:1,int:1,agi:1,car:1,sab:1},
-    startItems:r.items_iniciales||[],orden:r.orden||0,
-    bonus:computeClassBonus(r.attrs||{})
+    attrs:attrs,startItems:items,orden:r.orden||0,
+    bonus:computeClassBonus(attrs)
   };
 }
 function computeClassBonus(attrs){
@@ -433,9 +440,15 @@ function buildCreatorCls(){
   });
 }
 function buildAttrBars(cid,attrs){
-  document.getElementById(cid).innerHTML=Object.entries(attrs).map(([k,v])=>
-    `<div class="srow"><span class="slbl">${AN[k]}</span><div class="strk"><div class="sfill" style="width:${Math.round(v/6*100)}%;background:${AC[k]};"></div></div><span class="snum">${v}</span></div>`
-  ).join('');
+  var el=document.getElementById(cid);if(!el)return;
+  attrs=attrs||{};
+  // Solo las 5 claves conocidas, en orden fijo
+  var keys=['fue','int','agi','car','sab'];
+  el.innerHTML=keys.map(function(k){
+    var v=parseInt(attrs[k])||0;
+    var maxv=Math.max(6,v);
+    return '<div class="srow"><span class="slbl">'+(AN[k]||k)+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(v/maxv*100)+'%;background:'+(AC[k]||'#888')+';"></div></div><span class="snum">'+v+'</span></div>';
+  }).join('');
 }
 function buildCreatorColors(cid){
   const c=document.getElementById(cid);c.innerHTML='';
@@ -459,8 +472,10 @@ function buildStartItemsPreview(cls){
     }).join('');
 }
 function cGoTo(step){
-  document.querySelectorAll('.wp').forEach((p,i)=>p.classList.toggle('active',i===step));
-  document.querySelectorAll('.stepi').forEach((s,i)=>{s.classList.toggle('active',i===step);s.classList.toggle('done',i<step);});
+  var wps=document.querySelectorAll('.wp');
+  wps.forEach(function(p,i){p.classList.toggle('active',i===step);});
+  var stps=document.querySelectorAll('.stepi');
+  stps.forEach(function(s,i){s.classList.toggle('active',i===step);s.classList.toggle('done',i<step);});
 }
 function cNext(step){
   if(step===0){if(!document.getElementById('cp-rn').value.trim()){toast('Introduce tu nombre real.');return;}if(!document.getElementById('cp-pn').value.trim()){toast('Elige un nombre para tu personaje.');return;}if(!document.getElementById('cp-pin').value){toast('Elige una contraseña.');return;}}
@@ -959,9 +974,15 @@ function openEditModal(pid){
   if(session.isAdmin){
     ae.style.display='block';ad.style.display='block';
     document.getElementById('e-xp').value=p.xp;
+    document.getElementById('e-level').value=p.level;
     document.getElementById('e-gold').value=p.gold;
     document.getElementById('e-frag').value=p.fragments||0;
     document.getElementById('e-cls').value=p.cls;
+    document.getElementById('e-fue').value=p.attrs.fue||0;
+    document.getElementById('e-int').value=p.attrs.int||0;
+    document.getElementById('e-agi').value=p.attrs.agi||0;
+    document.getElementById('e-car').value=p.attrs.car||0;
+    document.getElementById('e-sab').value=p.attrs.sab||0;
   }else{ae.style.display='none';ad.style.display='none';}
   document.getElementById('modal-edit').style.display='block';
 }
@@ -995,8 +1016,21 @@ function saveEdit(){
     p.xp=parseInt(document.getElementById('e-xp').value)||p.xp;
     p.gold=parseInt(document.getElementById('e-gold').value)||p.gold;
     p.fragments=parseInt(document.getElementById('e-frag').value)||0;
-    p.cls=document.getElementById('e-cls').value;p.level=Math.floor(p.xp/100)+1;
-    const cls=CLASSES.find(c=>c.name===p.cls);if(cls){p.role=cls.role;p.attrs={...cls.attrs};}
+    // Nivel: si el admin lo pone manualmente lo respeta; si no, lo deriva de XP
+    var manualLevel=parseInt(document.getElementById('e-level').value);
+    p.level=manualLevel&&manualLevel>0?manualLevel:Math.floor(p.xp/100)+1;
+    // Clase: solo resetea attrs si REALMENTE cambió de clase
+    var newCls=document.getElementById('e-cls').value;
+    var clsChanged=newCls!==p.cls;
+    p.cls=newCls;
+    var cls=CLASSES.find(c=>c.name===p.cls);
+    if(cls){p.role=cls.role;if(clsChanged)p.attrs={...cls.attrs};}
+    // Stats manuales (siempre se aplican, después del posible reset por cambio de clase)
+    p.attrs.fue=parseInt(document.getElementById('e-fue').value)||0;
+    p.attrs.int=parseInt(document.getElementById('e-int').value)||0;
+    p.attrs.agi=parseInt(document.getElementById('e-agi').value)||0;
+    p.attrs.car=parseInt(document.getElementById('e-car').value)||0;
+    p.attrs.sab=parseInt(document.getElementById('e-sab').value)||0;
   }
   if(CFG.MODE==='supabase')saveToSupabase();
   closeEdit();renderAll();
@@ -1026,9 +1060,6 @@ function meetsReqs(p,item){
 }
 function renderShop(){
   var p=players.find(function(pl){return pl.id===session.playerId;});
-  var ap=document.getElementById('admin-shop-panel');
-  if(ap)ap.style.display=session.isAdmin?'block':'none';
-  if(session.isAdmin)renderAdminItemsList();
   var eqWrap=document.getElementById('my-equipped');
   if(eqWrap){
     if(!p){
@@ -1220,7 +1251,15 @@ function openAdminEditItem(itemId){
     +'<div class="field"><label>Cost (or)</label><input type="number" id="aem-cost" value="'+(item.cost||0)+'"/></div>'
     +'<div class="field"><label>Nivell mínim</label><input type="number" id="aem-lvl" value="'+(item.minLevel||1)+'"/></div>'
     +'</div>'
-    +'<div class="field"><label>Disponible a</label><select id="aem-via"><option value="tienda"'+(item.via==='tienda'?' selected':'')+'>Botiga+Gacha</option><option value="gacha"'+(item.via==='gacha'?' selected':'')+'>Només Gacha</option><option value="solo_tienda"'+(item.via==='solo_tienda'?' selected':'')+'>Només Botiga</option></select></div>';
+    +'<div class="field"><label>Disponible a</label><select id="aem-via"><option value="tienda"'+(item.via==='tienda'?' selected':'')+'>Botiga+Gacha</option><option value="gacha"'+(item.via==='gacha'?' selected':'')+'>Només Gacha</option><option value="solo_tienda"'+(item.via==='solo_tienda'?' selected':'')+'>Només Botiga</option></select></div>'
+    +'<div class="stitle" style="margin-top:10px;">Requisits mínims per comprar (0 = sense requisit)</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">'
+    +['fue','int','agi','car','sab'].map(function(k){return '<div class="field" style="margin:0;"><label>'+k.toUpperCase()+'</label><input type="number" id="aem-r'+k+'" value="'+((item.minAttrs&&item.minAttrs[k])||0)+'" min="0"/></div>';}).join('')
+    +'</div>'
+    +'<div class="stitle" style="margin-top:10px;">Bonus d\'atributs en equipar (0 = sense bonus)</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">'
+    +['fue','int','agi','car','sab'].map(function(k){return '<div class="field" style="margin:0;"><label>+'+k.toUpperCase()+'</label><input type="number" id="aem-b'+k+'" value="'+((item.bonus&&item.bonus[k])||0)+'" min="0"/></div>';}).join('')
+    +'</div>';
   document.getElementById('modal-admin-edit').style.display='flex';
 }
 function openAdminEditCarta(cartaId){
@@ -1252,6 +1291,8 @@ async function saveAdminEdit(){
     item.cost=parseInt(document.getElementById('aem-cost').value)||0;
     item.minLevel=parseInt(document.getElementById('aem-lvl').value)||1;
     item.via=document.getElementById('aem-via').value;
+    item.minAttrs={fue:parseInt(document.getElementById('aem-rfue').value)||0,int:parseInt(document.getElementById('aem-rint').value)||0,agi:parseInt(document.getElementById('aem-ragi').value)||0,car:parseInt(document.getElementById('aem-rcar').value)||0,sab:parseInt(document.getElementById('aem-rsab').value)||0};
+    item.bonus={fue:parseInt(document.getElementById('aem-bfue').value)||0,int:parseInt(document.getElementById('aem-bint').value)||0,agi:parseInt(document.getElementById('aem-bagi').value)||0,car:parseInt(document.getElementById('aem-bcar').value)||0,sab:parseInt(document.getElementById('aem-bsab').value)||0};
     if(CFG.MODE==='supabase')saveItemToSupabase(item);
     renderAdminItemsPage();renderShop();
   }else if(_adminEditType==='carta'){
@@ -1322,52 +1363,6 @@ function renderAdminCartasPage(){
       +'</div>';
   }).join('');
 }
-function adminCreateItem(){
-  var name=document.getElementById('si-name').value.trim();
-  var icon=document.getElementById('si-icon').value.trim()||'📦';
-  var desc=document.getElementById('si-desc').value.trim();
-  var slot=document.getElementById('si-slot').value;
-  var cost=parseInt(document.getElementById('si-cost').value)||0;
-  var minLevel=parseInt(document.getElementById('si-lvl').value)||1;
-  if(!name){toast('El item necesita un nombre.');return;}
-  shopItems.push({id:'item'+Date.now(),name:name,icon:icon,desc:desc,slot:slot,cost:cost,minLevel:minLevel,
-    minAttrs:{fue:parseInt(document.getElementById('si-rfue').value)||0,int:parseInt(document.getElementById('si-rint').value)||0,agi:parseInt(document.getElementById('si-ragi').value)||0,car:parseInt(document.getElementById('si-rcar').value)||0,sab:parseInt(document.getElementById('si-rsab').value)||0},
-    bonus:{fue:parseInt(document.getElementById('si-bfue').value)||0,int:parseInt(document.getElementById('si-bint').value)||0,agi:parseInt(document.getElementById('si-bagi').value)||0,car:parseInt(document.getElementById('si-bcar').value)||0,sab:parseInt(document.getElementById('si-bsab').value)||0}
-  });
-  if(CFG.MODE==='supabase')saveToSupabase();
-  ['si-name','si-icon','si-desc','si-cost','si-lvl'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
-  ['si-rfue','si-rint','si-ragi','si-rcar','si-rsab','si-bfue','si-bint','si-bagi','si-bcar','si-bsab'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='0';});
-  renderShop();
-}
-function adminDeleteItem(itemId){
-  if(!confirm('¿Eliminar este item?'))return;
-  shopItems=shopItems.filter(function(i){return i.id!==itemId;});
-  players.forEach(function(p){
-    if(p.inventory)p.inventory=p.inventory.filter(function(id){return id!==itemId;});
-    if(p.equipped)Object.keys(p.equipped).forEach(function(k){if(p.equipped[k]===itemId)p.equipped[k]=null;});
-  });
-  if(CFG.MODE==='supabase')saveToSupabase();
-  renderShop();
-}
-function renderAdminItemsList(){
-  var wrap=document.getElementById('admin-items-list');
-  if(!wrap)return;
-  if(!shopItems.length){wrap.innerHTML='';return;}
-  wrap.innerHTML='<div class="stitle" style="margin-top:.5rem;">Items existentes</div>'
-    +shopItems.map(function(item){
-      return '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">'
-        +'<span style="font-size:18px;">'+item.icon+'</span>'
-        +'<span style="flex:1;font-size:13px;">'+item.name+' <span style="color:var(--muted);font-size:11px;">'+item.slot+' · '+item.cost+' oro · Nv.'+item.minLevel+'+'+'</span></span>'
-        +'<button class="btn btn-sm" style="background:rgba(216,90,48,.15);color:#f08060;border-color:rgba(216,90,48,.3);" onclick="adminDeleteItem(\''+item.id+'\')">🗑️</button>'
-        +'</div>';
-    }).join('');
-}
-
-
-
-/* ══ CALENDARIO ══ */
-var calState={year:new Date().getFullYear(),month:new Date().getMonth(),selectedDate:null,filter:'all',editingEventId:null};
-
 function initCalFilterBtns(){
   ['all','personal','team','mission'].forEach(function(k){
     var b=document.getElementById('cal-filter-'+k);
@@ -2294,3 +2289,8 @@ function createArc(){
   }
   showScreen('screen-welcome');
 })();
+
+/* ══ EXPONER FUNCIONES EN WINDOW (para onclick del HTML) ══ */
+// Necesario al tener el JS en archivo externo: garantiza que los onclick="fn()" encuentren las funciones.
+try{window.addAttrPt=addAttrPt;}catch(e){}try{window.applyMenuNames=applyMenuNames;}catch(e){}try{window.assignMission=assignMission;}catch(e){}try{window.buildAttrBars=buildAttrBars;}catch(e){}try{window.buildAvatarUrl=buildAvatarUrl;}catch(e){}try{window.buildCreatorCls=buildCreatorCls;}catch(e){}try{window.buildCreatorColors=buildCreatorColors;}catch(e){}try{window.buildCreatorEmblems=buildCreatorEmblems;}catch(e){}try{window.buildPentagon=buildPentagon;}catch(e){}try{window.buildStartItemsPreview=buildStartItemsPreview;}catch(e){}try{window.buyItem=buyItem;}catch(e){}try{window.cGoTo=cGoTo;}catch(e){}try{window.cNext=cNext;}catch(e){}try{window.calNav=calNav;}catch(e){}try{window.canBuyItem=canBuyItem;}catch(e){}try{window.checkDailyMissions=checkDailyMissions;}catch(e){}try{window.checkLevelUp=checkLevelUp;}catch(e){}try{window.classToRow=classToRow;}catch(e){}try{window.cleanOldCompleted=cleanOldCompleted;}catch(e){}try{window.clearPlannerImport=clearPlannerImport;}catch(e){}try{window.closeAdminEditModal=closeAdminEditModal;}catch(e){}try{window.closeAvatarEditor=closeAvatarEditor;}catch(e){}try{window.closeEdit=closeEdit;}catch(e){}try{window.closeEventModal=closeEventModal;}catch(e){}try{window.closeMissionModal=closeMissionModal;}catch(e){}try{window.closeReward=closeReward;}catch(e){}try{window.completeMission=completeMission;}catch(e){}try{window.computeClassBonus=computeClassBonus;}catch(e){}try{window.confirmLevelUp=confirmLevelUp;}catch(e){}try{window.confirmPlannerImport=confirmPlannerImport;}catch(e){}try{window.createArc=createArc;}catch(e){}try{window.createMission=createMission;}catch(e){}try{window.createTutorialForPlayer=createTutorialForPlayer;}catch(e){}try{window.createWelcomeArc=createWelcomeArc;}catch(e){}try{window.cycleAvatarOpt=cycleAvatarOpt;}catch(e){}try{window.deleteArc=deleteArc;}catch(e){}try{window.deleteEvent=deleteEvent;}catch(e){}try{window.deleteMission=deleteMission;}catch(e){}try{window.deletePlayer=deletePlayer;}catch(e){}try{window.doAdminLogin=doAdminLogin;}catch(e){}try{window.doLogout=doLogout;}catch(e){}try{window.doPull=doPull;}catch(e){}try{window.enterApp=enterApp;}catch(e){}try{window.equipItem=equipItem;}catch(e){}try{window.eventItemHTML=eventItemHTML;}catch(e){}try{window.exportJSON=exportJSON;}catch(e){}try{window.formatDate=formatDate;}catch(e){}try{window.getAdminProfile=getAdminProfile;}catch(e){}try{window.getEffectiveAttrs=getEffectiveAttrs;}catch(e){}try{window.getFilteredEvents=getFilteredEvents;}catch(e){}try{window.getPlayerAvatar=getPlayerAvatar;}catch(e){}try{window.getRarityByChance=getRarityByChance;}catch(e){}try{window.goToMyProfile=goToMyProfile;}catch(e){}try{window.initCalFilterBtns=initCalFilterBtns;}catch(e){}try{window.initTheme=initTheme;}catch(e){}try{window.invEquipSlot=invEquipSlot;}catch(e){}try{window.loadMenuNames=loadMenuNames;}catch(e){}try{window.mCard=mCard;}catch(e){}try{window.meetsReqs=meetsReqs;}catch(e){}try{window.missionToRow=missionToRow;}catch(e){}try{window.openAdminEditCarta=openAdminEditCarta;}catch(e){}try{window.openAdminEditItem=openAdminEditItem;}catch(e){}try{window.openAvatarEditor=openAvatarEditor;}catch(e){}try{window.openEditModal=openEditModal;}catch(e){}try{window.openEventModal=openEventModal;}catch(e){}try{window.openMissionModal=openMissionModal;}catch(e){}try{window.openShowcaseSelector=openShowcaseSelector;}catch(e){}try{window.parsePlannerCSV=parsePlannerCSV;}catch(e){}try{window.parsePlannerExcel=parsePlannerExcel;}catch(e){}try{window.parsePlannerFile=parsePlannerFile;}catch(e){}try{window.plannerDragOver=plannerDragOver;}catch(e){}try{window.plannerDrop=plannerDrop;}catch(e){}try{window.plannerFileSelected=plannerFileSelected;}catch(e){}try{window.populateArcSelect=populateArcSelect;}catch(e){}try{window.promptRenameMenu=promptRenameMenu;}catch(e){}try{window.pullCard=pullCard;}catch(e){}try{window.pullResult=pullResult;}catch(e){}try{window.renderAdminCartasPage=renderAdminCartasPage;}catch(e){}try{window.renderAdminItemsPage=renderAdminItemsPage;}catch(e){}try{window.renderAll=renderAll;}catch(e){}try{window.renderArcs=renderArcs;}catch(e){}try{window.renderAvatar=renderAvatar;}catch(e){}try{window.renderAvatarEditor=renderAvatarEditor;}catch(e){}try{window.renderCalendar=renderCalendar;}catch(e){}try{window.renderClassesAdmin=renderClassesAdmin;}catch(e){}try{window.renderDayEvents=renderDayEvents;}catch(e){}try{window.renderGachaGold=renderGachaGold;}catch(e){}try{window.renderGalleryCards=renderGalleryCards;}catch(e){}try{window.renderGalleryTabs=renderGalleryTabs;}catch(e){}try{window.renderHeroProfile=renderHeroProfile;}catch(e){}try{window.renderHeroTabs=renderHeroTabs;}catch(e){}try{window.renderHeroTabsOLD=renderHeroTabsOLD;}catch(e){}try{window.renderInventario=renderInventario;}catch(e){}try{window.renderMStats=renderMStats;}catch(e){}try{window.renderMissions=renderMissions;}catch(e){}try{window.renderMyGallery=renderMyGallery;}catch(e){}try{window.renderPlannerImported=renderPlannerImported;}catch(e){}try{window.renderRanking=renderRanking;}catch(e){}try{window.renderShop=renderShop;}catch(e){}try{window.renderUpcoming=renderUpcoming;}catch(e){}try{window.rowToClass=rowToClass;}catch(e){}try{window.rowToMission=rowToMission;}catch(e){}try{window.saveAvatar=saveAvatar;}catch(e){}try{window.saveEdit=saveEdit;}catch(e){}try{window.saveEvent=saveEvent;}catch(e){}try{window.saveNewChar=saveNewChar;}catch(e){}try{window.selectCalDay=selectCalDay;}catch(e){}try{window.selectDiff=selectDiff;}catch(e){}try{window.selectGalleryHero=selectGalleryHero;}catch(e){}try{window.selectHero=selectHero;}catch(e){}try{window.setAvatarOpt=setAvatarOpt;}catch(e){}try{window.setCalFilter=setCalFilter;}catch(e){}try{window.showLevelUpPopup=showLevelUpPopup;}catch(e){}try{window.showPage=showPage;}catch(e){}try{window.showPage_planner=showPage_planner;}catch(e){}try{window.showPlannerPreview=showPlannerPreview;}catch(e){}try{window.showRewardPopup=showRewardPopup;}catch(e){}try{window.showScreen=showScreen;}catch(e){}try{window.switchAdminTab=switchAdminTab;}catch(e){}try{window.switchPTab=switchPTab;}catch(e){}try{window.toast=toast;}catch(e){}try{window.toggleDailyFields=toggleDailyFields;}catch(e){}try{window.toggleTheme=toggleTheme;}catch(e){}try{window.toggleUMenu=toggleUMenu;}catch(e){}try{window.unequipItem=unequipItem;}catch(e){}try{window.updateArcCounts=updateArcCounts;}catch(e){}try{window.updateSidebarAvatar=updateSidebarAvatar;}catch(e){}
+try{window.adminChangeVia=adminChangeVia;}catch(e){}try{window.adminCreateCarta=adminCreateCarta;}catch(e){}try{window.adminCreateItemFull=adminCreateItemFull;}catch(e){}try{window.adminDeleteCarta=adminDeleteCarta;}catch(e){}try{window.adminDeleteItemFull=adminDeleteItemFull;}catch(e){}try{window.deleteCartaFromSupabase=deleteCartaFromSupabase;}catch(e){}try{window.deleteItemFromSupabase=deleteItemFromSupabase;}catch(e){}try{window.deleteMissionFromSupabase=deleteMissionFromSupabase;}catch(e){}try{window.doLogin=doLogin;}catch(e){}try{window.loadClassesFromSupabase=loadClassesFromSupabase;}catch(e){}try{window.loadData=loadData;}catch(e){}try{window.loadFromSupabase=loadFromSupabase;}catch(e){}try{window.loadMissionsFromSupabase=loadMissionsFromSupabase;}catch(e){}try{window.saveAdminEdit=saveAdminEdit;}catch(e){}try{window.saveAllMissionsToSupabase=saveAllMissionsToSupabase;}catch(e){}try{window.saveCartaToSupabase=saveCartaToSupabase;}catch(e){}try{window.saveClassEdit=saveClassEdit;}catch(e){}try{window.saveClassToSupabase=saveClassToSupabase;}catch(e){}try{window.saveItemToSupabase=saveItemToSupabase;}catch(e){}try{window.saveMissionToSupabase=saveMissionToSupabase;}catch(e){}try{window.saveToSupabase=saveToSupabase;}catch(e){}
