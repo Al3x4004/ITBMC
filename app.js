@@ -74,17 +74,18 @@ cpState.color=COLORS[0];/* color por defecto */
 // ATTRS: array ordenado de {key, name, color}. Se puede añadir/quitar.
 var ATTR_COLORS=['#d85a30','#7f77dd','#1d9e75','#378add','#e4a428','#d4537e','#639922','#0f6e56','#993c1d','#534ab7'];
 var ATTRS=[
-  {key:'fue',name:'Força',color:'#d85a30'},
-  {key:'int',name:'Intel·ligència',color:'#7f77dd'},
-  {key:'agi',name:'Agilitat',color:'#1d9e75'},
-  {key:'car',name:'Carisma',color:'#378add'},
-  {key:'sab',name:'Saviesa',color:'#e4a428'}
+  {key:'fue',name:'Força',color:'#d85a30',icon:'💪'},
+  {key:'int',name:'Intel·ligència',color:'#7f77dd',icon:'🧠'},
+  {key:'agi',name:'Agilitat',color:'#1d9e75',icon:'⚡'},
+  {key:'car',name:'Carisma',color:'#378add',icon:'✨'},
+  {key:'sab',name:'Saviesa',color:'#e4a428',icon:'📖'}
 ];
 function attrKeys(){return ATTRS.map(function(a){return a.key;});}
 try{var _sa=localStorage.getItem('cg_attrs');if(_sa){var _pa=JSON.parse(_sa);if(Array.isArray(_pa)&&_pa.length)ATTRS=_pa;}}catch(e){}
 try{var _sc=localStorage.getItem('cg_custom_traits');if(_sc){var _pc=JSON.parse(_sc);if(Array.isArray(_pc))customTraits=_pc;}}catch(e){}
 function attrName(k){var a=ATTRS.find(function(x){return x.key===k;});return a?a.name:k;}
 function attrColor(k){var a=ATTRS.find(function(x){return x.key===k;});return a?a.color:'#888';}
+function attrIcon(k){var a=ATTRS.find(function(x){return x.key===k;});return a&&a.icon?a.icon:'⭐';}
 // Proxies de compatibilidad: AN[k] y AC[k] siguen funcionando como antes
 var AN=new Proxy({},{get:function(t,k){return attrName(k);},set:function(t,k,v){var a=ATTRS.find(function(x){return x.key===k;});if(a)a.name=v;return true;},ownKeys:function(){return attrKeys();},getOwnPropertyDescriptor:function(){return {enumerable:true,configurable:true};}});
 var AC=new Proxy({},{get:function(t,k){return attrColor(k);}});
@@ -733,9 +734,7 @@ function showLevelUpPopup(p){
   luState={pid:p.id,pts:p.pendingAttrPts,spent:{}};
   document.getElementById('lu-level').textContent='Nivell '+p.level;
   document.getElementById('lu-pts').textContent=luState.pts;
-  const emojis={fue:'💪',int:'🧠',agi:'⚡',car:'✨',sab:'📖'};
-  document.getElementById('lu-attrs').innerHTML=Object.entries(AN).map(([k,name])=>
-    '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg3);border-radius:var(--radius);padding:8px 4px;">'    +'<div style="font-size:16px;">'+emojis[k]+'</div>'    +'<div style="font-size:9px;color:var(--muted);">'+name+'</div>'    +'<div style="font-size:14px;font-weight:600;" id="lu-'+k+'">'+p.attrs[k]+'</div>'    +'<button class="btn btn-sm btn-p" style="padding:1px 10px;width:100%;" onclick="addAttrPt(\''+k+'\',1)">+</button>'    +'<button class="btn btn-sm" style="padding:1px 10px;width:100%;" onclick="addAttrPt(\''+k+'\',-1)">−</button>'    +'</div>').join('');
+  document.getElementById('lu-attrs').innerHTML=attrKeys().map(function(k){var name=attrName(k);return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg3);border-radius:var(--radius);padding:8px 4px;">'    +'<div style="font-size:16px;">'+attrIcon(k)+'</div>'    +'<div style="font-size:9px;color:var(--muted);">'+name+'</div>'    +'<div style="font-size:14px;font-weight:600;" id="lu-'+k+'">'+p.attrs[k]+'</div>'    +'<button class="btn btn-sm btn-p" style="padding:1px 10px;width:100%;" onclick="addAttrPt(\''+k+'\',1)">+</button>'    +'<button class="btn btn-sm" style="padding:1px 10px;width:100%;" onclick="addAttrPt(\''+k+'\',-1)">−</button>'    +'</div>';}).join('');
   document.getElementById('levelup-pop').classList.add('show');
 }
 function addAttrPt(attr,delta){
@@ -854,7 +853,7 @@ function renderHeroProfile(i){
         <div class="pbody">
           <div>
             <div class="stitle">Atributos</div>
-            ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl">'+AN[k]+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(Math.min(100,ev/99*100))+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
+            ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl" title="'+attrName(k)+'">'+attrIcon(k)+' '+attrName(k)+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(Math.min(100,ev/99*100))+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
             <div class="pentagon-wrap" style="margin-top:1rem;">${buildPentagon(getEffectiveAttrs(p),p.color)}</div>
             <div class="stitle" style="margin-top:1rem;">Equipament</div>
             ${(function(){var eq=Object.values(p.equipped||{}).filter(Boolean);if(!eq.length)return '<div style="font-size:12px;color:var(--muted);">Sense equipament.</div>';var items=eq.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);return '<div class="erow">'+items.map(function(i){return '<span class="epill" style="border-color:var(--gold);color:var(--gold);">'+(i.icon||'')+' '+i.name+'</span>';}).join('')+'</div>';})()}
@@ -1896,6 +1895,10 @@ function saveAttrNames(){
   ATTRS.forEach(function(a){
     var el=document.getElementById('an-'+a.key);
     if(el&&el.value.trim())a.name=el.value.trim();
+    var ic=document.getElementById('ai-'+a.key);
+    if(ic&&ic.value.trim())a.icon=ic.value.trim();
+    var co=document.getElementById('ac-'+a.key);
+    if(co&&co.value)a.color=co.value;
   });
   persistAttrs();
   if(CFG.MODE==='supabase')saveToSupabase();
@@ -1904,11 +1907,11 @@ function saveAttrNames(){
 }
 function addAttr(){
   // Guardar nombres actuales antes de re-render
-  ATTRS.forEach(function(a){var el=document.getElementById('an-'+a.key);if(el&&el.value.trim())a.name=el.value.trim();});
+  ATTRS.forEach(function(a){var el=document.getElementById('an-'+a.key);if(el&&el.value.trim())a.name=el.value.trim();var ic=document.getElementById('ai-'+a.key);if(ic&&ic.value.trim())a.icon=ic.value.trim();var co=document.getElementById('ac-'+a.key);if(co&&co.value)a.color=co.value;});
   var n=1;var key;
   do{key='a'+n;n++;}while(ATTRS.some(function(a){return a.key===key;}));
   var color=ATTR_COLORS[ATTRS.length%ATTR_COLORS.length];
-  ATTRS.push({key:key,name:'Nou atribut',color:color});
+  ATTRS.push({key:key,name:'Nou atribut',color:color,icon:'⭐'});
   // Añadir el campo a todos los jugadores y clases con valor base
   players.forEach(function(p){if(p.attrs&&p.attrs[key]===undefined)p.attrs[key]=10;});
   CLASSES.forEach(function(cl){if(cl.attrs&&cl.attrs[key]===undefined)cl.attrs[key]=1;});
@@ -1939,9 +1942,10 @@ function renderClassesAdmin(){
     +'<div class="stitle">Atributs</div>'
     +'<div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Renombra, afegeix o treu atributs. S\'apliquen a tota l\'app.</div>';
   attrEditor+=ATTRS.map(function(a,i){
-    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'
-      +'<div style="width:22px;height:22px;border-radius:var(--radius);flex-shrink:0;background:'+a.color+';"></div>'
-      +'<input type="text" id="an-'+a.key+'" value="'+(a.name||'')+'" style="flex:1;padding:6px 8px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);"/>'
+    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">'
+      +'<input type="text" id="ai-'+a.key+'" value="'+(a.icon||'⭐')+'" maxlength="2" title="Icona" style="width:38px;flex-shrink:0;padding:6px;font-size:16px;text-align:center;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);"/>'
+      +'<input type="color" id="ac-'+a.key+'" value="'+(a.color||'#888888')+'" title="Color" style="width:34px;height:32px;flex-shrink:0;padding:0;border:0.5px solid var(--border2);border-radius:var(--radius);background:none;cursor:pointer;"/>'
+      +'<input type="text" id="an-'+a.key+'" value="'+(a.name||'')+'" style="flex:1;min-width:0;padding:6px 8px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);"/>'
       +(ATTRS.length>1?'<button class="btn btn-sm" style="flex-shrink:0;color:var(--coral);border-color:var(--coral-border);" onclick="removeAttr(\''+a.key+'\')">✕</button>':'')
       +'</div>';
   }).join('');
@@ -2149,32 +2153,34 @@ function getPlayerAvatar(p){
 }
 // Renderiza el avatar completo (base DiceBear + capas de items equipados)
 function recolorBeard(svg,hairHex,beardHex){
-  // Recolorea SOLO los elementos de la barba usando el DOM (fiable, sin regex frágil).
+  // Recolorea SOLO el bloque de la barba, sin re-serializar todo el SVG (evita corromperlo).
   try{
-    if(typeof DOMParser==='undefined')return svg;
     var hh=('#'+hairHex.replace('#','')).toLowerCase();
     var bh='#'+beardHex.replace('#','');
-    var doc=new DOMParser().parseFromString(svg,'image/svg+xml');
-    if(doc.querySelector('parsererror'))return svg;
-    // Buscar los grupos de barba: <g mask="url(#beardVariantXX-a)"> y su <mask>
-    var recolor=function(root){
-      root.querySelectorAll('[fill]').forEach(function(el){
-        if((el.getAttribute('fill')||'').toLowerCase()===hh)el.setAttribute('fill',bh);
-      });
-      // fill como atributo del propio nodo
-      if((root.getAttribute&&(root.getAttribute('fill')||'').toLowerCase())===hh)root.setAttribute('fill',bh);
-    };
-    // Grupos que referencian la máscara de barba
-    doc.querySelectorAll('g[mask]').forEach(function(g){
-      var mk=g.getAttribute('mask')||'';
-      if(mk.indexOf('beardVariant')>=0)recolor(g);
+    // La barba se compone de un <mask id="beardVariantXX-a">...</mask> seguido de <g mask="url(#beardVariantXX-a)">...</g>
+    // Localizamos el ID de la variante presente
+    var m=svg.match(/beardVariant\d+-a/);
+    if(!m)return svg;
+    var maskId=m[0];
+    // Recolorear dentro del bloque <mask id="maskId"> ... </mask>
+    var maskRe=new RegExp('(<mask id="'+maskId+'"[\\s\\S]*?<\\/mask>)');
+    svg=svg.replace(maskRe,function(block){
+      return block.replace(new RegExp(hh,'gi'),bh);
     });
-    // Las propias máscaras de barba
-    doc.querySelectorAll('mask[id]').forEach(function(mk){
-      if((mk.getAttribute('id')||'').indexOf('beardVariant')>=0)recolor(mk);
-    });
-    var out=new XMLSerializer().serializeToString(doc.documentElement);
-    return out;
+    // Recolorear dentro del bloque <g mask="url(#maskId)"> ... </g> (primer </g> tras la apertura; DiceBear no anida aquí)
+    var gStart=svg.indexOf('<g mask="url(#'+maskId+')"');
+    if(gStart>=0){
+      var gEnd=svg.indexOf('</g>',gStart);
+      if(gEnd>=0){
+        gEnd+=4;
+        var before=svg.slice(0,gStart);
+        var block=svg.slice(gStart,gEnd);
+        var after=svg.slice(gEnd);
+        block=block.replace(new RegExp(hh,'gi'),bh);
+        svg=before+block+after;
+      }
+    }
+    return svg;
   }catch(e){console.error('recolorBeard error',e);return svg;}
 }
 function buildAvatarSvg(av){
@@ -2406,7 +2412,7 @@ function saveAvatar(){
 /* ══ PENTAGON ══ */
 function buildPentagon(attrs,color){
   var keys=attrKeys();
-  var labels=keys.map(function(k){var n=attrName(k)||k;return n.length>8?n.slice(0,7)+'.':n;});
+  var labels=keys.map(function(k){var n=attrName(k)||k;return attrIcon(k)+' '+n.slice(0,4).toUpperCase();});
   var cx=100,cy=100,r=75,n=keys.length||1;
   var bgLvls=[0.25,0.5,0.75,1.0];
   var bgSvg=bgLvls.map(function(lv){
