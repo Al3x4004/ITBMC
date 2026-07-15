@@ -2611,17 +2611,45 @@ function invEquipSlot(slot){
 }
 
 /* ══ SHOWCASE ══ */
+var _showcaseIdx=null;
 function openShowcaseSelector(idx){
   var p=players.find(function(pl){return pl.id===session.playerId;});
-  if(!p||!(p.gallery||[]).length){toast('Encara no tens cartes a la teva galeria.');return;}
+  if(!p||!(p.gallery||[]).length)return;
   if(!p.showcase)p.showcase=[null,null,null];
+  _showcaseIdx=idx;
   var allIds=typeof p.gallery[0]==='string'?p.gallery:p.gallery.map(function(e){return e.cardId||e;});
-  var available=allIds.filter(function(id){return !p.showcase.includes(id)||id===p.showcase[idx];});
-  if(!available.length){toast('No hi ha més cartes disponibles.');return;}
-  var ci=available.indexOf(p.showcase[idx]);
-  p.showcase[idx]=available[(ci+1)%available.length];
+  // Cartas disponibles: las que no están ya en OTROS huecos del showcase
+  var grid=document.getElementById('showcase-grid');
+  var html='';
+  // Opción para dejar el hueco vacío
+  html+='<div onclick="pickShowcaseCard(null)" style="cursor:pointer;border:2px dashed var(--border2);border-radius:var(--radius);min-height:110px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);">— Buit —</div>';
+  allIds.forEach(function(id){
+    var usedElsewhere=p.showcase.some(function(sc,i){return sc===id&&i!==idx;});
+    if(usedElsewhere)return;
+    var card=gachaCards.find(function(x){return x.id===id;});
+    if(!card)return;
+    var url=card.imageUrl||CFG.GITHUB_RAW+card.image;
+    var isCurrent=p.showcase[idx]===id;
+    html+='<div onclick="pickShowcaseCard(\''+id+'\')" style="cursor:pointer;border:2px solid '+(isCurrent?'var(--accent)':'var(--border)')+';border-radius:var(--radius);overflow:hidden;position:relative;'+(isCurrent?'box-shadow:0 0 12px var(--accent-border);':'')+'">'
+      +'<img src="'+url+'" alt="'+card.name+'" style="width:100%;height:110px;object-fit:cover;display:block;" onerror="this.style.opacity=0"/>'
+      +'<div style="font-size:10px;text-align:center;padding:3px;background:var(--bg3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+card.name+'</div>'
+      +'</div>';
+  });
+  grid.innerHTML=html;
+  document.getElementById('showcase-modal').style.display='flex';
+}
+function pickShowcaseCard(cardId){
+  var p=players.find(function(pl){return pl.id===session.playerId;});
+  if(!p||_showcaseIdx===null)return;
+  if(!p.showcase)p.showcase=[null,null,null];
+  p.showcase[_showcaseIdx]=cardId;
   if(CFG.MODE==='supabase')saveToSupabase();
+  closeShowcaseModal();
   renderHeroProfile(curHero);
+}
+function closeShowcaseModal(){
+  var m=document.getElementById('showcase-modal');if(m)m.style.display='none';
+  _showcaseIdx=null;
 }
 
 
@@ -2691,7 +2719,7 @@ function promptRenameMenu(key){
 
 /* ══ TOAST ══ */
 let toastT;
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',2500);}
+function toast(msg){/* toasts desactivados a petición del usuario */}
 
 /* ══ TEMA ══ */
 function toggleTheme(){
@@ -2856,3 +2884,5 @@ try{window.equipFromEditor=equipFromEditor;}catch(e){}
 try{window.nudgeEquipPos=nudgeEquipPos;}catch(e){}
 try{window.enableAvatarDrag=enableAvatarDrag;}catch(e){}
 try{window.refreshAvatarPreview=refreshAvatarPreview;}catch(e){}
+try{window.pickShowcaseCard=pickShowcaseCard;}catch(e){}
+try{window.closeShowcaseModal=closeShowcaseModal;}catch(e){}
