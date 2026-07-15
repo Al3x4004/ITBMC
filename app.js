@@ -982,7 +982,7 @@ function doPull(times){
     if(r.type==='card'){
       var already=p.gallery.indexOf(r.data.id)>=0;
       if(already){refund+=Math.floor(costPerPull/2);dupes++;r._dupe=true;}
-      p.gallery.push(r.data.id);
+      else p.gallery.push(r.data.id);
     }else if(r.type==='item'){
       var haveItem=p.inventory.indexOf(r.data.id)>=0;
       if(haveItem){refund+=Math.floor(costPerPull/2);dupes++;r._dupe=true;}
