@@ -2126,6 +2126,7 @@ function buildAvatarUrl(av){
   else params.push('hatProbability=0');
   if(av.accessories&&av.accessories!=='none'){params.push('accessories='+av.accessories);params.push('accessoriesProbability=100');if(av.accessoriesColor)params.push('accessoriesColor='+av.accessoriesColor);}
   else params.push('accessoriesProbability=0');
+  if(av.bgColor){params.push('backgroundColor='+av.bgColor.replace('#',''));params.push('backgroundType=solid');}
   params.push('size=180');
   return base+'?'+params.join('&');
 }
@@ -2198,18 +2199,14 @@ function buildAvatarSvg(av){
     else opts.hatProbability=0;
     if(av.accessories&&av.accessories!=='none'){opts.accessories=[av.accessories];opts.accessoriesProbability=100;if(av.accessoriesColor)opts.accessoriesColor=[av.accessoriesColor];}
     else opts.accessoriesProbability=0;
-    var svg=window.DiceBearCreate(window.DiceBearPixelArt,opts).toString();
-    // Recolorear la barba con beardColor (DiceBear la pinta con hairColor)
-    if(av.beard&&av.beard!=='none'&&av.beardColor&&av.hairColor&&av.beardColor!==av.hairColor){
-      svg=recolorBeard(svg,av.hairColor,av.beardColor);
-    }
-    return svg;
+    if(av.bgColor){opts.backgroundColor=[av.bgColor.replace('#','')];opts.backgroundType=['solid'];}
+    return window.DiceBearCreate(window.DiceBearPixelArt,opts).toString();
   }catch(e){console.error('DiceBear local error',e);return null;}
 }
 function renderAvatar(p,sizeClass){
   var av=getPlayerAvatar(p);
   var emblem=p.emblem||'🧙';
-  var bg=p.colorBg||'var(--bg3)';
+  var bg=(av.bgColor)||p.colorBg||'var(--bg3)';
   var html='<div class="pixel-avatar '+(sizeClass||'pixel-avatar-lg')+'" style="background:'+bg+';">';
   html+='<div class="pa-fallback" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:60%;">'+emblem+'</div>';
   // Preferir SVG local (control total de rasgos); fallback a la API HTTP
@@ -2231,7 +2228,7 @@ function renderAvatar(p,sizeClass){
       if(item&&item.imageUrl){
         var ps=(p.equipPos&&p.equipPos[sl.key])||item.avatarPos||sl.pos;
         var z=(ps.z!=null?ps.z:(sl.pos.z||4));
-        html+='<img class="pa-layer" style="position:absolute;left:'+ps.x+'%;top:'+ps.y+'%;width:'+ps.w+'%;height:auto;z-index:'+z+';" src="'+item.imageUrl+'" alt="'+item.name+'" onerror="this.style.display=\'none\'"/>';
+        html+='<img class="pa-layer" data-slot="'+sl.key+'" style="position:absolute;left:'+ps.x+'%;top:'+ps.y+'%;width:'+ps.w+'%;height:auto;z-index:'+z+';" src="'+item.imageUrl+'" alt="'+item.name+'" onerror="this.style.display=\'none\'"/>';
       }
     });
   }
@@ -2260,6 +2257,60 @@ var _avatarEditPid=null;
 function renderInlineAvatarEditor(pid){
   _avatarEditPid=pid;
   renderAvatarEditor('inline-avatar-preview','inline-avatar-controls');
+  enableAvatarDrag('inline-avatar-preview');
+}
+function enableAvatarDrag(previewId){
+  var cont=document.getElementById(previewId);
+  if(!cont)return;
+  var wrap=cont.querySelector('.pixel-avatar');
+  if(!wrap)return;
+  var p=players.find(function(pl){return pl.id===_avatarEditPid;});
+  if(!p)return;
+  if(!p.equipPos)p.equipPos={};
+  // Cada capa de item (pa-layer) que corresponda a un slot equipado es arrastrable
+  var layers=wrap.querySelectorAll('.pa-layer');
+  layers.forEach(function(layer){
+    // Identificar a qué slot pertenece por el alt (nombre) — mejor por data. Añadimos data-slot en render.
+    var slot=layer.getAttribute('data-slot');
+    if(!slot)return;
+    layer.classList.add('pa-draggable');
+    var dragging=false,startX,startY,startPx,startPy,rect;
+    function down(e){
+      e.preventDefault();
+      dragging=true;
+      rect=wrap.getBoundingClientRect();
+      var pt=e.touches?e.touches[0]:e;
+      startX=pt.clientX;startY=pt.clientY;
+      var it=shopItems.find(function(i){return i.id===p.equipped[slot];});
+      var sl=SLOT_DEFS.find(function(x){return x.key===slot;});
+      var cur=p.equipPos[slot]||(it&&it.avatarPos)||(sl&&sl.pos)||{x:20,y:20,w:60};
+      p.equipPos[slot]=Object.assign({},cur);
+      startPx=p.equipPos[slot].x;startPy=p.equipPos[slot].y;
+      document.addEventListener('mousemove',move);document.addEventListener('mouseup',up);
+      document.addEventListener('touchmove',move,{passive:false});document.addEventListener('touchend',up);
+    }
+    function move(e){
+      if(!dragging)return;
+      e.preventDefault();
+      var pt=e.touches?e.touches[0]:e;
+      var dx=(pt.clientX-startX)/rect.width*100;
+      var dy=(pt.clientY-startY)/rect.height*100;
+      p.equipPos[slot].x=Math.round(startPx+dx);
+      p.equipPos[slot].y=Math.round(startPy+dy);
+      var pv=document.getElementById(previewId);
+      if(pv){pv.innerHTML=renderAvatar(p,'pixel-avatar-lg');enableAvatarDrag(previewId);}
+      // actualizar sliders si existen
+      var lx=document.getElementById('eqp-x-'+slot);if(lx)lx.textContent=p.equipPos[slot].x;
+      var ly=document.getElementById('eqp-y-'+slot);if(ly)ly.textContent=p.equipPos[slot].y;
+    }
+    function up(){
+      dragging=false;
+      document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up);
+      document.removeEventListener('touchmove',move);document.removeEventListener('touchend',up);
+    }
+    layer.addEventListener('mousedown',down);
+    layer.addEventListener('touchstart',down,{passive:false});
+  });
 }
 function saveInlineAvatar(pid){
   _avatarEditPid=pid;
@@ -2309,8 +2360,8 @@ function renderAvatarEditor(previewId,controlsId){
   }
   // Colores
   html+=colorPicker('skinColor','Pell');
+  html+=colorPicker('bgColor','Color de fons');
   html+=colorPicker('hairColor','Color cabell');
-  html+=colorPicker('beardColor','Color barba');
   html+=colorPicker('eyesColor','Color ulls');
   html+=colorPicker('clothingColor','Color roba');
   html+=colorPicker('glassesColor','Color ulleres');
@@ -2326,39 +2377,78 @@ function renderAvatarEditor(previewId,controlsId){
   html+=selector('beard','Barba');
   html+=selector('hat','Barret');
   html+=selector('accessories','Accessoris');
-  // Ajustar posición de items equipados con imagen (el jugador coloca sus cosméticos)
+  // Objectes equipats: equipar/desequipar + moure (còmode)
   if(p.equipped){
-    var equippedImgs=SLOT_DEFS.filter(function(sl){
-      var iid=p.equipped[sl.key];if(!iid)return false;
-      var it=shopItems.find(function(i){return i.id===iid;});
-      return it&&it.imageUrl;
+    if(!p.equipPos)p.equipPos={};
+    // Slots on el jugador té algun objecte a l'inventari
+    var slotsWithItems=SLOT_DEFS.filter(function(sl){
+      return (p.inventory||[]).some(function(id){var it=shopItems.find(function(i){return i.id===id;});return it&&it.slot===sl.key;});
     });
-    if(equippedImgs.length){
+    if(slotsWithItems.length){
       html+='<div style="border-top:0.5px solid var(--border);margin:10px 0;padding-top:6px;"></div>';
-      html+='<div class="stitle">Posició dels objectes</div>';
-      if(!p.equipPos)p.equipPos={};
-      equippedImgs.forEach(function(sl){
-        var it=shopItems.find(function(i){return i.id===p.equipped[sl.key];});
-        var ps=p.equipPos[sl.key]||it.avatarPos||sl.pos;
-        html+='<div style="margin-bottom:10px;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px;">'
-          +'<div style="font-size:12px;font-weight:500;margin-bottom:6px;">'+(it.icon||'')+' '+it.name+'</div>'
-          +'<div style="display:grid;grid-template-columns:auto 1fr auto;gap:6px 8px;align-items:center;font-size:11px;">'
-          +'<span>X</span><input type="range" min="-30" max="100" value="'+ps.x+'" oninput="setEquipPos(\''+sl.key+'\',\'x\',this.value)"/><span id="eqp-x-'+sl.key+'">'+ps.x+'</span>'
-          +'<span>Y</span><input type="range" min="-30" max="100" value="'+ps.y+'" oninput="setEquipPos(\''+sl.key+'\',\'y\',this.value)"/><span id="eqp-y-'+sl.key+'">'+ps.y+'</span>'
-          +'<span>Mida</span><input type="range" min="10" max="120" value="'+ps.w+'" oninput="setEquipPos(\''+sl.key+'\',\'w\',this.value)"/><span id="eqp-w-'+sl.key+'">'+ps.w+'</span>'
-          +'</div>'
-          +'<button class="btn btn-sm" style="width:100%;margin-top:6px;" onclick="resetEquipPos(\''+sl.key+'\')">↺ Restaurar</button>'
+      html+='<div class="stitle">Objectes equipats</div>';
+      slotsWithItems.forEach(function(sl){
+        var owned=(p.inventory||[]).filter(function(id){var it=shopItems.find(function(i){return i.id===id;});return it&&it.slot===sl.key;});
+        var cur=p.equipped[sl.key]||'';
+        // Selector d'objecte per aquest slot
+        var opts='<option value="">— Cap —</option>'+owned.map(function(id){
+          var it=shopItems.find(function(i){return i.id===id;});
+          return '<option value="'+id+'"'+(cur===id?' selected':'')+'>'+(it.icon||'')+' '+it.name+'</option>';
+        }).join('');
+        html+='<div style="margin-bottom:12px;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px;">'
+          +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">'
+          +'<span style="font-size:16px;flex-shrink:0;">'+sl.icon+'</span>'
+          +'<select onchange="equipFromEditor(\''+sl.key+'\',this.value)" style="flex:1;padding:6px;font-size:12px;border:2px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">'+opts+'</select>'
           +'</div>';
+        // Si hi ha un objecte amb imatge equipat, mostrar controls de posició
+        var it=cur?shopItems.find(function(i){return i.id===cur;}):null;
+        if(it&&it.imageUrl){
+          var ps=p.equipPos[sl.key]||it.avatarPos||sl.pos;
+          function ctrl(axis,label,mn,mx){
+            return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">'
+              +'<span style="font-size:11px;width:40px;">'+label+'</span>'
+              +'<button class="ava-cycle-btn" onclick="nudgeEquipPos(\''+sl.key+'\',\''+axis+'\',-2)">−</button>'
+              +'<input type="range" min="'+mn+'" max="'+mx+'" value="'+ps[axis]+'" style="flex:1;" oninput="setEquipPos(\''+sl.key+'\',\''+axis+'\',this.value)"/>'
+              +'<button class="ava-cycle-btn" onclick="nudgeEquipPos(\''+sl.key+'\',\''+axis+'\',2)">+</button>'
+              +'<span style="font-size:11px;width:32px;text-align:right;" id="eqp-'+axis+'-'+sl.key+'">'+Math.round(ps[axis])+'</span>'
+              +'</div>';
+          }
+          html+='<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">🖱️ Arrossega l\'objecte sobre l\'avatar per moure\'l</div>';
+          html+=ctrl('w','⛶ Mida',8,140);
+          html+='<button class="btn btn-sm" style="width:100%;margin-top:4px;" onclick="resetEquipPos(\''+sl.key+'\')">↺ Posició per defecte</button>';
+        }
+        html+='</div>';
       });
     }
   }
-  html+='<div style="margin-top:12px;"><button class="btn btn-sm" style="width:100%;" onclick="randomizeAvatar()">🎲 Aleatori</button></div>';
+    html+='<div style="margin-top:12px;"><button class="btn btn-sm" style="width:100%;" onclick="randomizeAvatar()">🎲 Aleatori</button></div>';
   var cc=document.getElementById(controlsId);if(cc)cc.innerHTML=html;
 }
 function setAvatarShape(key,val){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
   if(!p)return;
   getPlayerAvatar(p)[key]=val;
+  var t=window._avaTargets||{};var pv=document.getElementById(t.preview||'avatar-editor-preview');if(pv)pv.innerHTML=renderAvatar(p,'pixel-avatar-lg');
+}
+function equipFromEditor(slot,itemId){
+  var p=players.find(function(pl){return pl.id===_avatarEditPid;});
+  if(!p)return;
+  if(!p.equipped)p.equipped=emptyEquipped();
+  if(itemId)p.equipped[slot]=itemId;
+  else p.equipped[slot]=null;
+  var t=window._avaTargets||{};
+  var pv=document.getElementById(t.preview||'avatar-editor-preview');if(pv)pv.innerHTML=renderAvatar(p,'pixel-avatar-lg');
+  renderAvatarEditor(t.preview,t.controls);
+}
+function nudgeEquipPos(slot,axis,delta){
+  var p=players.find(function(pl){return pl.id===_avatarEditPid;});
+  if(!p)return;
+  if(!p.equipPos)p.equipPos={};
+  var it=shopItems.find(function(i){return i.id===(p.equipped&&p.equipped[slot]);});
+  var sl=SLOT_DEFS.find(function(x){return x.key===slot;});
+  if(!p.equipPos[slot])p.equipPos[slot]=Object.assign({},(it&&it.avatarPos)||(sl&&sl.pos)||{x:20,y:20,w:60,z:4});
+  p.equipPos[slot][axis]=(p.equipPos[slot][axis]||0)+delta;
+  var lbl=document.getElementById('eqp-'+axis+'-'+slot);if(lbl)lbl.textContent=Math.round(p.equipPos[slot][axis]);
   var t=window._avaTargets||{};var pv=document.getElementById(t.preview||'avatar-editor-preview');if(pv)pv.innerHTML=renderAvatar(p,'pixel-avatar-lg');
 }
 function setEquipPos(slot,axis,val){
@@ -2451,22 +2541,32 @@ function buildPentagon(attrs,color){
 /* ══ INVENTARIO ══ */
 function renderInventario(){
   var p=players.find(function(pl){return pl.id===session.playerId;});
-  var sw=document.getElementById('inv-slots'),gw=document.getElementById('inv-grid');
-  if(!sw||!gw)return;
-  if(!p){sw.innerHTML='<div style="color:var(--muted);font-size:13px;">Inicia sesión.</div>';gw.innerHTML='';return;}
+  var eqEl=document.getElementById('inv-slots-equip');
+  var cosmEl=document.getElementById('inv-slots-cosm');
+  var gw=document.getElementById('inv-grid');
+  if(!gw)return;
+  if(!p){if(eqEl)eqEl.innerHTML='<div style="color:var(--muted);font-size:13px;">Inicia sessió.</div>';if(cosmEl)cosmEl.innerHTML='';gw.innerHTML='';return;}
   if(!p.equipped)p.equipped=emptyEquipped();
-  var slotDefs=SLOT_DEFS;
-  sw.innerHTML=slotDefs.map(function(sl){
+  // Qué slots son cosméticos: los que solo tienen items isCosmetic disponibles, o por convención (gafas,sombrero,capa,alas). Mejor: por tipo de item.
+  var COSMETIC_SLOTS=['gafas','sombrero','capa','alas'];
+  function slotCard(sl){
     var iid=p.equipped[sl.key];
     var item=shopItems.find(function(i){return i.id===iid;});
-    var html='<div class="inv-slot '+(item?'filled':'')+'" onclick="invEquipSlot(\"'+sl.key+'\")">';
-    html+='<div class="inv-slot-icon">'+(item?item.icon:sl.icon)+'</div>';
-    html+='<div class="inv-slot-name">'+(item?item.name:'Vacío')+'</div>';
+    var html='<div class="inv-slot '+(item?'filled':'')+'" onclick="invEquipSlot(\''+sl.key+'\')">';
+    html+='<div class="inv-slot-icon">'+(item?(item.imageUrl?'<img src="'+item.imageUrl+'" style="width:32px;height:32px;object-fit:contain;">':item.icon):sl.icon)+'</div>';
+    html+='<div class="inv-slot-name">'+(item?item.name:'Buit')+'</div>';
     html+='<div class="inv-slot-label">'+sl.label+'</div>';
-    if(item)html+='<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;" onclick="event.stopPropagation();unequipItem(\"'+iid+'\");renderInventario();">✕</button>';
+    if(item)html+='<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;margin-top:4px;" onclick="event.stopPropagation();unequipItem(\''+iid+'\');renderInventario();">✕ Treure</button>';
     html+='</div>';
     return html;
-  }).join('');
+  }
+  if(eqEl)eqEl.innerHTML=SLOT_DEFS.filter(function(sl){return COSMETIC_SLOTS.indexOf(sl.key)<0;}).map(slotCard).join('');
+  if(cosmEl)cosmEl.innerHTML=SLOT_DEFS.filter(function(sl){return COSMETIC_SLOTS.indexOf(sl.key)>=0;}).map(slotCard).join('');
+  // Filtro de slot del catálogo (dinámico con todos los slots)
+  var slotFilterEl=document.getElementById('inv-filter-slot');
+  if(slotFilterEl&&slotFilterEl.options.length<=1){
+    slotFilterEl.innerHTML='<option value="">Tots els slots</option>'+SLOT_DEFS.map(function(s){return '<option value="'+s.key+'">'+s.icon+' '+s.label+'</option>';}).join('');
+  }
   var invSearch=(document.getElementById('inv-search')?document.getElementById('inv-search').value.toLowerCase().trim():'');
   var invSlot=(document.getElementById('inv-filter-slot')?document.getElementById('inv-filter-slot').value:'');
   var invRarity=(document.getElementById('inv-filter-rarity')?document.getElementById('inv-filter-rarity').value:'');
@@ -2483,22 +2583,23 @@ function renderInventario(){
     if(invSortBy==='name')return(ia?ia.name:'').localeCompare(ib?ib.name:'');
     return RARITY_ORDER.indexOf(ia?ia.rareza:'comun')-RARITY_ORDER.indexOf(ib?ib.rareza:'comun');
   });
-  if(!inv.length){gw.innerHTML='';return;}
+  if(!inv.length){gw.innerHTML='<div style="font-size:13px;color:var(--muted);padding:1rem;grid-column:1/-1;">La motxilla està buida.</div>';return;}
   gw.innerHTML=inv.map(function(iid){
     var item=shopItems.find(function(i){return i.id===iid;});
     if(!item)return '';
     var eq=p.equipped&&Object.values(p.equipped).indexOf(iid)>=0;
     var bonusStr=Object.entries(item.bonus||{}).filter(function(e){return e[1]>0;}).map(function(e){return '+'+e[1]+' '+AN[e[0]];}).join(' · ');
     var html='<div class="inv-item bg-rarity-'+(item.rareza||'comun')+' '+(eq?'equipped':'')+'">';
-    html+=(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'" style="width:100%;height:120px;object-fit:cover;border-radius:var(--radius);margin-bottom:4px;">':'<div style="font-size:24px;text-align:center;">'+item.icon+'</div>');
-    html+='<div style="font-size:13px;font-weight:500;">'+item.name+'</div>';
-    html+='<div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">'+item.slot+'</div>';
-    if(bonusStr)html+='<div style="font-size:11px;color:var(--accent);">⬆️ '+bonusStr+'</div>';
+    html+=(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'" style="width:100%;height:90px;object-fit:contain;border-radius:var(--radius);margin-bottom:4px;background:var(--bg3);">':'<div style="font-size:24px;text-align:center;">'+item.icon+'</div>');
+    html+='<div style="font-size:12px;font-weight:500;">'+item.name+'</div>';
+    var slLbl=(SLOT_DEFS.find(function(s){return s.key===item.slot;})||{}).label||item.slot;
+    html+='<div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">'+slLbl+'</div>';
+    if(bonusStr)html+='<div style="font-size:10px;color:var(--accent);">⬆️ '+bonusStr+'</div>';
     html+='<div style="margin-top:auto;padding-top:6px;">';
     if(eq){
-      html+='<button class="btn btn-sm" style="width:100%;" onclick="unequipItem(\"'+iid+'\");renderInventario();">Desequipar</button>';
+      html+='<button class="btn btn-sm" style="width:100%;" onclick="unequipItem(\''+iid+'\');renderInventario();">Treure</button>';
     }else{
-      html+='<button class="btn btn-sm btn-p" style="width:100%;" onclick="equipItem(\"'+iid+'\");renderInventario();">Equipar</button>';
+      html+='<button class="btn btn-sm btn-p" style="width:100%;" onclick="equipItem(\''+iid+'\');renderInventario();">Equipar</button>';
     }
     html+='</div></div>';
     return html;
@@ -2507,10 +2608,15 @@ function renderInventario(){
 function invEquipSlot(slot){
   var p=players.find(function(pl){return pl.id===session.playerId;});if(!p)return;
   var compatible=(p.inventory||[]).filter(function(id){var item=shopItems.find(function(i){return i.id===id;});return item&&item.slot===slot;});
-  if(!compatible.length){toast('No tienes items para el slot: '+slot);return;}
+  if(!compatible.length){toast('No tens objectes per aquest slot');return;}
+  // Ciclo: null (buit) -> item1 -> item2 -> ... -> null
+  var cycle=[null].concat(compatible);
   var current=p.equipped?p.equipped[slot]:null;
-  var next=compatible.find(function(id){return id!==current;})||compatible[0];
-  equipItem(next);renderInventario();
+  var ci=cycle.indexOf(current);
+  var next=cycle[(ci+1)%cycle.length];
+  if(next)equipItem(next);
+  else unequipItem(current);
+  renderInventario();
 }
 
 /* ══ SHOWCASE ══ */
@@ -2755,3 +2861,6 @@ try{window.saveInlineAvatar=saveInlineAvatar;}catch(e){}
 try{window.setEquipPos=setEquipPos;}catch(e){}
 try{window.resetEquipPos=resetEquipPos;}catch(e){}
 try{window.createCosmetic=createCosmetic;}catch(e){}
+try{window.equipFromEditor=equipFromEditor;}catch(e){}
+try{window.nudgeEquipPos=nudgeEquipPos;}catch(e){}
+try{window.enableAvatarDrag=enableAvatarDrag;}catch(e){}
