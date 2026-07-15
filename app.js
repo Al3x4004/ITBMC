@@ -834,7 +834,7 @@ function renderHeroProfile(i){
       </div>
       <div class="ptab-panel active" id="pinfo">
         <div class="phead">
-          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">${renderAvatar(p,"pixel-avatar-lg")}${canEdit?`<button class="btn btn-sm" onclick="openAvatarEditor('${p.id}')">🎨 Editar avatar</button>`:""}</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">${renderAvatar(p,"pixel-avatar-lg")}</div>
           <div style="flex:1;min-width:0;">
             <span class="badge b-purple" style="margin-bottom:6px;display:inline-block;">Nivel ${p.level} · ${p.cls}</span>
             <div class="pname">${p.name}${session.isAdmin?'<span class="adm-rib">DIOS</span>':`<span class="adm-rib" style="display:none"></span>`}</div>
@@ -875,12 +875,12 @@ function renderHeroProfile(i){
         ${renderGalleryCards(p.gallery||[],'view')}
       </div>
       ${canEdit?`<div class="ptab-panel" id="pcustom">
-        <div style="display:grid;grid-template-columns:auto 1fr;gap:1.5rem;align-items:start;">
-          <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+        <div class="pcustom-layout">
+          <div class="pcustom-avatar">
             <div id="inline-avatar-preview"></div>
-            <button class="btn btn-p btn-sm" onclick="saveInlineAvatar('${p.id}')">💾 Desar avatar</button>
+            <button class="btn btn-p btn-sm" style="margin-top:10px;" onclick="saveInlineAvatar('${p.id}')">💾 Desar avatar</button>
           </div>
-          <div id="inline-avatar-controls"></div>
+          <div id="inline-avatar-controls" class="pcustom-controls"></div>
         </div>
       </div>`:''}
     </div>`;
@@ -2252,6 +2252,14 @@ function renderInlineAvatarEditor(pid){
   renderAvatarEditor('inline-avatar-preview','inline-avatar-controls');
   enableAvatarDrag('inline-avatar-preview');
 }
+function refreshAvatarPreview(){
+  var p=players.find(function(pl){return pl.id===_avatarEditPid;});
+  if(!p)return;
+  var t=window._avaTargets||{};
+  var pid=t.preview||'avatar-editor-preview';
+  var pv=document.getElementById(pid);
+  if(pv){pv.innerHTML=renderAvatar(p,'pixel-avatar-lg');enableAvatarDrag(pid);}
+}
 function enableAvatarDrag(previewId){
   var cont=document.getElementById(previewId);
   if(!cont)return;
@@ -2325,7 +2333,7 @@ function renderAvatarEditor(previewId,controlsId){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
   if(!p)return;
   var av=getPlayerAvatar(p);
-  var pv=document.getElementById(previewId);if(pv)pv.innerHTML=renderAvatar(p,'pixel-avatar-lg');
+  var pv=document.getElementById(previewId);if(pv){pv.innerHTML=renderAvatar(p,'pixel-avatar-lg');enableAvatarDrag(previewId);}
   var html='';
   window._avaTargets={preview:previewId,controls:controlsId};
   function colorPicker(key,label){
@@ -2371,12 +2379,12 @@ function renderAvatarEditor(previewId,controlsId){
     if(!p.equipPos)p.equipPos={};
     var cosmeticSlots=SLOT_DEFS.filter(function(sl){return sl.cosmetic;});
     var ownedCosmetics=(p.inventory||[]).filter(function(id){var it=shopItems.find(function(i){return i.id===id;});return it&&it.isCosmetic;});
-    html+='<div style="border-top:0.5px solid var(--border);margin:10px 0;padding-top:6px;"></div>';
-    html+='<div class="stitle">✨ Cosmètics</div>';
+    html+='<div style="grid-column:1/-1;border-top:0.5px solid var(--border);margin:10px 0;padding-top:6px;"></div>';
+    html+='<div class="stitle" style="grid-column:1/-1;">✨ Cosmètics</div>';
     if(!ownedCosmetics.length){
-      html+='<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">No tens cap cosmètic encara. Aconsegueix-ne a la botiga o al gacha!</div>';
+      html+='<div style="grid-column:1/-1;font-size:12px;color:var(--muted);margin-bottom:8px;">No tens cap cosmètic encara. Aconsegueix-ne a la botiga o al gacha!</div>';
     }else{
-      html+='<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">🖱️ Arrossega els cosmètics sobre l\'avatar per moure\'ls.</div>';
+      html+='<div style="grid-column:1/-1;font-size:11px;color:var(--muted);margin-bottom:8px;">🖱️ Arrossega els cosmètics sobre l\'avatar per moure\'ls.</div>';
     }
     cosmeticSlots.forEach(function(sl,idx){
       var cur=p.equipped[sl.key]||'';
@@ -2384,9 +2392,9 @@ function renderAvatarEditor(previewId,controlsId){
         var it=shopItems.find(function(i){return i.id===id;});
         return '<option value="'+id+'"'+(cur===id?' selected':'')+'>'+(it.icon||'✨')+' '+it.name+'</option>';
       }).join('');
-      html+='<div style="margin-bottom:10px;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px;">'
+      html+='<div style="grid-column:1/-1;margin-bottom:10px;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px;">'
         +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">'
-        +'<span style="font-size:13px;color:var(--muted);flex-shrink:0;width:52px;">Slot '+(idx+1)+'</span>'
+        +'<span style="font-size:12px;color:var(--muted);flex-shrink:0;">Cosmètic</span>'
         +'<select onchange="equipFromEditor(\''+sl.key+'\',this.value)" style="flex:1;padding:6px;font-size:12px;border:2px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">'+opts+'</select>'
         +'</div>';
       var it=cur?shopItems.find(function(i){return i.id===cur;}):null;
@@ -2411,7 +2419,7 @@ function setAvatarShape(key,val){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
   if(!p)return;
   getPlayerAvatar(p)[key]=val;
-  var t=window._avaTargets||{};var pv=document.getElementById(t.preview||'avatar-editor-preview');if(pv)pv.innerHTML=renderAvatar(p,'pixel-avatar-lg');
+  refreshAvatarPreview();
 }
 function equipFromEditor(slot,itemId){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
@@ -2420,7 +2428,7 @@ function equipFromEditor(slot,itemId){
   if(itemId)p.equipped[slot]=itemId;
   else p.equipped[slot]=null;
   var t=window._avaTargets||{};
-  var pv=document.getElementById(t.preview||'avatar-editor-preview');if(pv)pv.innerHTML=renderAvatar(p,'pixel-avatar-lg');
+  refreshAvatarPreview();
   renderAvatarEditor(t.preview,t.controls);
 }
 function nudgeEquipPos(slot,axis,delta){
@@ -2432,7 +2440,7 @@ function nudgeEquipPos(slot,axis,delta){
   if(!p.equipPos[slot])p.equipPos[slot]=Object.assign({},(it&&it.avatarPos)||(sl&&sl.pos)||{x:20,y:20,w:60,z:4});
   p.equipPos[slot][axis]=(p.equipPos[slot][axis]||0)+delta;
   var lbl=document.getElementById('eqp-'+axis+'-'+slot);if(lbl)lbl.textContent=Math.round(p.equipPos[slot][axis]);
-  var t=window._avaTargets||{};var pv=document.getElementById(t.preview||'avatar-editor-preview');if(pv)pv.innerHTML=renderAvatar(p,'pixel-avatar-lg');
+  refreshAvatarPreview();
 }
 function setEquipPos(slot,axis,val){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
@@ -2443,7 +2451,7 @@ function setEquipPos(slot,axis,val){
   if(!p.equipPos[slot])p.equipPos[slot]=Object.assign({},(it&&it.avatarPos)||(sl&&sl.pos)||{x:20,y:20,w:60,z:4});
   p.equipPos[slot][axis]=parseFloat(val);
   var lbl=document.getElementById('eqp-'+axis+'-'+slot);if(lbl)lbl.textContent=val;
-  var t=window._avaTargets||{};var pv=document.getElementById(t.preview||'avatar-editor-preview');if(pv)pv.innerHTML=renderAvatar(p,'pixel-avatar-lg');
+  refreshAvatarPreview();
 }
 function resetEquipPos(slot){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
@@ -2458,7 +2466,7 @@ function setCustomTrait(catId,optId){
   if(!av.custom)av.custom={};
   if(optId==='none')delete av.custom[catId];
   else av.custom[catId]=optId;
-  var t=window._avaTargets||{};var pv=document.getElementById(t.preview||'avatar-editor-preview');if(pv)pv.innerHTML=renderAvatar(p,'pixel-avatar-lg');
+  refreshAvatarPreview();
 }
 function setAvatarColor(key,hex){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
@@ -2847,3 +2855,4 @@ try{window.createCosmetic=createCosmetic;}catch(e){}
 try{window.equipFromEditor=equipFromEditor;}catch(e){}
 try{window.nudgeEquipPos=nudgeEquipPos;}catch(e){}
 try{window.enableAvatarDrag=enableAvatarDrag;}catch(e){}
+try{window.refreshAvatarPreview=refreshAvatarPreview;}catch(e){}
