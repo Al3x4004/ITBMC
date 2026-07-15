@@ -490,3 +490,157 @@ body::after{
 /* Secciones que ocupan ancho completo (títulos, cosméticos) */
 .pcustom-controls .stitle,.pcustom-controls>[style*="border-top"]{grid-column:1/-1;}
 @media(max-width:720px){.pcustom-controls{grid-template-columns:1fr;}}
+
+/* ═══════════════════════════════════════════════════════════
+   ██ PULIDO PROFESIONAL — refinamiento retro/arcade ██
+   ═══════════════════════════════════════════════════════════ */
+
+/* Colores de rareza (consistentes en toda la app) */
+:root{
+  --r-comun:#8a8a8a;--r-comun-glow:rgba(138,138,138,.4);
+  --r-rara:#3b82f6;--r-rara-glow:rgba(59,130,246,.45);
+  --r-epica:#a855f7;--r-epica-glow:rgba(168,85,247,.5);
+  --r-legendaria:#f59e0b;--r-legendaria-glow:rgba(245,158,11,.55);
+}
+
+/* ── Sombras con más profundidad y capas ── */
+.card{
+  box-shadow:4px 4px 0 rgba(0,0,0,.08), 0 2px 12px rgba(0,0,0,.06);
+  transition:box-shadow .18s ease, transform .18s ease;
+}
+[data-theme="dark"] .card{
+  box-shadow:4px 4px 0 rgba(0,0,0,.35), 0 2px 16px rgba(0,0,0,.4);
+}
+.card:hover{
+  box-shadow:6px 6px 0 rgba(0,0,0,.1), 0 6px 20px rgba(0,0,0,.09);
+}
+[data-theme="dark"] .card:hover{
+  box-shadow:6px 6px 0 rgba(0,0,0,.4), 0 8px 28px rgba(0,0,0,.5);
+}
+
+/* ── Botones más pulidos con brillo sutil ── */
+.btn{
+  position:relative;
+  letter-spacing:.02em;
+  transition:transform .1s ease, box-shadow .1s ease, filter .15s ease;
+}
+.btn:hover{filter:brightness(1.08);}
+.btn-p, .btn-gold, .btn-g{
+  background-image:linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,0) 60%);
+}
+
+/* ── Navegación lateral más viva ── */
+.nb{transition:all .15s ease, padding-left .15s ease;}
+.nb:hover{padding-left:16px;}
+.nb.active{
+  background:linear-gradient(90deg, var(--accent-bg), transparent);
+  border-left:3px solid var(--accent);
+  padding-left:9px;
+}
+
+/* ── Barras de atributos con brillo y transición ── */
+.strk{position:relative;overflow:hidden;}
+.sfill{
+  position:relative;
+  background-image:linear-gradient(180deg, rgba(255,255,255,.25), rgba(0,0,0,.1));
+  transition:width .5s cubic-bezier(.4,0,.2,1);
+}
+.sfill::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent);
+  transform:translateX(-100%);animation:shimmer 2.5s infinite;
+}
+@keyframes shimmer{to{transform:translateX(200%);}}
+
+/* ── Cartas del gacha con marcos y auras por rareza ── */
+.gacha-card{
+  position:relative;overflow:hidden;
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+.gacha-card:hover{transform:translateY(-4px) scale(1.02);}
+.gacha-card-imgwrap{
+  position:relative;width:100%;min-height:160px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+.gacha-card-imgwrap img{width:100%;height:100%;object-fit:cover;}
+.rarity-bg-comun{background:radial-gradient(circle at 50% 40%, rgba(138,138,138,.25), var(--bg3));}
+.rarity-bg-rara{background:radial-gradient(circle at 50% 40%, rgba(59,130,246,.3), var(--bg3));}
+.rarity-bg-epica{background:radial-gradient(circle at 50% 40%, rgba(168,85,247,.35), var(--bg3));}
+.rarity-bg-legendaria{background:radial-gradient(circle at 50% 40%, rgba(245,158,11,.4), var(--bg3));}
+.rarity-frame-comun{border:3px solid var(--r-comun) !important;box-shadow:0 0 12px var(--r-comun-glow) !important;}
+.rarity-frame-rara{border:3px solid var(--r-rara) !important;box-shadow:0 0 16px var(--r-rara-glow) !important;}
+.rarity-frame-epica{border:3px solid var(--r-epica) !important;box-shadow:0 0 20px var(--r-epica-glow) !important;}
+.rarity-frame-legendaria{border:3px solid var(--r-legendaria) !important;box-shadow:0 0 26px var(--r-legendaria-glow) !important;animation:legendaryPulse 1.8s ease-in-out infinite;}
+@keyframes legendaryPulse{0%,100%{box-shadow:0 0 20px var(--r-legendaria-glow);}50%{box-shadow:0 0 34px var(--r-legendaria-glow);}}
+
+.gacha-card-rarity.rarity-comun{color:var(--r-comun);}
+.gacha-card-rarity.rarity-rara{color:var(--r-rara);}
+.gacha-card-rarity.rarity-epica{color:var(--r-epica);}
+.gacha-card-rarity.rarity-legendaria{color:var(--r-legendaria);}
+.gacha-card-rarity{font-weight:700;letter-spacing:.04em;}
+
+/* Mensaje de duplicado debajo de la rareza */
+.gacha-dupe-msg{
+  margin-top:6px;font-size:10px;color:var(--gold);
+  background:var(--gold-bg);border:1px solid var(--gold-border);
+  border-radius:var(--radius);padding:3px 6px;text-align:center;line-height:1.3;
+}
+
+/* ── Rareza aplicada al inventario también ── */
+.inv-item{transition:transform .15s ease, box-shadow .15s ease;position:relative;}
+.inv-item:hover{transform:translateY(-2px);}
+.bg-rarity-rara{border-color:var(--r-rara) !important;}
+.bg-rarity-epica{border-color:var(--r-epica) !important;}
+.bg-rarity-legendaria{border-color:var(--r-legendaria) !important;box-shadow:0 0 12px var(--r-legendaria-glow);}
+
+/* ── Badges y pills más definidos ── */
+.badge{
+  box-shadow:2px 2px 0 rgba(0,0,0,.12);
+  font-weight:700;letter-spacing:.03em;
+}
+
+/* ── Títulos de sección con acento ── */
+.stitle{
+  position:relative;padding-left:10px;
+}
+.stitle::before{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:4px;height:70%;background:var(--accent);border-radius:2px;
+}
+
+/* ── Inputs con foco elegante ── */
+input:focus,select:focus,textarea:focus{
+  outline:none;border-color:var(--accent) !important;
+  box-shadow:0 0 0 3px var(--accent-bg);
+}
+
+/* ── Avatares con marco y sombra ── */
+.pixel-avatar{
+  box-shadow:0 4px 16px rgba(0,0,0,.15), inset 0 0 0 2px var(--border2);
+  transition:box-shadow .2s ease;
+}
+[data-theme="dark"] .pixel-avatar{box-shadow:0 4px 20px rgba(0,0,0,.4), inset 0 0 0 2px var(--border2);}
+
+/* ── Transiciones de página suaves ── */
+.page{animation:pageIn .35s ease;}
+@keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── Tabs del perfil más marcadas ── */
+.ptab{transition:all .15s ease;position:relative;}
+.ptab.active::after{
+  content:'';position:absolute;bottom:-1px;left:0;right:0;height:3px;
+  background:var(--accent);border-radius:2px;
+}
+
+/* ── Scrollbar estilizada ── */
+*::-webkit-scrollbar{width:10px;height:10px;}
+*::-webkit-scrollbar-track{background:var(--bg3);}
+*::-webkit-scrollbar-thumb{background:var(--border3);border-radius:0;border:2px solid var(--bg3);}
+*::-webkit-scrollbar-thumb:hover{background:var(--accent);}
+
+/* ── Toast más visible y elegante ── */
+.toast, #toast{
+  box-shadow:0 6px 24px rgba(0,0,0,.25) !important;
+  border:2px solid var(--accent-border) !important;
+  backdrop-filter:blur(8px);
+}
