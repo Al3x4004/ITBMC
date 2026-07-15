@@ -2366,55 +2366,45 @@ function renderAvatarEditor(previewId,controlsId){
   html+=selector('beard','Barba');
   html+=selector('hat','Barret');
   html+=selector('accessories','Accessoris');
-  // Objectes equipats: equipar/desequipar + moure (còmode)
+  // Cosmètics: 5 slots per posar qualsevol cosmètic que tinguis
   if(p.equipped){
     if(!p.equipPos)p.equipPos={};
-    var hasEquipItems=(p.inventory||[]).some(function(id){var it=shopItems.find(function(i){return i.id===id;});return it&&!it.isCosmetic;});
-    var hasCosmetics=(p.inventory||[]).some(function(id){var it=shopItems.find(function(i){return i.id===id;});return it&&it.isCosmetic;});
-    // Mostrar slots de equipo con items + los 5 cosméticos si tienes cosméticos
-    var slotsWithItems=SLOT_DEFS.filter(function(sl){
-      if(sl.cosmetic)return hasCosmetics;
-      return (p.inventory||[]).some(function(id){var it=shopItems.find(function(i){return i.id===id;});return it&&it.slot===sl.key;});
-    });
-    if(slotsWithItems.length){
-      html+='<div style="border-top:0.5px solid var(--border);margin:10px 0;padding-top:6px;"></div>';
-      html+='<div class="stitle">Objectes equipats</div>';
-      slotsWithItems.forEach(function(sl){
-        // Para slots cosméticos: cualquier cosmético que tengas. Para equipo: los de ese slot.
-        var owned=(p.inventory||[]).filter(function(id){var it=shopItems.find(function(i){return i.id===id;});if(!it)return false;return sl.cosmetic?it.isCosmetic:(it.slot===sl.key&&!it.isCosmetic);});
-        var cur=p.equipped[sl.key]||'';
-        // Selector d'objecte per aquest slot
-        var opts='<option value="">— Cap —</option>'+owned.map(function(id){
-          var it=shopItems.find(function(i){return i.id===id;});
-          return '<option value="'+id+'"'+(cur===id?' selected':'')+'>'+(it.icon||'')+' '+it.name+'</option>';
-        }).join('');
-        html+='<div style="margin-bottom:12px;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px;">'
-          +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">'
-          +'<span style="font-size:16px;flex-shrink:0;">'+sl.icon+'</span>'
-          +'<select onchange="equipFromEditor(\''+sl.key+'\',this.value)" style="flex:1;padding:6px;font-size:12px;border:2px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">'+opts+'</select>'
-          +'</div>';
-        // Si hi ha un objecte amb imatge equipat, mostrar controls de posició
-        var it=cur?shopItems.find(function(i){return i.id===cur;}):null;
-        if(it&&it.imageUrl){
-          var ps=p.equipPos[sl.key]||it.avatarPos||sl.pos;
-          function ctrl(axis,label,mn,mx){
-            return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">'
-              +'<span style="font-size:11px;width:40px;">'+label+'</span>'
-              +'<button class="ava-cycle-btn" onclick="nudgeEquipPos(\''+sl.key+'\',\''+axis+'\',-2)">−</button>'
-              +'<input type="range" min="'+mn+'" max="'+mx+'" value="'+ps[axis]+'" style="flex:1;" oninput="setEquipPos(\''+sl.key+'\',\''+axis+'\',this.value)"/>'
-              +'<button class="ava-cycle-btn" onclick="nudgeEquipPos(\''+sl.key+'\',\''+axis+'\',2)">+</button>'
-              +'<span style="font-size:11px;width:32px;text-align:right;" id="eqp-'+axis+'-'+sl.key+'">'+Math.round(ps[axis])+'</span>'
-              +'</div>';
-          }
-          html+='<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">🖱️ Arrossega l\'objecte sobre l\'avatar per moure\'l</div>';
-          html+=ctrl('w','⛶ Mida',8,140);
-          html+='<button class="btn btn-sm" style="width:100%;margin-top:4px;" onclick="resetEquipPos(\''+sl.key+'\')">↺ Posició per defecte</button>';
-        }
-        html+='</div>';
-      });
+    var cosmeticSlots=SLOT_DEFS.filter(function(sl){return sl.cosmetic;});
+    var ownedCosmetics=(p.inventory||[]).filter(function(id){var it=shopItems.find(function(i){return i.id===id;});return it&&it.isCosmetic;});
+    html+='<div style="border-top:0.5px solid var(--border);margin:10px 0;padding-top:6px;"></div>';
+    html+='<div class="stitle">✨ Cosmètics</div>';
+    if(!ownedCosmetics.length){
+      html+='<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">No tens cap cosmètic encara. Aconsegueix-ne a la botiga o al gacha!</div>';
+    }else{
+      html+='<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">🖱️ Arrossega els cosmètics sobre l\'avatar per moure\'ls.</div>';
     }
+    cosmeticSlots.forEach(function(sl,idx){
+      var cur=p.equipped[sl.key]||'';
+      var opts='<option value="">— Buit —</option>'+ownedCosmetics.map(function(id){
+        var it=shopItems.find(function(i){return i.id===id;});
+        return '<option value="'+id+'"'+(cur===id?' selected':'')+'>'+(it.icon||'✨')+' '+it.name+'</option>';
+      }).join('');
+      html+='<div style="margin-bottom:10px;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px;">'
+        +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">'
+        +'<span style="font-size:13px;color:var(--muted);flex-shrink:0;width:52px;">Slot '+(idx+1)+'</span>'
+        +'<select onchange="equipFromEditor(\''+sl.key+'\',this.value)" style="flex:1;padding:6px;font-size:12px;border:2px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">'+opts+'</select>'
+        +'</div>';
+      var it=cur?shopItems.find(function(i){return i.id===cur;}):null;
+      if(it&&it.imageUrl){
+        var ps=p.equipPos[sl.key]||it.avatarPos||sl.pos;
+        html+='<div style="display:flex;align-items:center;gap:6px;">'
+          +'<span style="font-size:11px;width:40px;">⛶ Mida</span>'
+          +'<button class="ava-cycle-btn" onclick="nudgeEquipPos(\''+sl.key+'\',\'w\',-4)">−</button>'
+          +'<input type="range" min="8" max="140" value="'+ps.w+'" style="flex:1;" oninput="setEquipPos(\''+sl.key+'\',\'w\',this.value)"/>'
+          +'<button class="ava-cycle-btn" onclick="nudgeEquipPos(\''+sl.key+'\',\'w\',4)">+</button>'
+          +'<span style="font-size:11px;width:32px;text-align:right;" id="eqp-w-'+sl.key+'">'+Math.round(ps.w)+'</span>'
+          +'</div>'
+          +'<button class="btn btn-sm" style="width:100%;margin-top:4px;" onclick="resetEquipPos(\''+sl.key+'\')">↺ Posició per defecte</button>';
+      }
+      html+='</div>';
+    });
   }
-    html+='<div style="margin-top:12px;"><button class="btn btn-sm" style="width:100%;" onclick="randomizeAvatar()">🎲 Aleatori</button></div>';
+      html+='<div style="margin-top:12px;"><button class="btn btn-sm" style="width:100%;" onclick="randomizeAvatar()">🎲 Aleatori</button></div>';
   var cc=document.getElementById(controlsId);if(cc)cc.innerHTML=html;
 }
 function setAvatarShape(key,val){
