@@ -11,6 +11,15 @@
 </head>
 <body>
 <div id="toast"></div>
+<div id="showcase-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;padding:1rem;" onclick="if(event.target===this)closeShowcaseModal()">
+  <div style="background:var(--bg2);border:3px solid var(--accent);border-radius:var(--radius-lg);max-width:520px;width:100%;max-height:80vh;overflow-y:auto;padding:1.25rem;box-shadow:0 10px 40px rgba(0,0,0,.4);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div class="stitle" style="margin:0;">Tria una carta</div>
+      <button class="btn btn-sm" onclick="closeShowcaseModal()">✕</button>
+    </div>
+    <div id="showcase-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;"></div>
+  </div>
+</div>
 
 <div class="levelup-pop" id="levelup-pop">
   <div class="levelup-box">
