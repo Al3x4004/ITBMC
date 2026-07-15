@@ -542,15 +542,22 @@ body::after{
 .strk{position:relative;overflow:hidden;}
 .sfill{
   position:relative;
-  background-image:linear-gradient(180deg, rgba(255,255,255,.25), rgba(0,0,0,.1));
+  background-image:linear-gradient(180deg, rgba(255,255,255,.18), rgba(0,0,0,.06));
   transition:width .5s cubic-bezier(.4,0,.2,1);
 }
 .sfill::after{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent);
-  transform:translateX(-100%);animation:shimmer 2.5s infinite;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.28), transparent);
+  transform:translateX(-100%);animation:shimmer 3s ease-in-out infinite;
 }
-@keyframes shimmer{to{transform:translateX(200%);}}
+/* En modo oscuro el shimmer blanco fuerte queda mal: suavizarlo mucho */
+[data-theme="dark"] .sfill{
+  background-image:linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.14));
+}
+[data-theme="dark"] .sfill::after{
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.14), transparent);
+}
+@keyframes shimmer{0%{transform:translateX(-100%);}60%,100%{transform:translateX(200%);}}
 
 /* ── Cartas del gacha con marcos y auras por rareza ── */
 .gacha-card{
