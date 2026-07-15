@@ -61,10 +61,11 @@ var SLOT_DEFS=[
   {key:'accesorio',label:'Accessori',icon:'💎',pos:{x:8,y:22,w:30,z:4}},
   {key:'casco',label:'Casc',icon:'⛑️',pos:{x:18,y:-2,w:64,z:6}},
   {key:'botas',label:'Botes',icon:'👟',pos:{x:26,y:78,w:48,z:2}},
-  {key:'gafas',label:'Ulleres',icon:'👓',pos:{x:28,y:28,w:44,z:7}},
-  {key:'sombrero',label:'Barret',icon:'🎩',pos:{x:16,y:-8,w:68,z:6}},
-  {key:'capa',label:'Capa',icon:'🧥',pos:{x:12,y:34,w:76,z:1}},
-  {key:'alas',label:'Ales',icon:'🪽',pos:{x:2,y:28,w:96,z:0}}
+  {key:'cosm1',label:'Cosmètic 1',icon:'✨',pos:{x:20,y:20,w:60,z:10},cosmetic:true},
+  {key:'cosm2',label:'Cosmètic 2',icon:'✨',pos:{x:20,y:20,w:60,z:11},cosmetic:true},
+  {key:'cosm3',label:'Cosmètic 3',icon:'✨',pos:{x:20,y:20,w:60,z:12},cosmetic:true},
+  {key:'cosm4',label:'Cosmètic 4',icon:'✨',pos:{x:20,y:20,w:60,z:13},cosmetic:true},
+  {key:'cosm5',label:'Cosmètic 5',icon:'✨',pos:{x:20,y:20,w:60,z:14},cosmetic:true}
 ];
 function slotLabel(k){var s=SLOT_DEFS.find(function(x){return x.key===k;});return s?s.label:k;}
 function slotDefaultPos(k){var s=SLOT_DEFS.find(function(x){return x.key===k;});return s?s.pos:{x:20,y:20,w:60,z:4};}
@@ -1409,13 +1410,9 @@ async function saveAdminEdit(){
 }
 function renderCustomTraitsAdmin(){
   // Rellenar select de slots
-  var slotSel=document.getElementById('cu-slot');
-  if(slotSel)slotSel.innerHTML=SLOT_DEFS.map(function(s){return '<option value="'+s.key+'">'+s.icon+' '+s.label+'</option>';}).join('');
-  // Rellenar grids de requisitos y bonus
+  // Rellenar grid de requisitos (los cosméticos no dan stats, solo se compran)
   var reqs=document.getElementById('cu-reqs');
   if(reqs)reqs.innerHTML=attrKeys().map(function(k){return '<div class="field" style="margin:0;"><label>'+attrName(k).slice(0,6)+'</label><input type="number" id="cu-r'+k+'" value="0" min="0"/></div>';}).join('');
-  var bon=document.getElementById('cu-bonus');
-  if(bon)bon.innerHTML=attrKeys().map(function(k){return '<div class="field" style="margin:0;"><label>+'+attrName(k).slice(0,6)+'</label><input type="number" id="cu-b'+k+'" value="0" min="0"/></div>';}).join('');
   // Lista de cosméticos existentes
   var list=document.getElementById('cu-list');
   var cosmetics=shopItems.filter(function(i){return i.isCosmetic;});
@@ -1439,32 +1436,28 @@ function renderCustomTraitsAdmin(){
 async function createCosmetic(){
   var name=document.getElementById('cu-name').value.trim();
   if(!name){toast('Posa un nom');return;}
-  var slot=document.getElementById('cu-slot').value;
-  var sl=SLOT_DEFS.find(function(s){return s.key===slot;});
   var minAttrs={};attrKeys().forEach(function(k){var el=document.getElementById('cu-r'+k);minAttrs[k]=el?(parseInt(el.value)||0):0;});
-  var bonus={};attrKeys().forEach(function(k){var el=document.getElementById('cu-b'+k);bonus[k]=el?(parseInt(el.value)||0):0;});
   var newItem={
     id:'cosm'+Date.now(),
     name:name,
     icon:document.getElementById('cu-icon').value.trim()||'✨',
     imageUrl:document.getElementById('cu-imageurl').value.trim()||null,
     desc:'',
-    slot:slot,
+    slot:'cosmetic',
     rareza:document.getElementById('cu-rarity').value,
     cost:parseInt(document.getElementById('cu-cost').value)||0,
     minLevel:parseInt(document.getElementById('cu-lvl').value)||1,
     via:document.getElementById('cu-via').value,
     minAttrs:minAttrs,
-    bonus:bonus,
-    avatarPos:sl?Object.assign({},sl.pos):null,
+    bonus:{},
+    avatarPos:{x:20,y:20,w:60,z:10},
     isCosmetic:true
   };
   shopItems.push(newItem);
   if(CFG.MODE==='supabase')await saveItemToSupabase(newItem);
-  // Limpiar formulario
   ['cu-name','cu-icon','cu-imageurl','cu-cost'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('cu-lvl').value='1';
-  attrKeys().forEach(function(k){var r=document.getElementById('cu-r'+k);if(r)r.value='0';var b=document.getElementById('cu-b'+k);if(b)b.value='0';});
+  attrKeys().forEach(function(k){var r=document.getElementById('cu-r'+k);if(r)r.value='0';});
   renderCustomTraitsAdmin();
   renderShop();
   toast('Cosmètic creat');
@@ -2267,23 +2260,21 @@ function enableAvatarDrag(previewId){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
   if(!p)return;
   if(!p.equipPos)p.equipPos={};
-  // Cada capa de item (pa-layer) que corresponda a un slot equipado es arrastrable
-  var layers=wrap.querySelectorAll('.pa-layer');
+  var layers=wrap.querySelectorAll('.pa-layer[data-slot]');
   layers.forEach(function(layer){
-    // Identificar a qué slot pertenece por el alt (nombre) — mejor por data. Añadimos data-slot en render.
     var slot=layer.getAttribute('data-slot');
     if(!slot)return;
     layer.classList.add('pa-draggable');
     var dragging=false,startX,startY,startPx,startPy,rect;
     function down(e){
-      e.preventDefault();
+      e.preventDefault();e.stopPropagation();
       dragging=true;
       rect=wrap.getBoundingClientRect();
       var pt=e.touches?e.touches[0]:e;
       startX=pt.clientX;startY=pt.clientY;
       var it=shopItems.find(function(i){return i.id===p.equipped[slot];});
       var sl=SLOT_DEFS.find(function(x){return x.key===slot;});
-      var cur=p.equipPos[slot]||(it&&it.avatarPos)||(sl&&sl.pos)||{x:20,y:20,w:60};
+      var cur=p.equipPos[slot]||(it&&it.avatarPos)||(sl&&sl.pos)||{x:20,y:20,w:60,z:10};
       p.equipPos[slot]=Object.assign({},cur);
       startPx=p.equipPos[slot].x;startPy=p.equipPos[slot].y;
       document.addEventListener('mousemove',move);document.addEventListener('mouseup',up);
@@ -2295,13 +2286,11 @@ function enableAvatarDrag(previewId){
       var pt=e.touches?e.touches[0]:e;
       var dx=(pt.clientX-startX)/rect.width*100;
       var dy=(pt.clientY-startY)/rect.height*100;
-      p.equipPos[slot].x=Math.round(startPx+dx);
-      p.equipPos[slot].y=Math.round(startPy+dy);
-      var pv=document.getElementById(previewId);
-      if(pv){pv.innerHTML=renderAvatar(p,'pixel-avatar-lg');enableAvatarDrag(previewId);}
-      // actualizar sliders si existen
-      var lx=document.getElementById('eqp-x-'+slot);if(lx)lx.textContent=p.equipPos[slot].x;
-      var ly=document.getElementById('eqp-y-'+slot);if(ly)ly.textContent=p.equipPos[slot].y;
+      var nx=Math.round(startPx+dx),ny=Math.round(startPy+dy);
+      p.equipPos[slot].x=nx;p.equipPos[slot].y=ny;
+      // Mover SOLO este elemento (sin regenerar el avatar)
+      layer.style.left=nx+'%';
+      layer.style.top=ny+'%';
     }
     function up(){
       dragging=false;
@@ -2380,15 +2369,19 @@ function renderAvatarEditor(previewId,controlsId){
   // Objectes equipats: equipar/desequipar + moure (còmode)
   if(p.equipped){
     if(!p.equipPos)p.equipPos={};
-    // Slots on el jugador té algun objecte a l'inventari
+    var hasEquipItems=(p.inventory||[]).some(function(id){var it=shopItems.find(function(i){return i.id===id;});return it&&!it.isCosmetic;});
+    var hasCosmetics=(p.inventory||[]).some(function(id){var it=shopItems.find(function(i){return i.id===id;});return it&&it.isCosmetic;});
+    // Mostrar slots de equipo con items + los 5 cosméticos si tienes cosméticos
     var slotsWithItems=SLOT_DEFS.filter(function(sl){
+      if(sl.cosmetic)return hasCosmetics;
       return (p.inventory||[]).some(function(id){var it=shopItems.find(function(i){return i.id===id;});return it&&it.slot===sl.key;});
     });
     if(slotsWithItems.length){
       html+='<div style="border-top:0.5px solid var(--border);margin:10px 0;padding-top:6px;"></div>';
       html+='<div class="stitle">Objectes equipats</div>';
       slotsWithItems.forEach(function(sl){
-        var owned=(p.inventory||[]).filter(function(id){var it=shopItems.find(function(i){return i.id===id;});return it&&it.slot===sl.key;});
+        // Para slots cosméticos: cualquier cosmético que tengas. Para equipo: los de ese slot.
+        var owned=(p.inventory||[]).filter(function(id){var it=shopItems.find(function(i){return i.id===id;});if(!it)return false;return sl.cosmetic?it.isCosmetic:(it.slot===sl.key&&!it.isCosmetic);});
         var cur=p.equipped[sl.key]||'';
         // Selector d'objecte per aquest slot
         var opts='<option value="">— Cap —</option>'+owned.map(function(id){
@@ -2548,7 +2541,7 @@ function renderInventario(){
   if(!p){if(eqEl)eqEl.innerHTML='<div style="color:var(--muted);font-size:13px;">Inicia sessió.</div>';if(cosmEl)cosmEl.innerHTML='';gw.innerHTML='';return;}
   if(!p.equipped)p.equipped=emptyEquipped();
   // Qué slots son cosméticos: los que solo tienen items isCosmetic disponibles, o por convención (gafas,sombrero,capa,alas). Mejor: por tipo de item.
-  var COSMETIC_SLOTS=['gafas','sombrero','capa','alas'];
+  var COSMETIC_SLOTS=SLOT_DEFS.filter(function(s){return s.cosmetic;}).map(function(s){return s.key;});
   function slotCard(sl){
     var iid=p.equipped[sl.key];
     var item=shopItems.find(function(i){return i.id===iid;});
