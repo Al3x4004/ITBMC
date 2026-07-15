@@ -2120,7 +2120,6 @@ function buildAvatarUrl(av){
   else params.push('hatProbability=0');
   if(av.accessories&&av.accessories!=='none'){params.push('accessories='+av.accessories);params.push('accessoriesProbability=100');if(av.accessoriesColor)params.push('accessoriesColor='+av.accessoriesColor);}
   else params.push('accessoriesProbability=0');
-  if(av.bgColor){params.push('backgroundColor='+av.bgColor.replace('#',''));params.push('backgroundType=solid');}
   params.push('size=180');
   return base+'?'+params.join('&');
 }
@@ -2193,14 +2192,13 @@ function buildAvatarSvg(av){
     else opts.hatProbability=0;
     if(av.accessories&&av.accessories!=='none'){opts.accessories=[av.accessories];opts.accessoriesProbability=100;if(av.accessoriesColor)opts.accessoriesColor=[av.accessoriesColor];}
     else opts.accessoriesProbability=0;
-    if(av.bgColor){opts.backgroundColor=[av.bgColor.replace('#','')];opts.backgroundType=['solid'];}
     return window.DiceBearCreate(window.DiceBearPixelArt,opts).toString();
   }catch(e){console.error('DiceBear local error',e);return null;}
 }
 function renderAvatar(p,sizeClass){
   var av=getPlayerAvatar(p);
   var emblem=p.emblem||'🧙';
-  var bg=(av.bgColor)||p.colorBg||'var(--bg3)';
+  var bg=av.bgColor?(av.bgColor.charAt(0)==='#'?av.bgColor:'#'+av.bgColor):(p.colorBg||'var(--bg3)');
   var html='<div class="pixel-avatar '+(sizeClass||'pixel-avatar-lg')+'" style="background:'+bg+';">';
   html+='<div class="pa-fallback" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:60%;">'+emblem+'</div>';
   // Preferir SVG local (control total de rasgos); fallback a la API HTTP
@@ -2338,7 +2336,8 @@ function renderAvatarEditor(previewId,controlsId){
   var html='';
   window._avaTargets={preview:previewId,controls:controlsId};
   function colorPicker(key,label){
-    var val='#'+(av[key]||'000000');
+    var raw=av[key]||'000000';
+    var val=raw.charAt(0)==='#'?raw:'#'+raw;
     return '<div class="ava-opt-row"><label>'+label+'</label>'
       +'<div style="display:flex;align-items:center;gap:8px;">'
       +'<input type="color" value="'+val+'" oninput="setAvatarColor(\''+key+'\',this.value)" style="width:44px;height:32px;padding:0;border:2px solid var(--border2);border-radius:var(--radius);background:none;cursor:pointer;"/>'
@@ -2472,8 +2471,8 @@ function setCustomTrait(catId,optId){
 function setAvatarColor(key,hex){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
   if(!p)return;
-  getPlayerAvatar(p)[key]=hex.replace('#','');
-  // Solo refrescar el preview (no todo el editor) para no cerrar el selector
+  // bgColor es CSS (necesita #); los colores de DiceBear van sin #
+  getPlayerAvatar(p)[key]=(key==='bgColor')?hex:hex.replace('#','');
   var t=window._avaTargets||{};renderAvatarEditor(t.preview,t.controls);
 }
 function randomizeAvatar(){
