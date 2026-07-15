@@ -220,31 +220,37 @@
         <div style="font-size:18px;font-weight:500;margin-bottom:4px;">Inventari</div>
         <div style="font-size:13px;color:var(--muted);">Equipa los items que has comprado o conseguido.</div>
       </div>
-      <div class="stitle">Slots d'equipament</div>
-      <div class="inv-slots" id="inv-slots"></div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:.75rem;margin-top:1rem;">
-        <input type="text" id="inv-search" placeholder="🔍 Cercar ítem..." oninput="renderInventario()" style="flex:1;min-width:160px;padding:7px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);outline:none;"/>
-        <select id="inv-filter-slot" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
-          <option value="">Tots els slots</option>
-          <option value="arma">Arma</option>
-          <option value="armadura">Armadura</option>
-          <option value="accesorio">Accessori</option>
-          <option value="casco">Casc</option>
-          <option value="botas">Botes</option>
-        </select>
-        <select id="inv-filter-rarity" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
-          <option value="">Totes les rareses</option>
-          <option value="comun">Comú</option>
-          <option value="rara">Rara</option>
-          <option value="epica">Èpica</option>
-          <option value="legendaria">Llegendària</option>
-        </select>
-        <select id="inv-sort" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
-          <option value="rarity">Ordenar: Raresa</option>
-          <option value="name">Ordenar: Nom</option>
-        </select>
+      <div class="inv-3col">
+        <div class="inv-col">
+          <div class="stitle">⚔️ Equip</div>
+          <div id="inv-slots-equip"></div>
+        </div>
+        <div class="inv-col">
+          <div class="stitle">✨ Cosmètics</div>
+          <div id="inv-slots-cosm"></div>
+        </div>
+        <div class="inv-col inv-col-catalog">
+          <div class="stitle">Motxilla</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:.75rem;">
+            <input type="text" id="inv-search" placeholder="🔍 Cercar..." oninput="renderInventario()" style="flex:1;min-width:120px;padding:7px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);outline:none;"/>
+            <select id="inv-filter-slot" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+              <option value="">Tots els slots</option>
+            </select>
+            <select id="inv-filter-rarity" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+              <option value="">Totes les rareses</option>
+              <option value="comun">Comú</option>
+              <option value="rara">Rara</option>
+              <option value="epica">Èpica</option>
+              <option value="legendaria">Llegendària</option>
+            </select>
+            <select id="inv-sort" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+              <option value="rarity">Raresa</option>
+              <option value="name">Nom</option>
+            </select>
+          </div>
+          <div class="inv-grid" id="inv-grid"></div>
+        </div>
       </div>
-      <div class="inv-grid" id="inv-grid"></div>
     </div>
 
     <!-- ARCOS -->
