@@ -993,17 +993,18 @@ function doPull(times){
   const reveal=document.getElementById('card-reveal');
   reveal.innerHTML='';reveal.classList.add('show');
   results.forEach((r,i)=>{
-    const div=document.createElement('div');div.className='gacha-card pull-anim';
+    var rarity=r.type==='card'?r.data.rarity:(r.data.rareza||'comun');
+    const div=document.createElement('div');div.className='gacha-card pull-anim rarity-frame-'+rarity;
     div.style.animationDelay=`${i*0.08}s`;
-    var dupeBadge=r._dupe?'<div style="position:absolute;top:4px;right:4px;background:var(--gold-bg);color:var(--gold);font-size:9px;padding:2px 5px;border-radius:20px;border:0.5px solid var(--gold-border);">✨ +'+Math.floor(costPerPull/2)+'</div>':'';
     div.style.position='relative';
+    var dupeMsg=r._dupe?'<div class="gacha-dupe-msg">✨ Ja el tenies · +'+Math.floor(costPerPull/2)+' retornats</div>':'';
     if(r.type==='card'){
       const imgUrl=r.data.imageUrl||(r.data.image?CFG.GITHUB_RAW+r.data.image:'');
-      div.innerHTML=dupeBadge+`<img src="${imgUrl}" alt="${r.data.name}" onerror="this.style.background='var(--bg3)';this.style.minHeight='160px';">
-        <div class="gacha-card-info"><div class="gacha-card-name">${r.data.name}</div><div class="gacha-card-rarity rarity-${r.data.rarity}">${RARITY_LABEL[r.data.rarity]}</div></div>`;
+      div.innerHTML=`<div class="gacha-card-imgwrap rarity-bg-${rarity}"><img src="${imgUrl}" alt="${r.data.name}" onerror="this.style.opacity=0;"></div>
+        <div class="gacha-card-info"><div class="gacha-card-name">${r.data.name}</div><div class="gacha-card-rarity rarity-${rarity}">${RARITY_LABEL[rarity]}</div>${dupeMsg}</div>`;
     }else{
-      div.innerHTML=dupeBadge+`<div style="display:flex;align-items:center;justify-content:center;min-height:160px;font-size:48px;background:var(--gold-bg);">${r.data.icon}</div>
-        <div class="gacha-card-info"><div class="gacha-card-name">${r.data.name}</div><div class="gacha-card-rarity" style="color:var(--gold);">✨ Item obtingut</div></div>`;
+      div.innerHTML=`<div class="gacha-card-imgwrap rarity-bg-${rarity}">${r.data.imageUrl?'<img src="'+r.data.imageUrl+'" alt="'+r.data.name+'" onerror="this.style.opacity=0;">':'<div style="display:flex;align-items:center;justify-content:center;min-height:160px;font-size:48px;">'+r.data.icon+'</div>'}</div>
+        <div class="gacha-card-info"><div class="gacha-card-name">${r.data.name}</div><div class="gacha-card-rarity rarity-${rarity}">${RARITY_LABEL[rarity]||'Item'}</div>${dupeMsg}</div>`;
     }
     reveal.appendChild(div);
   });
