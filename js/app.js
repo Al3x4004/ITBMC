@@ -1080,27 +1080,6 @@ function renderFramePicker(){
         +'</button>';
     }).join('')+'</div>';
 }
-/* ══ INSÍGNIES / LOGROS ══ */
-function playerBadges(p){
-  var done=missions.filter(function(m){return m.playerId===p.id&&m.status==='done';}).length;
-  var lvl=p.level||1;
-  var hasLegend=(p.gallery||[]).some(function(id){var c=gachaCards.find(function(x){return x.id===id;});return c&&c.rarity==='legendaria';});
-  return [
-    {icon:'🎯',label:'Primera missió',earned:done>=1,req:'Completa 1 missió'},
-    {icon:'⚔️',label:'Treballador',earned:done>=10,req:'Completa 10 missions'},
-    {icon:'🏆',label:'Imparable',earned:done>=25,req:'Completa 25 missions'},
-    {icon:'⭐',label:'Aprenent',earned:lvl>=5,req:'Assoleix el nivell 5'},
-    {icon:'🌟',label:'Veterà',earned:lvl>=10,req:'Assoleix el nivell 10'},
-    {icon:'👑',label:'Mestre',earned:lvl>=20,req:'Assoleix el nivell 20'},
-    {icon:'🃏',label:'Col·leccionista',earned:hasLegend,req:'Aconsegueix una carta llegendària'}
-  ];
-}
-function renderBadges(p){
-  return '<div class="badge-grid">'+playerBadges(p).map(function(b){
-    var tip=b.earned?b.label:(b.label+' — '+b.req);
-    return '<div class="ach '+(b.earned?'earned':'locked')+'" title="'+tip+'"><span class="ach-ic">'+b.icon+'</span><span class="ach-lbl">'+b.label+'</span></div>';
-  }).join('')+'</div>';
-}
 function renderHeroProfile(i){
   const p=(session.isAdmin&&i==='admin')?getAdminProfile():players[i];if(!p)return;
   const xpPct=Math.round(p.xp/p.xpNext*100);
@@ -1115,8 +1094,8 @@ function renderHeroProfile(i){
       </div>
       <div class="ptab-panel active" id="pinfo">
         <div class="phead">
-          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">${frameWrap(p,renderAvatar(p,"pixel-avatar-lg"))}</div>
-          <div style="flex:1;min-width:0;">
+          <div class="phead-ava">${frameWrap(p,renderAvatar(p,"pixel-avatar-lg"))}</div>
+          <div class="phead-info">
             <span class="badge b-purple" style="margin-bottom:6px;display:inline-block;">Nivel ${p.level} · ${p.cls}</span>
             <div class="pname">${p.name}${session.isAdmin?'<span class="adm-rib">DIOS</span>':`<span class="adm-rib" style="display:none"></span>`}</div>
             <div class="pclass">${p.role}</div>
@@ -1134,15 +1113,27 @@ function renderHeroProfile(i){
           <div class="smini"><div class="v">${p.fragments||0} ✨</div><div class="l">Fragments</div></div>
           <div class="smini"><div class="v">${p.missions}</div><div class="l">Missions</div></div>
         </div>
-        <div class="stitle" style="margin-bottom:.5rem;">🏅 Insígnies</div>
-        ${renderBadges(p)}
         <div class="pbody">
           <div>
-            <div class="stitle">Atributos</div>
-            ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl" title="'+attrName(k)+'">'+attrName(k)+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(Math.min(100,ev/99*100))+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
-            <div class="pentagon-wrap" style="margin-top:1rem;">${buildPentagon(getEffectiveAttrs(p),p.color)}</div>
-            <div class="stitle" style="margin-top:1rem;">Equipament</div>
-            ${(function(){var eq=Object.values(p.equipped||{}).filter(Boolean);if(!eq.length)return '<div style="font-size:12px;color:var(--muted);">Sense equipament.</div>';var items=eq.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);return '<div class="erow">'+items.map(function(i){return '<span class="epill" style="border-color:var(--gold);color:var(--gold);">'+(i.icon||'')+' '+i.name+'</span>';}).join('')+'</div>';})()}
+            <div class="pstats-row">
+              <div class="pstats-bars">
+                <div class="stitle">Atributs</div>
+                ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl" title="'+attrName(k)+'">'+attrName(k)+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(Math.min(100,ev/99*100))+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
+              </div>
+              <div class="pstats-radar">${buildPentagon(getEffectiveAttrs(p),p.color)}</div>
+            </div>
+            ${(function(){
+              var cosmSlots=SLOT_DEFS.filter(function(s){return s.cosmetic;}).map(function(s){return s.key;});
+              var eqIds=[],cosmIds=[];
+              Object.keys(p.equipped||{}).forEach(function(k){var id=p.equipped[k];if(!id)return;(cosmSlots.indexOf(k)>=0?cosmIds:eqIds).push(id);});
+              function pills(ids,cls,empty){
+                var items=ids.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);
+                if(!items.length)return '<div class="peq-empty">'+empty+'</div>';
+                return '<div class="erow">'+items.map(function(i){return '<span class="epill '+cls+'">'+(i.icon||'')+' '+i.name+'</span>';}).join('')+'</div>';
+              }
+              return '<div class="peq-group"><div class="stitle">⚔️ Equipament</div>'+pills(eqIds,'epill-eq','Sense equipament.')+'</div>'
+                +'<div class="peq-group"><div class="stitle">✨ Cosmètics</div>'+pills(cosmIds,'epill-cosm','Sense cosmètics.')+'</div>';
+            })()}
           </div>
           <div>
             <div class="stitle">Història</div>
@@ -2853,18 +2844,19 @@ function saveAvatar(){
 /* ══ PENTAGON ══ */
 function buildPentagon(attrs,color){
   var keys=attrKeys();
-  var labels=keys.map(function(k){var n=attrName(k)||k;return attrIcon(k)+' '+n.slice(0,4).toUpperCase();});
-  var cx=100,cy=100,r=75,n=keys.length||1;
+  var labels=keys.map(function(k){var n=attrName(k)||k;return n.slice(0,4).toUpperCase();});
+  var cx=130,cy=130,r=98,n=keys.length||1;
   var bgLvls=[0.25,0.5,0.75,1.0];
   var bgSvg=bgLvls.map(function(lv){
     var pts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;return (cx+r*lv*Math.cos(a)).toFixed(1)+','+(cy+r*lv*Math.sin(a)).toFixed(1);}).join(' ');
     return '<polygon class="penta-bg" points="'+pts+'"/>';
   }).join('');
   var axes=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;return '<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+r*Math.cos(a)).toFixed(1)+'" y2="'+(cy+r*Math.sin(a)).toFixed(1)+'" stroke="var(--border)" stroke-width="1"/>';}).join('');
-  var dataPts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;var v=Math.min(100,attrs[k]||0)/100;return {x:cx+r*v*Math.cos(a),y:cy+r*v*Math.sin(a),lx:cx+(r+20)*Math.cos(a),ly:cy+(r+20)*Math.sin(a),label:labels[i],val:attrs[k]||0};});
+  var dataPts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;var v=Math.min(100,attrs[k]||0)/100;return {x:cx+r*v*Math.cos(a),y:cy+r*v*Math.sin(a),lx:cx+(r+22)*Math.cos(a),ly:cy+(r+22)*Math.sin(a),label:labels[i],val:attrs[k]||0};});
   var fillPts=dataPts.map(function(p){return p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');
-  var lblSvg=dataPts.map(function(p){return '<text class="penta-label" x="'+p.lx.toFixed(1)+'" y="'+p.ly.toFixed(1)+'" text-anchor="middle" dominant-baseline="middle">'+p.label+'</text><text class="penta-value" x="'+(p.x+(p.lx-p.x)*0.45).toFixed(1)+'" y="'+(p.y+(p.ly-p.y)*0.45).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" fill="'+color+'">'+p.val+'</text>';}).join('');
-  return '<svg width="200" height="200" viewBox="0 0 200 200" style="overflow:visible">'+bgSvg+axes+'<polygon class="penta-fill" points="'+fillPts+'" fill="'+color+'" stroke="'+color+'"/>'+lblSvg+'</svg>';
+  var dots=dataPts.map(function(p){return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="3" fill="'+color+'"/>';}).join('');
+  var lblSvg=dataPts.map(function(p){return '<text class="penta-label" x="'+p.lx.toFixed(1)+'" y="'+p.ly.toFixed(1)+'" text-anchor="middle" dominant-baseline="middle">'+p.label+'</text><text class="penta-value" x="'+(p.x+(p.lx-p.x)*0.4).toFixed(1)+'" y="'+(p.y+(p.ly-p.y)*0.4).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" fill="'+color+'">'+p.val+'</text>';}).join('');
+  return '<svg width="260" height="260" viewBox="0 0 260 260" style="overflow:visible;max-width:100%;">'+bgSvg+axes+'<polygon class="penta-fill" points="'+fillPts+'" fill="'+color+'" stroke="'+color+'"/>'+dots+lblSvg+'</svg>';
 }
 
 /* ══ INVENTARIO ══ */
