@@ -1,0 +1,9 @@
+# Copias de seguridad locales
+_backup_*/
+
+# Configuración local de Claude Code
+.claude/
+
+# Ficheros del sistema
+.DS_Store
+Thumbs.db

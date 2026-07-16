@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>BMC Global — Cuartel General</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="toast"></div>
+<div id="widget-picker-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;padding:1rem;" onclick="if(event.target===this)closeWidgetPicker()">
+  <div style="background:var(--bg2);border:3px solid var(--accent);border-radius:var(--radius-lg);max-width:560px;width:100%;max-height:80vh;overflow-y:auto;padding:1.25rem;box-shadow:0 10px 40px rgba(0,0,0,.4);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div class="stitle" style="margin:0;">Els meus widgets</div>
+      <button class="btn btn-sm" onclick="closeWidgetPicker()">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Activa els widgets que vulguis veure al teu tauler.</div>
+    <div id="widget-picker-list"></div>
+  </div>
+</div>
+<div id="showcase-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;padding:1rem;" onclick="if(event.target===this)closeShowcaseModal()">
+  <div style="background:var(--bg2);border:3px solid var(--accent);border-radius:var(--radius-lg);max-width:520px;width:100%;max-height:80vh;overflow-y:auto;padding:1.25rem;box-shadow:0 10px 40px rgba(0,0,0,.4);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div class="stitle" style="margin:0;">Tria una carta</div>
+      <button class="btn btn-sm" onclick="closeShowcaseModal()">✕</button>
+    </div>
+    <div id="showcase-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;"></div>
+  </div>
+</div>
+
+<div class="levelup-pop" id="levelup-pop">
+  <div class="levelup-box">
+    <div style="font-size:42px;margin-bottom:.5rem;">⬆️</div>
+    <div style="font-size:22px;font-weight:700;color:var(--gold);margin-bottom:.25rem;">¡Subiste de nivel!</div>
+    <div id="lu-level" style="font-size:14px;color:var(--muted);margin-bottom:1rem;"></div>
+    <div style="font-size:13px;color:var(--text);margin-bottom:.5rem;">Puntos disponibles: <span class="pts-left" id="lu-pts">3</span></div>
+    <div id="lu-attrs" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:1rem 0;"></div>
+    <button class="btn btn-p" id="lu-confirm" onclick="confirmLevelUp()" style="margin-top:.5rem;width:100%;">Confirmar</button>
+  </div>
+</div>
+
+<div class="reward-pop" id="reward-pop">
+  <div class="reward-box">
+    <div class="reward-emoji" id="rp-emoji">⚔️</div>
+    <div class="reward-title" id="rp-title">¡Misión completada!</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:.5rem;" id="rp-mission"></div>
+    <div class="reward-chips" id="rp-chips"></div>
+    <button class="btn btn-p" onclick="closeReward()">¡Reclamar!</button>
+  </div>
+</div>
+
+<!-- BIENVENIDA -->
+<div id="screen-welcome" class="centered" style="padding:1rem;">
+  <div class="lbox">
+    <div style="margin-bottom:1.5rem;text-align:center;">
+      <img src="https://bmcglobal.net/wp-content/uploads/logo-bmcglobal.png" alt="BMC Global" style="max-width:180px;height:auto;"/>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="btn btn-p" onclick="showScreen('screen-new')">Crea el meu personatge</button>
+      <button class="btn" onclick="showScreen('screen-login')">Ja tinc personatge</button>
+      <button class="btn" style="border-color:rgba(228,164,40,.3);color:var(--gold);" onclick="showScreen('screen-admin')">Entrar com a admin 👑</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- LOGIN -->
+<div id="screen-login" style="display:none;" class="centered">
+  <div class="lbox">
+    <h2>Bienvenido de nuevo</h2>
+    <p>Introduce tu nombre de personaje y contraseña.</p>
+    <div class="field"><label>Nom del personatge</label><input type="text" id="ln" placeholder="Ej: Aldric el Arcano"/></div>
+    <div class="field"><label>Contraseña</label><input type="password" id="lp" placeholder="Tu contraseña"/><div class="errmsg" id="lerr">Nombre o contraseña incorrectos.</div></div>
+    <div style="display:flex;gap:8px;"><button class="btn" onclick="showScreen('screen-welcome')">← Enrere</button><button class="btn btn-p" style="flex:1" onclick="doLogin()">Entrar</button></div>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div id="screen-admin" style="display:none;" class="centered">
+  <div class="lbox">
+    <h2>Acceso admin 👑</h2>
+    <p>Introduce la contraseña de administrador.</p>
+    <div class="field"><label>Contraseña admin</label><input type="password" id="ap" placeholder="Contraseña"/><div class="errmsg" id="aerr">Contraseña incorrecta.</div></div>
+    <div style="display:flex;gap:8px;"><button class="btn" onclick="showScreen('screen-welcome')">← Enrere</button><button class="btn btn-p" style="flex:1" onclick="doAdminLogin()">Entrar</button></div>
+  </div>
+</div>
+
+<!-- CREADOR -->
+<div id="screen-new" style="display:none;padding:2rem 1rem;">
+  <div style="max-width:560px;margin:0 auto;">
+    <div style="font-size:28px;margin-bottom:.5rem;">⚔️</div>
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:.25rem;">Crea tu personaje</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:1.5rem;">Podrás editar el lore y aspecto después.</p>
+    <div class="steps" id="csteps">
+      <div class="stepi active" onclick="cGoTo(0)">1 · Identidad</div>
+      <div class="stepi" onclick="cGoTo(1)">2 · Clase</div>
+      <div class="stepi" onclick="cGoTo(2)">3 · Aspecto</div>
+      <div class="stepi" onclick="cGoTo(3)">4 · Historia</div>
+    </div>
+    <div class="wp active" id="cp-0">
+      <div class="field"><label>Tu nombre real</label><input type="text" id="cp-rn" placeholder="Ej: Antonio Conde"/></div>
+      <div class="field"><label>Nom del personatge</label><input type="text" id="cp-pn" placeholder="Ej: Seraphine Ojoagudo"/></div>
+      <div class="field"><label>Contraseña</label><input type="password" id="cp-pin" placeholder="Para editar tu ficha"/></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
+        <button class="btn" onclick="showScreen('screen-welcome')">← Enrere</button>
+        <button class="btn btn-p" onclick="cNext(0)">Siguiente →</button>
+      </div>
+    </div>
+    <div class="wp" id="cp-1">
+      <div class="stitle">Tria la teva classe</div>
+      <div class="cgrid" id="cp-cgrid"></div>
+      <div id="cp-cstats" style="display:none;margin-bottom:1rem;">
+        <div class="stitle">Atributos de esta clase</div>
+        <div id="cp-abars"></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button class="btn" onclick="cGoTo(0)">← Enrere</button>
+        <button class="btn btn-p" onclick="cNext(1)">Siguiente →</button>
+      </div>
+    </div>
+    <div class="wp" id="cp-2">
+      <div class="stitle">Color del personatge</div>
+      <div class="crow" id="cp-colors"></div>
+      <div class="stitle">Emblema</div>
+      <div id="cp-emblems" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;"></div>
+      <div class="stitle">Equipament inicial</div>
+      <div class="g3" id="cp-equip" style="gap:8px;"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
+        <button class="btn" onclick="cGoTo(1)">← Enrere</button>
+        <button class="btn btn-p" onclick="cNext(2)">Siguiente →</button>
+      </div>
+    </div>
+    <div class="wp" id="cp-3">
+      <div class="field"><label>Història del personatge</label><textarea id="cp-lore" placeholder="¿De dónde viene? ¿Cuál es su motivación en el equipo?"></textarea></div>
+      <div class="field"><label>Frase de batalla</label><input type="text" id="cp-quote" placeholder="Ej: El código no falla, fallan los que no lo prueban."/></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
+        <button class="btn" onclick="cGoTo(2)">← Enrere</button>
+        <button class="btn btn-p" onclick="saveNewChar()">Crear personatge ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="screen-app" style="display:none;">
+  <div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <img src="https://bmcglobal.net/wp-content/uploads/logo-bmcglobal.png" alt="BMC Global" style="max-width:140px;height:auto;display:block;"/>
+    </div>
+    <nav class="nav" role="navigation">
+      <button class="nb active" onclick="showPage('misiones',this)" id="nav-misiones"><span class="nb-icon">⚔️</span>Missions</button>
+      <button class="nb" onclick="showPage('heroe',this)" id="nav-heroe"><span class="nb-icon">🧙</span>Herois</button>
+      <button class="nb" onclick="showPage('arcos',this)" id="nav-arcos"><span class="nb-icon">🗺️</span>Arcs</button>
+      <button class="nb" onclick="showPage('ranking',this)" id="nav-ranking"><span class="nb-icon">🏆</span>Rànquing</button>
+      <button class="nb" onclick="showPage('gacha',this)" id="nav-gacha"><span class="nb-icon">✨</span>Gacha</button>
+      <button class="nb" onclick="showPage('tienda',this)" id="nav-tienda"><span class="nb-icon">🛒</span>Botiga</button>
+      <button class="nb" onclick="showPage('inventario',this)" id="nav-inventario"><span class="nb-icon">🎒</span>Inventari</button>
+      <button class="nb" onclick="showPage('calendario',this)" id="nav-calendario"><span class="nb-icon">📅</span>Calendari</button>
+      <button class="nb" onclick="showPage('planner',this)" id="nav-planner"><span class="nb-icon">📋</span>Planner</button>
+      <button class="nb admin-only" onclick="showPage('items-admin',this)" id="nav-items-admin" style="display:none;border-top:0.5px solid var(--border);margin-top:4px;"><span class="nb-icon">⚙️</span>Items</button>
+      <button class="nb admin-only" onclick="showPage('classes-admin',this)" id="nav-classes-admin" style="display:none;"><span class="nb-icon">🎭</span>Classes</button>
+      <button class="nb admin-only" onclick="showPage('widgets-admin',this)" id="nav-widgets-admin" style="display:none;"><span class="nb-icon">🧩</span>Widgets</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar tema" style="width:100%;margin-bottom:.5rem;justify-content:flex-start;gap:8px;padding:7px 12px;border-radius:var(--radius);border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s;display:flex;align-items:center;">☀️ <span id="theme-label">Mode clar</span></button>
+      <div id="umenu-inline" style="display:none;margin-bottom:.5rem;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius);padding:.5rem;">
+        <div style="padding:6px 8px;font-size:12px;color:var(--muted);border-bottom:0.5px solid var(--border);margin-bottom:4px;" id="umname">—</div>
+        <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="goToMyProfile()">👤 Mi perfil</button>
+        <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="openEditModal(session.playerId)">✏️ Editar personaje</button>
+        <button class="btn btn-sm btn-g" style="width:100%;text-align:left;margin-bottom:2px;" onclick="exportJSON()">⬇️ Exportar JSON</button>
+        <button class="btn btn-sm" style="width:100%;text-align:left;" onclick="doLogout()">← Cerrar sesión</button>
+      </div>
+      <div class="upill" onclick="toggleUMenu()" id="upill" style="width:100%;justify-content:flex-start;gap:8px;">
+        <span id="sidebar-mini-avatar" style="display:none;"></span>
+        <span class="udot" id="udot-fallback"></span><span id="ulabel">—</span>
+      </div>
+    </div>
+  </aside>
+  <div class="app">
+
+    <!-- MISIONES -->
+    <div id="page-misiones" class="page active">
+      <!-- Widgets del usuario (se rellenan dinámicamente desde el catálogo del admin) -->
+      <div id="user-widgets" style="margin-bottom:1.5rem;"></div>
+      <div class="g4" style="margin-bottom:1.5rem;" id="mstats"></div>
+
+      <!-- Crear misión -->
+      <details class="create-panel" id="panel-new-mission">
+        <summary>Nova missió</summary>
+        <div class="create-form">
+          <div class="field full"><label>Nom de la missió</label><input type="text" id="nm-name" placeholder="Ej: Revisar el backlog"/></div>
+          <div class="field"><label>Arco</label><select id="nm-arc"></select></div>
+          <div class="field"><label>Tipo</label>
+            <select id="nm-type" onchange="toggleDailyFields()">
+              <option value="normal">Misión normal</option>
+              <option value="daily">Missió diària (es repeteix cada dia automàticament)</option>
+            </select>
+          </div>
+          <div class="field full" id="nm-diff-wrap" style="display:none;"></div>
+          <div class="field full"><label>Descripció (opcional)</label><textarea id="nm-desc" placeholder="Describe en qué consiste esta misión..." style="min-height:56px;"></textarea></div>
+          <div class="field"><label>Data límit (opcional)</label><input type="date" id="nm-deadline"/></div>
+          <div class="field full" style="display:flex;justify-content:flex-end;">
+            <button class="btn btn-p" onclick="createMission()">Crear misión</button>
+          </div>
+        </div>
+      </details>
+
+      <!-- Crear arco -->
+      <details class="create-panel" id="panel-new-arc">
+        <summary>Nou arc</summary>
+        <div class="create-form">
+          <div class="field"><label>Nom de l'arc</label><input type="text" id="na-name" placeholder="Ej: La Conquista del Q3"/></div>
+          <div class="field"><label>Estado</label>
+            <select id="na-status"><option value="active">Actiu</option><option value="blocked">Blocat</option></select>
+          </div>
+          <div class="field full"><label>Descripció</label><textarea id="na-desc" placeholder="El equipo se embarca en..." style="min-height:56px;"></textarea></div>
+          <div class="field full" style="display:flex;justify-content:flex-end;">
+            <button class="btn btn-p" onclick="createArc()">Crear arco</button>
+          </div>
+        </div>
+      </details>
+
+      <div><div class="stitle">Diàries <span class="daily-rib">HOY</span></div><div id="m-daily"></div></div>
+      <div style="margin-top:1.25rem;"><div class="stitle">En curso</div><div id="m-active"></div></div>
+      <div style="margin-top:1.25rem;"><div class="stitle">Pendents</div><div id="m-pending"></div></div>
+      <div style="margin-top:1.25rem;"><div class="stitle">Completades</div><div id="m-done"></div></div>
+    </div>
+
+    <!-- HÉROES -->
+    <div id="page-heroe" class="page">
+      <div class="htabs" id="htabs"></div>
+      <div id="hprofile"></div>
+    </div>
+
+    <!-- INVENTARIO -->
+    <div id="page-inventario" class="page">
+      <div style="margin-bottom:1.25rem;">
+        <div style="font-size:18px;font-weight:500;margin-bottom:4px;">Inventari</div>
+        <div style="font-size:13px;color:var(--muted);">Equipa los items que has comprado o conseguido.</div>
+      </div>
+      <div class="inv-3col">
+        <div class="inv-col">
+          <div class="stitle">⚔️ Equip</div>
+          <div id="inv-slots-equip"></div>
+        </div>
+        <div class="inv-col">
+          <div class="stitle">✨ Cosmètics</div>
+          <div id="inv-slots-cosm"></div>
+        </div>
+        <div class="inv-col inv-col-catalog">
+          <div class="stitle">Motxilla</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:.75rem;">
+            <input type="text" id="inv-search" placeholder="🔍 Cercar..." oninput="renderInventario()" style="flex:1;min-width:120px;padding:7px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);outline:none;"/>
+            <select id="inv-filter-slot" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+              <option value="">Tots els slots</option>
+            </select>
+            <select id="inv-filter-rarity" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+              <option value="">Totes les rareses</option>
+              <option value="comun">Comú</option>
+              <option value="rara">Rara</option>
+              <option value="epica">Èpica</option>
+              <option value="legendaria">Llegendària</option>
+            </select>
+            <select id="inv-sort" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+              <option value="rarity">Raresa</option>
+              <option value="name">Nom</option>
+            </select>
+          </div>
+          <div class="inv-grid" id="inv-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ARCOS -->
+    <div id="page-arcos" class="page">
+      <div class="card" style="margin-bottom:1.25rem;background:var(--accent-bg);border-color:var(--accent-border);">
+        <div style="font-size:15px;font-weight:500;margin-bottom:.5rem;">📖 ¿Cómo funcionan los Arcos?</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.8;">
+          Los <strong>Arcs</strong> son agrupaciones de misiones con un objetivo común — como un sprint o un proyecto.<br>
+          • Crea un arco desde <strong>Misiones → Nou arc</strong><br>
+          • Asigna misiones a ese arco al crearlas<br>
+          • Al completar <strong>todas las misiones</strong> del arco recibes un bonus de XP y oro igual a la suma de todas<br>
+          • El progreso del arco se actualiza automáticamente<br>
+          • Cuando creas tu personaje se genera el arco <strong>"Tutorial: Primeros Pasos"</strong> con 5 misiones para empezar
+        </div>
+      </div>
+      <div id="arcs-list"></div>
+      <div class="g2" id="arcs-grid"></div>
+    </div>
+
+    <!-- RANKING -->
+    <div id="page-ranking" class="page">
+      <div class="card"><div class="stitle">Tabla de héroes</div><div id="rank-list"></div></div>
+    </div>
+
+    <!-- GACHA -->
+    <div id="page-gacha" class="page">
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="stitle">Invocación</div>
+        <div class="gacha-wrap">
+          <div class="gacha-cost">Cost: <span>100 ✨</span> per tirada · <span>900 ✨</span> per 10 tirades</div>
+          <div id="gacha-gold-display" style="font-size:22px;font-weight:700;color:var(--gold);margin-bottom:1rem;">0 oro</div>
+          <div class="gacha-btn-wrap">
+            <button class="btn btn-gold" onclick="doPull(1)">✨ Invocar x1 (100 ✨)</button>
+            <button class="btn btn-gold" onclick="doPull(10)">✨ Invocar x10 (900 ✨)</button>
+          </div>
+          <div class="card-reveal" id="card-reveal"></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:.75rem;">
+          Probabilidades: Común 60% · Rara 25% · Épica 12% · Legendaria 3%
+        </div>
+      </div>
+      <div class="card">
+        <div class="stitle">Mi galería</div>
+        <div id="my-gallery"></div>
+      </div>
+      <div class="card" style="margin-top:1rem;">
+        <div class="stitle">Galeria de l'equip</div>
+        <div class="htabs" id="gallery-tabs"></div>
+        <div id="team-gallery"></div>
+      </div>
+    </div>
+
+    <!-- TIENDA -->
+    <div id="page-tienda" class="page">
+      <div id="my-equipped"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:1rem;margin-top:.5rem;">
+        <input type="text" id="shop-search" placeholder="🔍 Cercar ítem..." oninput="renderShop()" style="flex:1;min-width:160px;padding:7px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);outline:none;"/>
+        <select id="shop-filter-slot" onchange="renderShop()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="">Tots els slots</option>
+          <option value="arma">Arma</option>
+          <option value="armadura">Armadura</option>
+          <option value="accesorio">Accessori</option>
+          <option value="casco">Casc</option>
+          <option value="botas">Botes</option>
+        </select>
+        <select id="shop-filter-rarity" onchange="renderShop()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="">Totes les rareses</option>
+          <option value="comun">Comú</option>
+          <option value="rara">Rara</option>
+          <option value="epica">Èpica</option>
+          <option value="legendaria">Llegendària</option>
+        </select>
+        <select id="shop-sort" onchange="renderShop()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="rarity">Ordenar: Raresa</option>
+          <option value="name">Ordenar: Nom</option>
+          <option value="cost-asc">Ordenar: Preu ↑</option>
+          <option value="cost-desc">Ordenar: Preu ↓</option>
+        </select>
+      </div>
+      <div id="shop-grid-wrap"></div>
+    </div>
+
+    <!-- CALENDARIO -->
+    <div id="page-calendario" class="page">
+      <div class="cal-header">
+        <div class="cal-month" id="cal-month-label">Junio 2026</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="display:flex;gap:4px;">
+            <button class="btn btn-sm" id="cal-filter-all" onclick="setCalFilter('all',this)" style="font-size:11px;">Todos</button>
+            <button class="btn btn-sm" id="cal-filter-personal" onclick="setCalFilter('personal',this)" style="font-size:11px;">Personal</button>
+            <button class="btn btn-sm" id="cal-filter-team" onclick="setCalFilter('team',this)" style="font-size:11px;">Equip</button>
+            <button class="btn btn-sm" id="cal-filter-mission" onclick="setCalFilter('mission',this)" style="font-size:11px;">Missions</button>
+          </div>
+          <div class="cal-nav">
+            <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+            <button class="cal-nav-btn" onclick="calNav(0)" style="font-size:11px;width:auto;padding:0 8px;">Hoy</button>
+            <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+          </div>
+          <button class="btn btn-sm btn-p" onclick="openEventModal(null)" id="cal-add-btn">+ Evento</button>
+        </div>
+      </div>
+      <div class="cal-shell">
+        <div class="cal-main">
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+        <div class="cal-sidebar">
+          <div class="card">
+            <div class="stitle" id="cal-selected-label">Hoy</div>
+            <div class="event-list" id="cal-day-events">
+              <div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin eventos.</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="stitle">Propers esdeveniments</div>
+            <div class="event-list" id="cal-upcoming"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ITEMS ADMIN -->
+    <div id="page-items-admin" class="page">
+      <div style="margin-bottom:1.25rem;">
+        <div style="font-size:18px;font-weight:500;margin-bottom:4px;">⚙️ Gestió d'Ítems i Cartes</div>
+        <div style="font-size:13px;color:var(--muted);">Crea, edita i assigna els ítems i les cartes del gacha.</div>
+      </div>
+      <!-- Tabs -->
+      <div style="display:flex;gap:0;border-bottom:0.5px solid var(--border);margin-bottom:1.25rem;">
+        <div class="ptab active" onclick="switchAdminTab(this,'tab-items')" id="admin-tab-items">Ítems</div>
+        <div class="ptab" onclick="switchAdminTab(this,'tab-cartas')" id="admin-tab-cartas">Cartes Gacha</div>
+        <div class="ptab" onclick="switchAdminTab(this,'tab-custom')" id="admin-tab-custom">Customitzables</div>
+      </div>
+      <div id="tab-items">
+      <!-- Crear item -->
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="stitle">Nou ítem</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Nom</label><input type="text" id="ai-name" placeholder="Espasa de l'Abisme"/></div>
+          <div class="field"><label>Icona (emoji)</label><input type="text" id="ai-icon" placeholder="⚔️" maxlength="2"/></div>
+          <div class="field"><label>URL Imatge (opcional)</label><input type="text" id="ai-imageurl" placeholder="https://..."/></div>
+          <div class="field"><label>Descripció</label><input type="text" id="ai-desc" placeholder="Forjada a les ombres..."/></div>
+          <div class="field"><label>Slot</label>
+            <select id="ai-slot">
+              <option value="arma">Arma</option>
+              <option value="armadura">Armadura</option>
+              <option value="accesorio">Accessori</option>
+              <option value="casco">Casc</option>
+              <option value="botas">Botes</option>
+            </select>
+          </div>
+          <div class="field"><label>Raresa</label>
+            <select id="ai-rarity">
+              <option value="comun">Comú</option>
+              <option value="rara">Rara</option>
+              <option value="epica">Èpica</option>
+              <option value="legendaria">Llegendària</option>
+            </select>
+          </div>
+          <div class="field"><label>Cost (or)</label><input type="number" id="ai-cost" placeholder="200" min="0"/></div>
+          <div class="field"><label>Nivell mínim</label><input type="number" id="ai-lvl" placeholder="1" min="1"/></div>
+          <div class="field"><label>Disponible a</label>
+            <select id="ai-via">
+              <option value="tienda">Botiga + Gacha</option>
+              <option value="gacha">Només Gacha</option>
+              <option value="solo_tienda">Només Botiga</option>
+            </select>
+          </div>
+          <div class="field"></div>
+          <div style="grid-column:1/-1;">
+            <div class="stitle">Requisits d'atributs (0 = sense requisit)</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
+              <div class="field" style="margin:0;"><label>Força mín.</label><input type="number" id="ai-rfue" value="0" min="0"/></div>
+              <div class="field" style="margin:0;"><label>Int. mín.</label><input type="number" id="ai-rint" value="0" min="0"/></div>
+              <div class="field" style="margin:0;"><label>Agi. mín.</label><input type="number" id="ai-ragi" value="0" min="0"/></div>
+              <div class="field" style="margin:0;"><label>Car. mín.</label><input type="number" id="ai-rcar" value="0" min="0"/></div>
+              <div class="field" style="margin:0;"><label>Sav. mín.</label><input type="number" id="ai-rsab" value="0" min="0"/></div>
+            </div>
+          </div>
+          <div style="grid-column:1/-1;">
+            <div class="stitle">Bonus d'atributs en equipar (0 = sense bonus)</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
+              <div class="field" style="margin:0;"><label>+Força</label><input type="number" id="ai-bfue" value="0" min="0"/></div>
+              <div class="field" style="margin:0;"><label>+Int.</label><input type="number" id="ai-bint" value="0" min="0"/></div>
+              <div class="field" style="margin:0;"><label>+Agi.</label><input type="number" id="ai-bagi" value="0" min="0"/></div>
+              <div class="field" style="margin:0;"><label>+Car.</label><input type="number" id="ai-bcar" value="0" min="0"/></div>
+              <div class="field" style="margin:0;"><label>+Sav.</label><input type="number" id="ai-bsab" value="0" min="0"/></div>
+            </div>
+          </div>
+          <div style="grid-column:1/-1;display:flex;justify-content:flex-end;">
+            <button class="btn btn-p" onclick="adminCreateItemFull()">+ Crear ítem</button>
+          </div>
+        </div>
+      </div>
+      <!-- Items list -->
+      <div class="card">
+        <div style="margin-bottom:.5rem;"><div class="stitle" style="margin:0;">Ítems existents (<span id="ai-count">0</span>)</div></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem;">
+          <input type="text" id="ai-search" placeholder="🔍 Cercar ítem..." oninput="renderAdminItemsPage()" style="flex:1;min-width:150px;padding:6px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);outline:none;"/>
+          <select id="ai-filter-slot" onchange="renderAdminItemsPage()" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+            <option value="">Tots els slots</option>
+            <option value="arma">Arma</option><option value="armadura">Armadura</option>
+            <option value="accesorio">Accessori</option><option value="casco">Casc</option><option value="botas">Botes</option>
+          </select>
+          <select id="ai-filter-rarity" onchange="renderAdminItemsPage()" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+            <option value="">Totes les rareses</option>
+            <option value="comun">Comú</option><option value="rara">Rara</option>
+            <option value="epica">Èpica</option><option value="legendaria">Llegendària</option>
+          </select>
+          <select id="ai-filter-via" onchange="renderAdminItemsPage()" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+            <option value="">Totes les ubicacions</option>
+            <option value="tienda">Botiga+Gacha</option>
+            <option value="gacha">Només Gacha</option>
+            <option value="solo_tienda">Només Botiga</option>
+          </select>
+        </div>
+        <div id="ai-list"></div>
+      </div>
+      </div><!-- end tab-items -->
+
+      <!-- TAB CARTES -->
+      <div id="tab-cartas" style="display:none;">
+        <div class="card" style="margin-bottom:1.25rem;">
+          <div class="stitle">Nova carta</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="field"><label>Nom</label><input type="text" id="ac-name" placeholder="Espasa Rúnica"/></div>
+            <div class="field"><label>Raresa</label>
+              <select id="ac-rarity">
+                <option value="comun">Comú</option>
+                <option value="rara">Rara</option>
+                <option value="epica">Èpica</option>
+                <option value="legendaria">Llegendària</option>
+              </select>
+            </div>
+            <div class="field"><label>URL Imatge</label><input type="text" id="ac-imageurl" placeholder="https://..."/></div>
+            <div class="field"><label>Descripció</label><input type="text" id="ac-desc" placeholder="Una carta llegendària..."/></div>
+            <div style="grid-column:1/-1;display:flex;justify-content:flex-end;">
+              <button class="btn btn-p" onclick="adminCreateCarta()">+ Crear carta</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <div class="stitle" style="margin:0;">Cartes existents (<span id="ac-count">0</span>)</div>
+            <select id="ac-filter-rarity" onchange="renderAdminCartasPage()" style="padding:5px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+              <option value="">Totes les rareses</option>
+              <option value="comun">Comú</option>
+              <option value="rara">Rara</option>
+              <option value="epica">Èpica</option>
+              <option value="legendaria">Llegendària</option>
+            </select>
+          </div>
+          <div id="ac-list"></div>
+        </div>
+      </div><!-- end tab-cartas -->
+
+      <div id="tab-custom" style="display:none;">
+        <div class="card" style="margin-bottom:1.25rem;">
+          <div class="stitle">Nou cosmètic</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Crea objectes cosmètics (peinats, ulleres, capes...) que es superposen al avatar. Funcionen com ítems: es compren o s'obtenen al gacha.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="field"><label>Nom</label><input type="text" id="cu-name" placeholder="Capa Estelar"/></div>
+            <div class="field"><label>Icona (emoji)</label><input type="text" id="cu-icon" placeholder="🧥" maxlength="2"/></div>
+            <div class="field" style="grid-column:1/-1;"><label>URL Imatge PNG</label><input type="text" id="cu-imageurl" placeholder="https://..."/></div>
+            <div class="field"><label>Raresa</label>
+              <select id="cu-rarity">
+                <option value="comun">Comú</option><option value="rara">Rara</option>
+                <option value="epica">Èpica</option><option value="legendaria">Llegendària</option>
+              </select>
+            </div>
+            <div class="field"><label>Disponible a</label>
+              <select id="cu-via">
+                <option value="tienda">🛒 Botiga + 🎲 Gacha</option>
+                <option value="solo_tienda">🛒 Només Botiga</option>
+                <option value="gacha">🎲 Només Gacha</option>
+              </select>
+            </div>
+            <div class="field"><label>Cost (or) 🪙</label><input type="number" id="cu-cost" value="0"/></div>
+            <div class="field"><label>Nivell mínim</label><input type="number" id="cu-lvl" value="1"/></div>
+            <div style="grid-column:1/-1;"><div class="stitle" style="margin:4px 0;">Requisits mínims per comprar (0 = cap)</div><div id="cu-reqs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px;"></div></div>
+            <div style="grid-column:1/-1;display:flex;justify-content:flex-end;">
+              <button class="btn btn-p" onclick="createCosmetic()">+ Crear cosmètic</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="stitle" style="margin-bottom:1rem;">Cosmètics existents (<span id="cu-count">0</span>)</div>
+          <div id="cu-list"></div>
+        </div>
+      </div><!-- end tab-custom -->
+
+    </div>
+
+    <!-- PLANNER -->
+    <!-- CLASSES ADMIN -->
+    <div id="page-classes-admin" class="page">
+      <div style="margin-bottom:1.25rem;">
+        <div style="font-size:18px;font-weight:500;margin-bottom:4px;">🎭 Gestió de Classes</div>
+        <div style="font-size:13px;color:var(--muted);">Edita el nom, el rol i les estadístiques base de cada classe.</div>
+      </div>
+      <div id="classes-list"></div>
+    </div>
+
+    <!-- PLANNER -->
+    <div id="page-widgets-admin" class="page">
+      <div class="page-head">
+        <div style="font-size:18px;font-weight:500;margin-bottom:4px;">🧩 Catàleg de Widgets</div>
+        <div style="font-size:13px;color:var(--muted);">Crea widgets externs (Spotify, YouTube, Twitch, calendari...) que els usuaris podran activar al seu tauler.</div>
+      </div>
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="stitle">Nou widget</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Enganxa la URL d'inserció (embed). Per Spotify: obre la playlist → Compartir → Insertar, i copia la URL que comença per open.spotify.com/embed/. Per YouTube: comparteix → Insertar, copia la URL youtube.com/embed/. Per Twitch: player.twitch.tv/?channel=NOM&parent=el-teu-domini.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Nom</label><input type="text" id="wg-name" placeholder="La meva playlist"/></div>
+          <div class="field"><label>Icona (emoji)</label><input type="text" id="wg-icon" placeholder="🎵" maxlength="2"/></div>
+          <div class="field"><label>Tipus</label>
+            <select id="wg-type">
+              <option value="spotify">🎵 Spotify</option>
+              <option value="youtube">▶️ YouTube</option>
+              <option value="twitch">🎮 Twitch</option>
+              <option value="calendar">📅 Google Calendar</option>
+              <option value="other">🌐 Altre (iframe)</option>
+            </select>
+          </div>
+          <div class="field"><label>Alçada (px)</label><input type="number" id="wg-height" value="152"/></div>
+          <div class="field full"><label>URL d'inserció (embed)</label><input type="text" id="wg-url" placeholder="https://open.spotify.com/embed/playlist/..."/></div>
+          <div class="field full" style="display:flex;justify-content:flex-end;">
+            <button class="btn btn-p" onclick="createWidget()">+ Crear widget</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="stitle" style="margin-bottom:1rem;">Widgets del catàleg (<span id="wg-count">0</span>)</div>
+        <div id="wg-list"></div>
+      </div>
+    </div>
+    <div id="page-planner" class="page">
+      <div style="margin-bottom:1.25rem;">
+        <div style="font-size:18px;font-weight:500;margin-bottom:4px;">Importar des de Planner</div>
+        <div style="font-size:13px;color:var(--muted);">Sube un archivo CSV exportado desde Microsoft Planner y las tareas se convertirán en misiones automáticamente.</div>
+      </div>
+
+      <!-- Instrucciones -->
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="stitle">Com exportar des de Planner</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+          <div style="background:var(--bg3);border-radius:var(--radius);padding:1rem;text-align:center;">
+            <div style="font-size:24px;margin-bottom:6px;">1️⃣</div>
+            <div style="font-size:12px;font-weight:500;margin-bottom:4px;">Obre el teu Pla</div>
+            <div style="font-size:11px;color:var(--muted);">Ve a Microsoft Planner y abre el plan que quieres importar</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--radius);padding:1rem;text-align:center;">
+            <div style="font-size:24px;margin-bottom:6px;">2️⃣</div>
+            <div style="font-size:12px;font-weight:500;margin-bottom:4px;">Exportar a Excel</div>
+            <div style="font-size:11px;color:var(--muted);">Haz clic en ··· → "Exportar plan a Excel" y ábrelo, luego guárdalo como CSV</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--radius);padding:1rem;text-align:center;">
+            <div style="font-size:24px;margin-bottom:6px;">3️⃣</div>
+            <div style="font-size:12px;font-weight:500;margin-bottom:4px;">Puja el CSV</div>
+            <div style="font-size:11px;color:var(--muted);">Arrastra o selecciona el archivo .csv aquí abajo</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload area -->
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="stitle">Subir archivo</div>
+        <div id="planner-drop" style="border:2px dashed var(--border2);border-radius:var(--radius);padding:2.5rem;text-align:center;cursor:pointer;transition:all .15s;" onclick="document.getElementById('planner-file').click()" ondragover="plannerDragOver(event)" ondrop="plannerDrop(event)">
+          <div style="font-size:32px;margin-bottom:8px;">📂</div>
+          <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px;">Arrossega el teu fitxer aquí</div>
+          <div style="font-size:12px;color:var(--muted);">o fes clic per seleccionar — .csv</div>
+          <input type="file" id="planner-file" accept=".csv,.xlsx,.xls" style="display:none;" onchange="plannerFileSelected(this)"/>
+        </div>
+      </div>
+
+      <!-- Preview / mapping -->
+      <div id="planner-preview" style="display:none;">
+        <div class="card" style="margin-bottom:1rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <div class="stitle" style="margin:0;" id="planner-preview-title">Previsualització</div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-sm" onclick="clearPlannerImport()">✕ Cancelar</button>
+              <button class="btn btn-sm btn-p" onclick="confirmPlannerImport()">✓ Importar missions</button>
+            </div>
+          </div>
+          <div style="background:var(--accent-bg);border:0.5px solid var(--accent-border);border-radius:var(--radius);padding:.75rem;margin-bottom:1rem;font-size:12px;color:var(--muted);line-height:1.6;">
+            ✅ Format detectat automàticament. Cada tasca s'importarà com a <strong>missió solta</strong> amb dificultat <strong>C</strong> per defecte (o segons la prioritat del Planner). Es guardaran el creador, l'assignat, les etiquetes i les notes.
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;" id="planner-table"></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Imported missions -->
+      <div id="planner-imported" style="display:none;">
+        <div class="card">
+          <div class="stitle">Misiones importadas desde Planner</div>
+          <div id="planner-missions-list"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  </div>
+</div>
+
+<!-- MODAL EDICIÓN -->
+<div id="modal-edit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;overflow-y:auto;padding:2rem 1rem;">
+  <div style="max-width:480px;margin:0 auto;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:1.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+      <h3 style="font-size:16px;font-weight:600;">Editar personaje</h3>
+      <button class="btn btn-sm" onclick="closeEdit()">✕</button>
+    </div>
+    <div class="field"><label>Nom del personatge</label><input type="text" id="e-name"/></div>
+    <div class="field"><label>Color</label><div class="crow" id="e-colors"></div></div>
+    <div class="field"><label>Emblema</label><div id="e-emblems" style="display:flex;gap:8px;flex-wrap:wrap;"></div></div>
+    <div class="field"><label>Lore</label><textarea id="e-lore"></textarea></div>
+    <div class="field"><label>Frase de batalla</label><input type="text" id="e-quote"/></div>
+    <div id="adm-extras" style="display:none;">
+      <div style="background:rgba(228,164,40,.08);border:1px solid rgba(228,164,40,.2);border-radius:var(--rsm);padding:.75rem;margin-bottom:1rem;">
+        <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:8px;">OPCIONES ADMIN</div>
+        <div class="g2">
+          <div class="field" style="margin:0;"><label>XP</label><input type="number" id="e-xp"/></div>
+          <div class="field" style="margin:0;"><label>Nivell</label><input type="number" id="e-level" min="1"/></div>
+          <div class="field" style="margin:0;"><label>Oro</label><input type="number" id="e-gold"/></div>
+          <div class="field" style="margin:0;"><label>Fragments ✨</label><input type="number" id="e-frag"/></div>
+        </div>
+        <div class="stitle" style="margin-top:10px;">Estadístiques base</div>
+        <div id="e-attrs-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:6px;"></div>
+        <div class="field" style="margin-top:8px;"><label>Clase</label>
+          <select id="e-cls"><option>Mago</option><option>Paladín</option><option>Exploradora</option><option>Guerrero</option><option>Pícaro</option><option>Bardo</option></select>
+        </div>
+      </div>
+    </div>
+    <div id="adm-delete-wrap" style="display:none;margin-bottom:1rem;">
+      <button class="btn btn-sm" style="background:rgba(216,90,48,.15);color:#f08060;border-color:rgba(216,90,48,.3);width:100%;" onclick="deletePlayer()">🗑️ Eliminar personaje</button>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn" onclick="closeEdit()">Cancel·lar</button>
+      <button class="btn btn-p" onclick="saveEdit()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EVENTO CALENDARIO -->
+    <!-- MODAL MISSIÓ -->
+    <div id="mission-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center;" onclick="closeMissionModal()">
+      <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:460px;animation:popIn .2s ease;" onclick="event.stopPropagation()">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <div style="font-size:15px;font-weight:500;" id="mm-name">Missió</div>
+          <button class="btn btn-sm" onclick="closeMissionModal()">✕</button>
+        </div>
+        <div id="mm-badges" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem;"></div>
+        <div id="mm-desc" style="font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:1rem;padding:.75rem;background:var(--bg3);border-radius:var(--radius);"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:1rem;" id="mm-stats"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;" id="mm-actions"></div>
+      </div>
+    </div>
+
+    <div class="cal-modal" id="cal-event-modal">
+      <div class="cal-modal-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+          <h3 style="font-size:15px;font-weight:500;" id="cal-modal-title">Nou esdeveniment</h3>
+          <button class="btn btn-sm" onclick="closeEventModal()">✕</button>
+        </div>
+        <div class="field"><label>Títol</label><input type="text" id="ev-title" placeholder="Reunión de equipo"/></div>
+        <div class="g2">
+          <div class="field"><label>Data</label><input type="date" id="ev-date"/></div>
+          <div class="field"><label>Hora</label><input type="time" id="ev-time" value="09:00"/></div>
+        </div>
+        <div class="field"><label>Descripció</label><textarea id="ev-desc" placeholder="Detalles del evento..." style="min-height:60px;"></textarea></div>
+        <div class="g2">
+          <div class="field"><label>Tipo</label>
+            <select id="ev-type">
+              <option value="personal">Personal</option>
+              <option value="team">Equip</option>
+            </select>
+          </div>
+          <div class="field"><label>Missió vinculada</label>
+            <select id="ev-mission"><option value="">Sense vincular</option></select>
+          </div>
+        </div>
+        <div id="ev-delete-wrap" style="display:none;margin-bottom:.75rem;">
+          <button class="btn btn-sm" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);width:100%;" onclick="deleteEvent()">🗑️ Eliminar esdeveniment</button>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button class="btn" onclick="closeEventModal()">Cancel·lar</button>
+          <button class="btn btn-p" onclick="saveEvent()">Desar</button>
+        </div>
+      </div>
+    </div>
+
+<!-- MODAL EDICIÓ ÍTEM/CARTA ADMIN -->
+<div id="modal-admin-edit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;" onclick="closeAdminEditModal()">
+  <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="font-size:15px;font-weight:500;" id="aem-title">Editar</h3>
+      <button class="btn btn-sm" onclick="closeAdminEditModal()">✕</button>
+    </div>
+    <div id="aem-fields"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem;">
+      <button class="btn" onclick="closeAdminEditModal()">Cancel·lar</button>
+      <button class="btn btn-p" onclick="saveAdminEdit()">Desar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITOR AVATAR -->
+<div id="avatar-editor-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;padding:1rem;" onclick="closeAvatarEditor()">
+  <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="font-size:15px;font-weight:500;">🎨 Editar avatar</h3>
+      <button class="btn btn-sm" onclick="closeAvatarEditor()">✕</button>
+    </div>
+    <div style="display:flex;justify-content:center;margin-bottom:1rem;" id="avatar-editor-preview"></div>
+    <div id="avatar-editor-controls"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem;">
+      <button class="btn" onclick="closeAvatarEditor()">Cancel·lar</button>
+      <button class="btn btn-p" onclick="saveAvatar()">Desar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { createAvatar } from 'https://esm.sh/@dicebear/core@9';
+  import { pixelArt } from 'https://esm.sh/@dicebear/collection@9';
+  window.DiceBearCreate = createAvatar;
+  window.DiceBearPixelArt = pixelArt;
+  window.dispatchEvent(new Event('dicebear-ready'));
+</script>
+<script src="js/app.js"></script>
+</body>
+</html>
