@@ -614,30 +614,46 @@ function renderUserWidgets(){
     if(!w)return;
     var h=p.widgetSizes[wid]||w.height||200;
     html+='<div class="card widget-card widget-'+w.type+'">'
-      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;">'
-        +'<div class="stitle" style="margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(w.icon||'🧩')+' '+w.name+'</div>'
-        +'<div style="display:flex;gap:4px;flex-shrink:0;">'
-          +'<button class="btn btn-sm" title="Fer-lo més petit" onclick="resizeUserWidget(\''+wid+'\',-40)">−</button>'
-          +'<button class="btn btn-sm" title="Fer-lo més gran" onclick="resizeUserWidget(\''+wid+'\',40)">+</button>'
-        +'</div>'
-      +'</div>'
+      +'<div class="stitle" style="margin:0 0 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(w.icon||'🧩')+' '+w.name+'</div>'
       +'<iframe id="wframe-'+wid+'" src="'+w.embedUrl+'" width="100%" height="'+h+'" frameborder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style="border-radius:10px;display:block;height:'+h+'px;"></iframe>'
+      +'<div class="widget-resize" title="Arrossega per canviar la mida" onmousedown="startWidgetResize(event,\''+wid+'\')" ontouchstart="startWidgetResize(event,\''+wid+'\')"><span></span></div>'
       +'</div>';
   });
   html+='</div>';
   cont.innerHTML=html;
 }
-function resizeUserWidget(wid,delta){
-  var p=players.find(function(pl){return pl.id===session.playerId;});
-  if(!p)return;
-  if(!p.widgetSizes)p.widgetSizes={};
-  var w=widgetCatalog.find(function(x){return x.id===wid;});
-  var cur=p.widgetSizes[wid]||(w&&w.height)||200;
-  var next=Math.max(80,Math.min(700,cur+delta));
-  p.widgetSizes[wid]=next;
+var _wResize=null;
+function startWidgetResize(e,wid){
   var fr=document.getElementById('wframe-'+wid);
-  if(fr){fr.style.height=next+'px';fr.height=next;}
-  if(CFG.MODE==='supabase')saveToSupabase();
+  if(!fr)return;
+  if(e.cancelable)e.preventDefault();
+  var y=e.touches?e.touches[0].clientY:e.clientY;
+  _wResize={wid:wid,fr:fr,startY:y,startH:fr.offsetHeight};
+  document.querySelectorAll('.widget-card iframe').forEach(function(f){f.style.pointerEvents='none';});
+  document.body.style.userSelect='none';
+  document.addEventListener('mousemove',onWidgetResizeMove);
+  document.addEventListener('mouseup',endWidgetResize);
+  document.addEventListener('touchmove',onWidgetResizeMove,{passive:false});
+  document.addEventListener('touchend',endWidgetResize);
+}
+function onWidgetResizeMove(e){
+  if(!_wResize)return;
+  if(e.cancelable)e.preventDefault();
+  var y=e.touches?e.touches[0].clientY:e.clientY;
+  var h=Math.max(80,Math.min(800,_wResize.startH+(y-_wResize.startY)));
+  _wResize.fr.style.height=h+'px';_wResize.fr.height=h;
+}
+function endWidgetResize(){
+  if(!_wResize)return;
+  var p=players.find(function(pl){return pl.id===session.playerId;});
+  if(p){if(!p.widgetSizes)p.widgetSizes={};p.widgetSizes[_wResize.wid]=Math.round(_wResize.fr.offsetHeight);if(CFG.MODE==='supabase')saveToSupabase();}
+  document.querySelectorAll('.widget-card iframe').forEach(function(f){f.style.pointerEvents='';});
+  document.body.style.userSelect='';
+  document.removeEventListener('mousemove',onWidgetResizeMove);
+  document.removeEventListener('mouseup',endWidgetResize);
+  document.removeEventListener('touchmove',onWidgetResizeMove);
+  document.removeEventListener('touchend',endWidgetResize);
+  _wResize=null;
 }
 function openWidgetPicker(){
   var p=players.find(function(pl){return pl.id===session.playerId;});
@@ -3041,5 +3057,5 @@ try{window.renderUserWidgets=renderUserWidgets;}catch(e){}
 try{window.renderInicio=renderInicio;}catch(e){}
 try{window.openWidgetPicker=openWidgetPicker;}catch(e){}
 try{window.toggleUserWidget=toggleUserWidget;}catch(e){}
-try{window.resizeUserWidget=resizeUserWidget;}catch(e){}
+try{window.startWidgetResize=startWidgetResize;}catch(e){}
 try{window.closeWidgetPicker=closeWidgetPicker;}catch(e){}

@@ -660,6 +660,10 @@ input:focus,select:focus,textarea:focus{
 /* ── Repositorio de widgets ── */
 .widgets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;}
 .widget-card iframe{display:block;}
+.widget-resize{display:flex;align-items:center;justify-content:center;height:16px;margin-top:6px;cursor:ns-resize;border-radius:8px;touch-action:none;transition:background .15s;}
+.widget-resize:hover{background:var(--bg3);}
+.widget-resize span{display:block;width:36px;height:4px;border-radius:4px;background:var(--border2);}
+.widget-resize:hover span{background:var(--accent);}
 .widget-spotify{border-left:3px solid #1DB954;}
 .widget-youtube{border-left:3px solid #FF0000;}
 .widget-twitch{border-left:3px solid #9146FF;}
