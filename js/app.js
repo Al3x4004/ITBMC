@@ -1163,8 +1163,18 @@ function getRarityByChance(){
 function pullCard(){
   const rarity=getRarityByChance();
   const pool=gachaCards.filter(c=>c.rarity===rarity);
-  if(!pool.length)return gachaCards[Math.floor(Math.random()*gachaCards.length)];
-  return pool[Math.floor(Math.random()*pool.length)];
+  if(pool.length)return pool[Math.floor(Math.random()*pool.length)];
+  // Sin cartas de esa rareza: degradar a la rareza disponible más cercana,
+  // priorizando las MENOS raras (nunca regalar una carta más rara de la sorteada).
+  // RARITY_ORDER va de legendaria(0) → comun(3).
+  var idx=RARITY_ORDER.indexOf(rarity);
+  for(var step=1;step<RARITY_ORDER.length;step++){
+    var lower=RARITY_ORDER[idx+step]; // más común
+    if(lower){var pl=gachaCards.filter(c=>c.rarity===lower);if(pl.length)return pl[Math.floor(Math.random()*pl.length)];}
+    var higher=RARITY_ORDER[idx-step]; // más rara (solo si no hay ninguna más común)
+    if(higher){var ph=gachaCards.filter(c=>c.rarity===higher);if(ph.length)return ph[Math.floor(Math.random()*ph.length)];}
+  }
+  return gachaCards.length?gachaCards[Math.floor(Math.random()*gachaCards.length)]:null;
 }
 
 function pullResult(){
