@@ -288,18 +288,19 @@
         </div>
       </div>
 
-      <!-- Pestaña: Cosméticos / Personalització d'avatar -->
+      <!-- Pestaña: Cosméticos (items customizables + banners) -->
       <div id="inv-tab-cosm" class="inv-tab-panel" style="display:none;">
-        <div class="stitle">✨ Personalitza el teu personatge</div>
         <div class="ava-editor-layout">
           <div class="ava-editor-side">
             <div id="inv-ava-preview" style="display:flex;justify-content:center;"></div>
-            <button class="btn btn-p" style="width:100%;margin-top:12px;" onclick="saveAvatarInline()">💾 Desar canvis</button>
+          </div>
+          <div>
+            <div class="stitle">✨ Cosmètics equipats</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Fes clic a un slot per equipar o treure els cosmètics que tinguis.</div>
+            <div id="inv-slots-cosm"></div>
             <div id="inv-frame-picker"></div>
           </div>
-          <div id="inv-ava-controls"></div>
         </div>
-        <div id="inv-slots-cosm" style="display:none;"></div>
       </div>
 
       <!-- Pestaña: Galería del gacha -->

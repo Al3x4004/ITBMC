@@ -1037,7 +1037,11 @@ const FRAME_TIERS=[
   {key:'bronze',label:'Bronze',min:1,color:'#cd7f32'},
   {key:'silver',label:'Plata',min:5,color:'#9fb2c9'},
   {key:'gold',label:'Or',min:10,color:'#e4a428'},
-  {key:'legend',label:'Llegendari',min:20,color:'#b06be0'}
+  {key:'ruby',label:'Robí',min:15,color:'#d64550'},
+  {key:'legend',label:'Llegendari',min:20,color:'#b06be0'},
+  {key:'emerald',label:'Maragda',min:25,color:'#2ecc8f'},
+  {key:'diamond',label:'Diamant',min:30,color:'#4fd1e0'},
+  {key:'mythic',label:'Mític',min:50,color:'#ff5fa2'}
 ];
 function playerFrame(p){
   if(!p)return FRAME_TIERS[0];
@@ -1360,9 +1364,9 @@ function showInvTab(name,btn){
   if(btn)btn.classList.add('active');
   var p=players.find(function(pl){return pl.id===session.playerId;});
   if(name==='cosm'){
-    var ctrl=document.getElementById('inv-ava-controls');
-    if(p){_avatarEditPid=p.id;getPlayerAvatar(p);renderAvatarEditor('inv-ava-preview','inv-ava-controls');renderFramePicker();}
-    else if(ctrl){ctrl.innerHTML='<div style="font-size:13px;color:var(--muted);">Inicia sessió per personalitzar el teu personatge.</div>';}
+    var pv=document.getElementById('inv-ava-preview');
+    if(p){getPlayerAvatar(p);if(pv)pv.innerHTML=frameWrap(p,renderAvatar(p,'pixel-avatar-lg'));renderInventario();renderFramePicker();}
+    else if(pv){pv.innerHTML='<div style="font-size:13px;color:var(--muted);">Inicia sessió per personalitzar el teu personatge.</div>';}
   }
   if(name==='galeria'){
     var g=document.getElementById('inv-my-gallery');
@@ -2889,6 +2893,8 @@ function renderInventario(){
   if(cosmEl)cosmEl.innerHTML=SLOT_DEFS.filter(function(sl){return COSMETIC_SLOTS.indexOf(sl.key)>=0;}).map(slotCard).join('');
   var galEl=document.getElementById('inv-my-gallery');
   if(galEl)galEl.innerHTML=renderGalleryCards(p.gallery||[]);
+  var avaPv=document.getElementById('inv-ava-preview');
+  if(avaPv)avaPv.innerHTML=frameWrap(p,renderAvatar(p,'pixel-avatar-lg'));
   // Filtro de slot del catálogo (dinámico con todos los slots)
   var slotFilterEl=document.getElementById('inv-filter-slot');
   if(slotFilterEl&&slotFilterEl.options.length<=1){
