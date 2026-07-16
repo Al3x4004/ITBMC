@@ -467,6 +467,9 @@ body::after{
 /* ── Inventario 3 columnas ── */
 .inv-3col{display:grid;grid-template-columns:auto auto 1fr;gap:1rem;align-items:start;}
 .inv-2col{display:grid;grid-template-columns:auto 1fr;gap:1.5rem;align-items:start;}
+.ava-editor-layout{display:grid;grid-template-columns:220px 1fr;gap:1.5rem;align-items:start;}
+.ava-editor-side{position:sticky;top:72px;}
+@media(max-width:720px){.ava-editor-layout{grid-template-columns:1fr;}.ava-editor-side{position:static;}}
 .inv-col{min-width:0;}
 .inv-col-catalog{min-width:0;}
 #inv-slots-equip,#inv-slots-cosm{display:flex;flex-direction:column;gap:8px;}
