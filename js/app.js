@@ -607,17 +607,37 @@ function renderUserWidgets(){
     cont.innerHTML=manageBtn;
     return;
   }
+  if(!p.widgetSizes)p.widgetSizes={};
   var html=manageBtn+'<div class="widgets-grid">';
   p.widgets.forEach(function(wid){
     var w=widgetCatalog.find(function(x){return x.id===wid;});
     if(!w)return;
+    var h=p.widgetSizes[wid]||w.height||200;
     html+='<div class="card widget-card widget-'+w.type+'">'
-      +'<div class="stitle" style="margin-bottom:10px;">'+(w.icon||'🧩')+' '+w.name+'</div>'
-      +'<iframe src="'+w.embedUrl+'" width="100%" height="'+(w.height||152)+'" frameborder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style="border-radius:10px;display:block;"></iframe>'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;">'
+        +'<div class="stitle" style="margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(w.icon||'🧩')+' '+w.name+'</div>'
+        +'<div style="display:flex;gap:4px;flex-shrink:0;">'
+          +'<button class="btn btn-sm" title="Fer-lo més petit" onclick="resizeUserWidget(\''+wid+'\',-40)">−</button>'
+          +'<button class="btn btn-sm" title="Fer-lo més gran" onclick="resizeUserWidget(\''+wid+'\',40)">+</button>'
+        +'</div>'
+      +'</div>'
+      +'<iframe id="wframe-'+wid+'" src="'+w.embedUrl+'" width="100%" height="'+h+'" frameborder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style="border-radius:10px;display:block;height:'+h+'px;"></iframe>'
       +'</div>';
   });
   html+='</div>';
   cont.innerHTML=html;
+}
+function resizeUserWidget(wid,delta){
+  var p=players.find(function(pl){return pl.id===session.playerId;});
+  if(!p)return;
+  if(!p.widgetSizes)p.widgetSizes={};
+  var w=widgetCatalog.find(function(x){return x.id===wid;});
+  var cur=p.widgetSizes[wid]||(w&&w.height)||200;
+  var next=Math.max(80,Math.min(700,cur+delta));
+  p.widgetSizes[wid]=next;
+  var fr=document.getElementById('wframe-'+wid);
+  if(fr){fr.style.height=next+'px';fr.height=next;}
+  if(CFG.MODE==='supabase')saveToSupabase();
 }
 function openWidgetPicker(){
   var p=players.find(function(pl){return pl.id===session.playerId;});
@@ -685,13 +705,11 @@ async function createWidget(){
     name:name,
     icon:document.getElementById('wg-icon').value.trim()||'🧩',
     type:document.getElementById('wg-type').value,
-    embedUrl:url,
-    height:parseInt(document.getElementById('wg-height').value)||152
+    embedUrl:url
   };
   widgetCatalog.push(w);
   persistWidgets();
   ['wg-name','wg-icon','wg-url'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('wg-height').value='152';
   renderWidgetAdmin();
 }
 function deleteWidget(id){
@@ -3023,4 +3041,5 @@ try{window.renderUserWidgets=renderUserWidgets;}catch(e){}
 try{window.renderInicio=renderInicio;}catch(e){}
 try{window.openWidgetPicker=openWidgetPicker;}catch(e){}
 try{window.toggleUserWidget=toggleUserWidget;}catch(e){}
+try{window.resizeUserWidget=resizeUserWidget;}catch(e){}
 try{window.closeWidgetPicker=closeWidgetPicker;}catch(e){}
