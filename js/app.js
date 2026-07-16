@@ -1160,19 +1160,15 @@ function getRarityByChance(){
 
 function pullCard(){
   const rarity=getRarityByChance();
-  const pool=gachaCards.filter(c=>c.rarity===rarity);
-  if(pool.length)return pool[Math.floor(Math.random()*pool.length)];
-  // Sin cartas de esa rareza: degradar a la rareza disponible más cercana,
-  // priorizando las MENOS raras (nunca regalar una carta más rara de la sorteada).
+  // Solo se puede obtener una carta de la rareza sorteada o MÁS COMÚN (nunca más rara).
+  // Así una legendaria única solo sale en su tirada real (~1%), no como relleno.
   // RARITY_ORDER va de legendaria(0) → comun(3).
   var idx=RARITY_ORDER.indexOf(rarity);
-  for(var step=1;step<RARITY_ORDER.length;step++){
-    var lower=RARITY_ORDER[idx+step]; // más común
-    if(lower){var pl=gachaCards.filter(c=>c.rarity===lower);if(pl.length)return pl[Math.floor(Math.random()*pl.length)];}
-    var higher=RARITY_ORDER[idx-step]; // más rara (solo si no hay ninguna más común)
-    if(higher){var ph=gachaCards.filter(c=>c.rarity===higher);if(ph.length)return ph[Math.floor(Math.random()*ph.length)];}
+  for(var i=idx;i<RARITY_ORDER.length;i++){
+    var pool=gachaCards.filter(c=>c.rarity===RARITY_ORDER[i]);
+    if(pool.length)return pool[Math.floor(Math.random()*pool.length)];
   }
-  return gachaCards.length?gachaCards[Math.floor(Math.random()*gachaCards.length)]:null;
+  return null; // no hay cartas de esa rareza ni de una más común
 }
 
 function pullResult(){
@@ -1180,10 +1176,11 @@ function pullResult(){
   if(gachaItems.length&&Math.random()<0.3){
     return {type:'item',data:gachaItems[Math.floor(Math.random()*gachaItems.length)]};
   }
-  if(!gachaCards.length)return null;
   const card=pullCard();
-  if(!card)return null;
-  return {type:'card',data:card};
+  if(card)return {type:'card',data:card};
+  // No hay carta de la rareza sorteada (ni más común): dar un objeto si existe
+  if(gachaItems.length)return {type:'item',data:gachaItems[Math.floor(Math.random()*gachaItems.length)]};
+  return null;
 }
 function doPull(times){
   const p=players.find(pl=>pl.id===session.playerId);
@@ -1195,7 +1192,10 @@ function doPull(times){
     p.fragments-=cost;
   }
   const results=Array.from({length:times},()=>pullResult()).filter(r=>r!==null);
-  if(!results.length){toast('No hi ha cartes disponibles.');return;}
+  // Devolver fragmentos de las tiradas vacías (rareza sorteada sin cartas ni objetos)
+  const emptyPulls=times-results.length;
+  if(emptyPulls>0&&!session.isAdmin)p.fragments+=emptyPulls*costPerPull;
+  if(!results.length){toast('No hi ha cartes ni objectes disponibles.');renderGachaGold();return;}
   if(!p.gallery)p.gallery=[];
   if(!p.inventory)p.inventory=[];
   var refund=0,dupes=0;
