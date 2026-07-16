@@ -487,7 +487,6 @@ function enterApp(){
   (function(){var _x=document.getElementById('umname');if(_x)_x.textContent=session.isAdmin?'👑 Dios':(p?p.name:'—');})();
   renderAll();
   try{renderInicio();}catch(e){}
-  var _sa=document.getElementById('screen-app');if(_sa)_sa.classList.add('wide');
 }
 function toggleUMenu(){
   const m=document.getElementById('umenu-inline');
@@ -792,7 +791,6 @@ function persistWidgets(){
 function showPage(name,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
-  var _sa=document.getElementById('screen-app');if(_sa)_sa.classList.toggle('wide',name==='inicio');
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
   if(name==='heroe')renderHeroProfile(curHero);
