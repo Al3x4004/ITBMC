@@ -470,6 +470,20 @@ body::after{
 .ava-editor-layout{display:grid;grid-template-columns:220px 1fr;gap:1.5rem;align-items:start;}
 .ava-editor-side{position:sticky;top:72px;}
 @media(max-width:720px){.ava-editor-layout{grid-template-columns:1fr;}.ava-editor-side{position:static;}}
+/* Marc del perfil */
+.ava-frame{display:inline-block;padding:4px;border-radius:14px;border:3px solid var(--frame);box-shadow:0 0 8px var(--frame);}
+.frame-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;margin-top:8px;}
+.frame-opt{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);cursor:pointer;font-family:inherit;transition:all .15s;}
+.frame-opt:hover:not(:disabled){border-color:var(--border3);}
+.frame-opt.active{border-color:var(--accent);background:var(--accent-bg);}
+.frame-opt:disabled{opacity:.5;cursor:not-allowed;}
+.frame-swatch{width:26px;height:26px;border-radius:8px;border:3px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);}
+/* Insígnies */
+.badge-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1.25rem;}
+.ach{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;border:0.5px solid var(--border2);font-size:12px;}
+.ach.earned{background:var(--gold-bg);border-color:var(--gold-border);color:var(--gold);}
+.ach.locked{opacity:.4;filter:grayscale(1);}
+.ach-ic{font-size:15px;}
 .inv-col{min-width:0;}
 .inv-col-catalog{min-width:0;}
 #inv-slots-equip,#inv-slots-cosm{display:flex;flex-direction:column;gap:8px;}
