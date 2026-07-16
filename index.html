@@ -146,41 +146,44 @@
 
 <!-- APP -->
 <div id="screen-app" style="display:none;">
-  <div class="shell">
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <img src="https://bmcglobal.net/wp-content/uploads/logo-bmcglobal.png" alt="BMC Global" style="max-width:140px;height:auto;display:block;"/>
-    </div>
-    <nav class="nav" role="navigation">
-      <button class="nb active" onclick="showPage('inicio',this)" id="nav-inicio"><span class="nb-icon">🏠</span>Inici</button>
-      <button class="nb" onclick="showPage('misiones',this)" id="nav-misiones"><span class="nb-icon">⚔️</span>Missions</button>
-      <button class="nb" onclick="showPage('heroe',this)" id="nav-heroe"><span class="nb-icon">🧙</span>Herois</button>
-      <button class="nb" onclick="showPage('arcos',this)" id="nav-arcos"><span class="nb-icon">🗺️</span>Arcs</button>
-      <button class="nb" onclick="showPage('ranking',this)" id="nav-ranking"><span class="nb-icon">🏆</span>Rànquing</button>
-      <button class="nb" onclick="showPage('gacha',this)" id="nav-gacha"><span class="nb-icon">✨</span>Gacha</button>
-      <button class="nb" onclick="showPage('tienda',this)" id="nav-tienda"><span class="nb-icon">🛒</span>Botiga</button>
-      <button class="nb" onclick="showPage('inventario',this)" id="nav-inventario"><span class="nb-icon">🎒</span>Inventari</button>
-      <button class="nb" onclick="showPage('calendario',this)" id="nav-calendario"><span class="nb-icon">📅</span>Calendari</button>
-      <button class="nb" onclick="showPage('planner',this)" id="nav-planner"><span class="nb-icon">📋</span>Planner</button>
-      <button class="nb admin-only" onclick="showPage('items-admin',this)" id="nav-items-admin" style="display:none;border-top:0.5px solid var(--border);margin-top:4px;"><span class="nb-icon">⚙️</span>Items</button>
-      <button class="nb admin-only" onclick="showPage('classes-admin',this)" id="nav-classes-admin" style="display:none;"><span class="nb-icon">🎭</span>Classes</button>
-      <button class="nb admin-only" onclick="showPage('widgets-admin',this)" id="nav-widgets-admin" style="display:none;"><span class="nb-icon">🧩</span>Widgets</button>
-    </nav>
-    <div class="sidebar-bottom">
-      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar tema" style="width:100%;margin-bottom:.5rem;justify-content:flex-start;gap:8px;padding:7px 12px;border-radius:var(--radius);border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s;display:flex;align-items:center;">☀️ <span id="theme-label">Mode clar</span></button>
-      <div id="umenu-inline" style="display:none;margin-bottom:.5rem;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius);padding:.5rem;">
-        <div style="padding:6px 8px;font-size:12px;color:var(--muted);border-bottom:0.5px solid var(--border);margin-bottom:4px;" id="umname">—</div>
-        <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="goToMyProfile()">👤 Mi perfil</button>
-        <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="openEditModal(session.playerId)">✏️ Editar personaje</button>
-        <button class="btn btn-sm btn-g" style="width:100%;text-align:left;margin-bottom:2px;" onclick="exportJSON()">⬇️ Exportar JSON</button>
-        <button class="btn btn-sm" style="width:100%;text-align:left;" onclick="doLogout()">← Cerrar sesión</button>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-logo">
+        <img src="https://bmcglobal.net/wp-content/uploads/logo-bmcglobal.png" alt="BMC Global" style="height:34px;width:auto;display:block;"/>
       </div>
-      <div class="upill" onclick="toggleUMenu()" id="upill" style="width:100%;justify-content:flex-start;gap:8px;">
-        <span id="sidebar-mini-avatar" style="display:none;"></span>
-        <span class="udot" id="udot-fallback"></span><span id="ulabel">—</span>
+      <nav class="nav" role="navigation">
+        <button class="nb active" onclick="showPage('inicio',this)" id="nav-inicio"><span class="nb-icon">🏠</span>Inici</button>
+        <button class="nb" onclick="showPage('misiones',this)" id="nav-misiones"><span class="nb-icon">⚔️</span>Missions</button>
+        <button class="nb" onclick="showPage('heroe',this)" id="nav-heroe"><span class="nb-icon">🧙</span>Herois</button>
+        <button class="nb" onclick="showPage('arcos',this)" id="nav-arcos"><span class="nb-icon">🗺️</span>Arcs</button>
+        <button class="nb" onclick="showPage('ranking',this)" id="nav-ranking"><span class="nb-icon">🏆</span>Rànquing</button>
+        <button class="nb" onclick="showPage('gacha',this)" id="nav-gacha"><span class="nb-icon">✨</span>Gacha</button>
+        <button class="nb" onclick="showPage('tienda',this)" id="nav-tienda"><span class="nb-icon">🛒</span>Botiga</button>
+        <button class="nb" onclick="showPage('inventario',this)" id="nav-inventario"><span class="nb-icon">🎒</span>Inventari</button>
+        <button class="nb" onclick="showPage('calendario',this)" id="nav-calendario"><span class="nb-icon">📅</span>Calendari</button>
+        <button class="nb" onclick="showPage('planner',this)" id="nav-planner"><span class="nb-icon">📋</span>Planner</button>
+        <button class="nb admin-only" onclick="showPage('items-admin',this)" id="nav-items-admin" style="display:none;"><span class="nb-icon">⚙️</span>Items</button>
+        <button class="nb admin-only" onclick="showPage('classes-admin',this)" id="nav-classes-admin" style="display:none;"><span class="nb-icon">🎭</span>Classes</button>
+        <button class="nb admin-only" onclick="showPage('widgets-admin',this)" id="nav-widgets-admin" style="display:none;"><span class="nb-icon">🧩</span>Widgets</button>
+      </nav>
+      <div class="topbar-right">
+        <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar tema">☀️</button>
+        <div class="uwrap">
+          <div class="upill" onclick="toggleUMenu()" id="upill">
+            <span id="sidebar-mini-avatar" style="display:none;"></span>
+            <span class="udot" id="udot-fallback"></span><span id="ulabel">—</span>
+          </div>
+          <div id="umenu-inline" class="umenu-dropdown" style="display:none;">
+            <div style="padding:6px 8px;font-size:12px;color:var(--muted);border-bottom:0.5px solid var(--border);margin-bottom:4px;" id="umname">—</div>
+            <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="goToMyProfile()">👤 Mi perfil</button>
+            <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="openEditModal(session.playerId)">✏️ Editar personaje</button>
+            <button class="btn btn-sm btn-g" style="width:100%;text-align:left;margin-bottom:2px;" onclick="exportJSON()">⬇️ Exportar JSON</button>
+            <button class="btn btn-sm" style="width:100%;text-align:left;" onclick="doLogout()">← Cerrar sesión</button>
+          </div>
+        </div>
       </div>
     </div>
-  </aside>
+  </header>
   <div class="app">
 
     <!-- INICIO -->
@@ -681,7 +684,6 @@
       </div>
     </div>
 
-  </div>
   </div>
 </div>
 
