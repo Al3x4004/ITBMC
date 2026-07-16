@@ -2845,7 +2845,7 @@ function saveAvatar(){
 function buildPentagon(attrs,color){
   var keys=attrKeys();
   var labels=keys.map(function(k){var n=attrName(k)||k;return n.slice(0,4).toUpperCase();});
-  var cx=130,cy=130,r=98,n=keys.length||1;
+  var cx=170,cy=170,r=132,n=keys.length||1;
   var bgLvls=[0.25,0.5,0.75,1.0];
   var bgSvg=bgLvls.map(function(lv){
     var pts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;return (cx+r*lv*Math.cos(a)).toFixed(1)+','+(cy+r*lv*Math.sin(a)).toFixed(1);}).join(' ');
@@ -2856,7 +2856,7 @@ function buildPentagon(attrs,color){
   var fillPts=dataPts.map(function(p){return p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');
   var dots=dataPts.map(function(p){return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="3" fill="'+color+'"/>';}).join('');
   var lblSvg=dataPts.map(function(p){return '<text class="penta-label" x="'+p.lx.toFixed(1)+'" y="'+p.ly.toFixed(1)+'" text-anchor="middle" dominant-baseline="middle">'+p.label+'</text><text class="penta-value" x="'+(p.x+(p.lx-p.x)*0.4).toFixed(1)+'" y="'+(p.y+(p.ly-p.y)*0.4).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" fill="'+color+'">'+p.val+'</text>';}).join('');
-  return '<svg width="260" height="260" viewBox="0 0 260 260" style="overflow:visible;max-width:100%;">'+bgSvg+axes+'<polygon class="penta-fill" points="'+fillPts+'" fill="'+color+'" stroke="'+color+'"/>'+dots+lblSvg+'</svg>';
+  return '<svg width="340" height="340" viewBox="0 0 340 340" style="overflow:visible;max-width:100%;">'+bgSvg+axes+'<polygon class="penta-fill" points="'+fillPts+'" fill="'+color+'" stroke="'+color+'"/>'+dots+lblSvg+'</svg>';
 }
 
 /* ══ INVENTARIO ══ */
