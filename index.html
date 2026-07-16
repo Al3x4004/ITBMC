@@ -603,8 +603,9 @@
             </select>
           </div>
           <div class="field full"><label>URL d'inserció (embed)</label><input type="text" id="wg-url" placeholder="https://open.spotify.com/embed/playlist/..."/></div>
-          <div class="field full" style="display:flex;justify-content:flex-end;">
-            <button class="btn btn-p" onclick="createWidget()">+ Crear widget</button>
+          <div class="field full" style="display:flex;justify-content:flex-end;gap:8px;">
+            <button class="btn" id="wg-cancel" onclick="cancelWidgetEdit()" style="display:none;">Cancel·lar</button>
+            <button class="btn btn-p" id="wg-submit" onclick="createWidget()">+ Crear widget</button>
           </div>
         </div>
       </div>
