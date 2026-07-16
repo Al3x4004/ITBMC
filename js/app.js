@@ -1171,15 +1171,28 @@ function pullCard(){
   return null; // no hay cartas de esa rareza ni de una más común
 }
 
+function pullItemByRarity(items){
+  if(!items.length)return null;
+  // Mismos ratios que las cartas: rareza sorteada o MÁS COMÚN, nunca más rara.
+  var rarity=getRarityByChance();
+  var idx=RARITY_ORDER.indexOf(rarity);
+  for(var i=idx;i<RARITY_ORDER.length;i++){
+    var pool=items.filter(function(it){return (it.rareza||'comun')===RARITY_ORDER[i];});
+    if(pool.length)return pool[Math.floor(Math.random()*pool.length)];
+  }
+  return null;
+}
 function pullResult(){
   const gachaItems=shopItems.filter(i=>i.via==='gacha'||i.via==='tienda');
   if(gachaItems.length&&Math.random()<0.3){
-    return {type:'item',data:gachaItems[Math.floor(Math.random()*gachaItems.length)]};
+    var it=pullItemByRarity(gachaItems);
+    if(it)return {type:'item',data:it};
   }
   const card=pullCard();
   if(card)return {type:'card',data:card};
-  // No hay carta de la rareza sorteada (ni más común): dar un objeto si existe
-  if(gachaItems.length)return {type:'item',data:gachaItems[Math.floor(Math.random()*gachaItems.length)]};
+  // No hay carta de la rareza sorteada (ni más común): dar un objeto (respetando rareza) si existe
+  var it2=pullItemByRarity(gachaItems);
+  if(it2)return {type:'item',data:it2};
   return null;
 }
 function doPull(times){
