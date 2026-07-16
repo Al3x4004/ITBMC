@@ -152,7 +152,8 @@
       <img src="https://bmcglobal.net/wp-content/uploads/logo-bmcglobal.png" alt="BMC Global" style="max-width:140px;height:auto;display:block;"/>
     </div>
     <nav class="nav" role="navigation">
-      <button class="nb active" onclick="showPage('misiones',this)" id="nav-misiones"><span class="nb-icon">⚔️</span>Missions</button>
+      <button class="nb active" onclick="showPage('inicio',this)" id="nav-inicio"><span class="nb-icon">🏠</span>Inici</button>
+      <button class="nb" onclick="showPage('misiones',this)" id="nav-misiones"><span class="nb-icon">⚔️</span>Missions</button>
       <button class="nb" onclick="showPage('heroe',this)" id="nav-heroe"><span class="nb-icon">🧙</span>Herois</button>
       <button class="nb" onclick="showPage('arcos',this)" id="nav-arcos"><span class="nb-icon">🗺️</span>Arcs</button>
       <button class="nb" onclick="showPage('ranking',this)" id="nav-ranking"><span class="nb-icon">🏆</span>Rànquing</button>
@@ -182,10 +183,15 @@
   </aside>
   <div class="app">
 
-    <!-- MISIONES -->
-    <div id="page-misiones" class="page active">
+    <!-- INICIO -->
+    <div id="page-inicio" class="page active">
+      <div id="inicio-hero" style="margin-bottom:1.5rem;"></div>
       <!-- Widgets del usuario (se rellenan dinámicamente desde el catálogo del admin) -->
-      <div id="user-widgets" style="margin-bottom:1.5rem;"></div>
+      <div id="user-widgets"></div>
+    </div>
+
+    <!-- MISIONES -->
+    <div id="page-misiones" class="page">
       <div class="g4" style="margin-bottom:1.5rem;" id="mstats"></div>
 
       <!-- Crear misión -->

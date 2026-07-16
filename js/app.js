@@ -486,6 +486,7 @@ function enterApp(){
   updateSidebarAvatar();
   (function(){var _x=document.getElementById('umname');if(_x)_x.textContent=session.isAdmin?'👑 Dios':(p?p.name:'—');})();
   renderAll();
+  try{renderInicio();}catch(e){}
 }
 function toggleUMenu(){
   const m=document.getElementById('umenu-inline');
@@ -581,6 +582,21 @@ function saveNewChar(){
 
 /* ══ RENDER ══ */
 function renderAll(){applyMenuNames();renderMStats();renderMissions();renderHeroTabs();renderArcs();renderRanking();renderGachaGold();renderShop();populateArcSelect();}
+function renderInicio(){
+  var hero=document.getElementById('inicio-hero');
+  if(hero){
+    var p=players.find(function(pl){return pl.id===session.playerId;});
+    var name=session.isAdmin?'Dios 👑':(p?p.name.split(' ')[0]:'—');
+    var sub=session.isAdmin
+      ?'Tens el control absolut del Quarter General.'
+      :(p?('Nivell '+p.level+' · '+p.cls+' · 🪙 '+p.gold.toLocaleString()):'');
+    hero.innerHTML='<div class="card" style="padding:1.25rem 1.5rem;">'
+      +'<div style="font-size:22px;font-weight:700;margin-bottom:4px;">Hola, '+name+' 👋</div>'
+      +'<div style="font-size:13px;color:var(--muted);">'+sub+'</div>'
+      +'</div>';
+  }
+  renderUserWidgets();
+}
 function renderUserWidgets(){
   var cont=document.getElementById('user-widgets');
   if(!cont)return;
@@ -701,7 +717,7 @@ function showPage(name,btn){
   if(name==='inventario')renderInventario();
   if(name==='misiones')populateArcSelect();
   if(name==='calendario'){if(!calState.selectedDate)calState.selectedDate=new Date().toISOString().slice(0,10);renderCalendar();}
-  if(name==='misiones'){try{renderUserWidgets();}catch(e){}}
+  if(name==='inicio'){try{renderInicio();}catch(e){}}
   if(name==='planner'){renderPlannerImported();}
   if(name==='items-admin'){renderAdminItemsPage();renderAdminCartasPage();}
   if(name==='classes-admin'){renderClassesAdmin();}
@@ -3004,6 +3020,7 @@ try{window.createWidget=createWidget;}catch(e){}
 try{window.deleteWidget=deleteWidget;}catch(e){}
 try{window.persistWidgets=persistWidgets;}catch(e){}
 try{window.renderUserWidgets=renderUserWidgets;}catch(e){}
+try{window.renderInicio=renderInicio;}catch(e){}
 try{window.openWidgetPicker=openWidgetPicker;}catch(e){}
 try{window.toggleUserWidget=toggleUserWidget;}catch(e){}
 try{window.closeWidgetPicker=closeWidgetPicker;}catch(e){}
