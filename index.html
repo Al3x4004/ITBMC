@@ -249,38 +249,57 @@
     <div id="page-inventario" class="page">
       <div style="margin-bottom:1.25rem;">
         <div style="font-size:18px;font-weight:500;margin-bottom:4px;">Inventari</div>
-        <div style="font-size:13px;color:var(--muted);">Equipa los items que has comprado o conseguido.</div>
+        <div style="font-size:13px;color:var(--muted);">Equipa els ítems que has aconseguit i mira la teva col·lecció.</div>
       </div>
-      <div class="inv-3col">
-        <div class="inv-col">
-          <div class="stitle">⚔️ Equip</div>
-          <div id="inv-slots-equip"></div>
+      <div class="htabs" id="inv-tabs">
+        <div class="htab active" onclick="showInvTab('equip',this)">⚔️ Equip</div>
+        <div class="htab" onclick="showInvTab('cosm',this)">✨ Cosmètics</div>
+        <div class="htab" onclick="showInvTab('galeria',this)">🃏 Galeria</div>
+      </div>
+
+      <!-- Pestaña: Equipo -->
+      <div id="inv-tab-equip" class="inv-tab-panel">
+        <div class="inv-2col">
+          <div class="inv-col">
+            <div class="stitle">⚔️ Equip</div>
+            <div id="inv-slots-equip"></div>
+          </div>
+          <div class="inv-col inv-col-catalog">
+            <div class="stitle">Motxilla</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:.75rem;">
+              <input type="text" id="inv-search" placeholder="🔍 Cercar..." oninput="renderInventario()" style="flex:1;min-width:120px;padding:7px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);outline:none;"/>
+              <select id="inv-filter-slot" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+                <option value="">Tots els slots</option>
+              </select>
+              <select id="inv-filter-rarity" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+                <option value="">Totes les rareses</option>
+                <option value="comun">Comú</option>
+                <option value="rara">Rara</option>
+                <option value="epica">Èpica</option>
+                <option value="legendaria">Llegendària</option>
+              </select>
+              <select id="inv-sort" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+                <option value="rarity">Raresa</option>
+                <option value="name">Nom</option>
+              </select>
+            </div>
+            <div class="inv-grid" id="inv-grid"></div>
+          </div>
         </div>
+      </div>
+
+      <!-- Pestaña: Cosméticos -->
+      <div id="inv-tab-cosm" class="inv-tab-panel" style="display:none;">
         <div class="inv-col">
           <div class="stitle">✨ Cosmètics</div>
           <div id="inv-slots-cosm"></div>
         </div>
-        <div class="inv-col inv-col-catalog">
-          <div class="stitle">Motxilla</div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:.75rem;">
-            <input type="text" id="inv-search" placeholder="🔍 Cercar..." oninput="renderInventario()" style="flex:1;min-width:120px;padding:7px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);outline:none;"/>
-            <select id="inv-filter-slot" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
-              <option value="">Tots els slots</option>
-            </select>
-            <select id="inv-filter-rarity" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
-              <option value="">Totes les rareses</option>
-              <option value="comun">Comú</option>
-              <option value="rara">Rara</option>
-              <option value="epica">Èpica</option>
-              <option value="legendaria">Llegendària</option>
-            </select>
-            <select id="inv-sort" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
-              <option value="rarity">Raresa</option>
-              <option value="name">Nom</option>
-            </select>
-          </div>
-          <div class="inv-grid" id="inv-grid"></div>
-        </div>
+      </div>
+
+      <!-- Pestaña: Galería del gacha -->
+      <div id="inv-tab-galeria" class="inv-tab-panel" style="display:none;">
+        <div class="stitle">🃏 La meva galeria</div>
+        <div id="inv-my-gallery"></div>
       </div>
     </div>
 
