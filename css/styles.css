@@ -24,6 +24,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 /* ══ LAYOUT (topbar) ══ */
 .topbar{position:sticky;top:0;z-index:50;background:var(--bg2);border-bottom:0.5px solid var(--border);width:100%;}
 .topbar-inner{display:flex;align-items:center;gap:1.25rem;max-width:1400px;margin:0 auto;padding:.6rem 1.5rem;}
+/* En Inicio, topbar y contenido comparten el mismo ancho para que alineen */
+#screen-app.wide .topbar-inner{max-width:1700px;}
 .topbar-logo{flex-shrink:0;display:flex;align-items:center;}
 .nav{display:flex;flex-direction:row;align-items:center;flex-wrap:wrap;gap:2px;flex:1;min-width:0;}
 .nb{padding:7px 12px;border-radius:var(--radius);border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s;text-align:left;display:flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0;}
@@ -41,7 +43,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   overflow-x:hidden;
 }
 /* La página de Inicio se muestra un poco más ancha que el resto */
-.app.inicio-wide{max-width:1700px;}
+#screen-app.wide .app{max-width:1700px;}
 .topbar-title{display:none;}
 .theme-btn{width:32px;height:32px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:15px;transition:all .15s;}
 .theme-btn:hover{background:var(--bg3);color:var(--text);}
