@@ -41,6 +41,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   box-sizing:border-box;
   overflow-x:hidden;
 }
+/* La página de Inicio se muestra un poco más ancha que el resto */
+.app.inicio-wide{max-width:1700px;}
 .topbar-title{display:none;}
 .theme-btn{width:32px;height:32px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:15px;transition:all .15s;}
 .theme-btn:hover{background:var(--bg3);color:var(--text);}
@@ -649,6 +651,8 @@ input:focus,select:focus,textarea:focus{
   border:2px solid var(--accent-border) !important;
   backdrop-filter:blur(8px);
 }
+/* El div de toast está siempre en el DOM; si está vacío no debe ocupar espacio */
+#toast:empty{display:none;}
 
 /* ── Widget de Spotify ── */
 .spotify-widget iframe{display:block;}
