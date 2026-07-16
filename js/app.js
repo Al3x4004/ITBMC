@@ -104,7 +104,7 @@ function attrKeyFromName(name){
   })||null;
 }
 const RARITY_ORDER=['legendaria','epica','rara','comun'];
-const RARITY_PROB={comun:60,rara:25,epica:12,legendaria:3};
+const RARITY_PROB={comun:70,rara:25,epica:4,legendaria:1};
 const GACHA_COST_SINGLE=100;
 const GACHA_COST_MULTI=900;
 const RARITY_LABEL={comun:'Comú',rara:'Rara',epica:'Èpica',legendaria:'Llegendària'};

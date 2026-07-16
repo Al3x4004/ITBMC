@@ -25,8 +25,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .topbar{position:sticky;top:0;z-index:50;background:var(--bg2);border-bottom:0.5px solid var(--border);width:100%;}
 .topbar-inner{display:flex;align-items:center;gap:1.25rem;max-width:1400px;margin:0 auto;padding:.6rem 1.5rem;}
 .topbar-logo{flex-shrink:0;display:flex;align-items:center;}
-.nav{display:flex;flex-direction:row;align-items:center;gap:2px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;}
-.nav::-webkit-scrollbar{display:none;}
+.nav{display:flex;flex-direction:row;align-items:center;flex-wrap:wrap;gap:2px;flex:1;min-width:0;}
 .nb{padding:7px 12px;border-radius:var(--radius);border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s;text-align:left;display:flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0;}
 .nb:hover{background:var(--bg3);color:var(--text);}
 .nb.active{background:var(--bg3);color:var(--text);font-weight:500;}
