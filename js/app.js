@@ -1051,7 +1051,27 @@ function playerFrame(p){
   if(sel&&lvl>=sel.min)return sel;
   return unlocked[unlocked.length-1]||FRAME_TIERS[0];
 }
+// Posición del jugador en el ranking (1/2/3) si está en el top 3 con puntos; si no, 0.
+function playerRankBanner(p){
+  if(!p||!p.id)return 0;
+  var score=function(x){return (x.xp||0)+(x.gold||0);};
+  if(score(p)<=0)return 0;
+  var sorted=players.filter(function(x){return x.id!=='admin_special';}).slice().sort(function(a,b){return score(b)-score(a);});
+  var idx=sorted.findIndex(function(x){return x.id===p.id;});
+  return (idx>=0&&idx<3)?idx+1:0;
+}
 function frameWrap(p,inner){
+  // Banner exclusivo del top 3 (tiene prioridad sobre el marc de nivell)
+  var rank=playerRankBanner(p);
+  if(rank){
+    var tag=rank===1?'CAMPIÓ':rank===2?'SUBCAMPIÓ':'3r LLOC';
+    var crown=rank===1?'👑':rank===2?'🥈':'🥉';
+    return '<div class="ava-rank ava-rank-'+rank+'">'
+      +'<span class="ava-rank-crown">'+crown+'</span>'
+      +'<div class="ava-rank-inner">'+inner+'</div>'
+      +'<span class="ava-rank-tag">'+tag+'</span>'
+      +'</div>';
+  }
   var f=playerFrame(p);
   if(!f||!f.color)return inner;
   return '<div class="ava-frame" style="--frame:'+f.color+';">'+inner+'</div>';
@@ -1070,7 +1090,9 @@ function renderFramePicker(){
   var p=players.find(function(pl){return pl.id===session.playerId;});
   if(!p){host.innerHTML='';return;}
   var cur=playerFrame(p).key;
-  host.innerHTML='<div class="stitle" style="margin-top:16px;">🖼️ Marc del perfil</div>'
+  var rank=playerRankBanner(p);
+  var rankNote=rank?'<div style="font-size:12px;color:var(--gold);background:var(--gold-bg);border:0.5px solid var(--gold-border);border-radius:var(--radius);padding:6px 10px;margin-top:12px;">🏆 Tens el banner exclusiu del <strong>Top '+rank+'</strong> actiu! Es mantindrà mentre no baixis de posició al rànquing.</div>':'';
+  host.innerHTML='<div class="stitle" style="margin-top:16px;">🖼️ Marc del perfil</div>'+rankNote
     +'<div class="frame-grid">'+FRAME_TIERS.map(function(f){
       var unlocked=(p.level||1)>=f.min;
       var sw='<span class="frame-swatch"'+(f.color?' style="border-color:'+f.color+';box-shadow:0 0 6px '+f.color+';"':'')+'>'+(f.color?'':'∅')+'</span>';
