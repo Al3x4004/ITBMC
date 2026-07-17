@@ -1261,27 +1261,18 @@ function getRarityByChance(){
 
 function pullCard(){
   const rarity=getRarityByChance();
-  // Solo se puede obtener una carta de la rareza sorteada o MÁS COMÚN (nunca más rara).
-  // Así una legendaria única solo sale en su tirada real (~1%), no como relleno.
-  // RARITY_ORDER va de legendaria(0) → comun(3).
-  var idx=RARITY_ORDER.indexOf(rarity);
-  for(var i=idx;i<RARITY_ORDER.length;i++){
-    var pool=gachaCards.filter(c=>c.rarity===RARITY_ORDER[i]);
-    if(pool.length)return pool[Math.floor(Math.random()*pool.length)];
-  }
-  return null; // no hay cartas de esa rareza ni de una más común
+  // Estricte: només una carta EXACTAMENT de la rareza sortejada. Si no n'hi ha, null
+  // (així cada carta surt just a la seva probabilitat: rara=25%, epica=4%, etc.).
+  var pool=gachaCards.filter(function(c){return c.rarity===rarity;});
+  return pool.length?pool[Math.floor(Math.random()*pool.length)]:null;
 }
 
 function pullItemByRarity(items){
   if(!items.length)return null;
-  // Mismos ratios que las cartas: rareza sorteada o MÁS COMÚN, nunca más rara.
+  // Estricte: objecte EXACTAMENT de la rareza sortejada; si no n'hi ha, null.
   var rarity=getRarityByChance();
-  var idx=RARITY_ORDER.indexOf(rarity);
-  for(var i=idx;i<RARITY_ORDER.length;i++){
-    var pool=items.filter(function(it){return (it.rareza||'comun')===RARITY_ORDER[i];});
-    if(pool.length)return pool[Math.floor(Math.random()*pool.length)];
-  }
-  return null;
+  var pool=items.filter(function(it){return (it.rareza||'comun')===rarity;});
+  return pool.length?pool[Math.floor(Math.random()*pool.length)]:null;
 }
 function pullResult(){
   const gachaItems=shopItems.filter(i=>i.via==='gacha'||i.via==='tienda');
