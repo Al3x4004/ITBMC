@@ -475,9 +475,18 @@ body::after{
 /* ── Inventario 3 columnas ── */
 .inv-3col{display:grid;grid-template-columns:auto auto 1fr;gap:1rem;align-items:start;}
 .inv-2col{display:grid;grid-template-columns:auto 1fr;gap:1.5rem;align-items:start;}
-.ava-editor-layout{display:grid;grid-template-columns:220px 1fr;gap:1.5rem;align-items:start;}
+.ava-editor-layout{display:grid;grid-template-columns:170px 1fr;gap:1.25rem;align-items:start;}
 .ava-editor-side{position:sticky;top:72px;}
 @media(max-width:720px){.ava-editor-layout{grid-template-columns:1fr;}.ava-editor-side{position:static;}}
+/* Pestaña Cosmètics compacta */
+#inv-tab-cosm .pixel-avatar-lg{width:120px;height:120px;}
+#inv-tab-cosm .inv-slot{width:96px;min-height:78px;padding:.5rem;}
+#inv-tab-cosm .inv-slot-icon{font-size:18px;}
+#inv-tab-cosm #inv-slots-cosm{display:flex;flex-wrap:wrap;gap:8px;}
+#inv-tab-cosm .frame-grid{grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:6px;margin-top:6px;}
+#inv-tab-cosm .frame-opt{padding:6px 3px;}
+#inv-tab-cosm .frame-swatch{width:20px;height:20px;}
+#inv-tab-cosm .stitle{margin-bottom:6px;}
 /* Marc del perfil */
 .ava-frame{display:inline-block;padding:4px;border-radius:14px;border:3px solid var(--frame);box-shadow:0 0 8px var(--frame);}
 /* ── Banners exclusius del TOP 3 (dinàmics segons rànquing) ── */

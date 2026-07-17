@@ -1064,7 +1064,7 @@ function frameWrap(p,inner){
   // Banner exclusivo del top 3 (tiene prioridad sobre el marc de nivell)
   var rank=playerRankBanner(p);
   if(rank){
-    var tag=rank===1?'CAMPIÓ':rank===2?'SUBCAMPIÓ':'3r LLOC';
+    var tag=rank===1?'1r':rank===2?'2n':'3r';
     var crown=rank===1?'👑':rank===2?'🥈':'🥉';
     return '<div class="ava-rank ava-rank-'+rank+'">'
       +'<span class="ava-rank-crown">'+crown+'</span>'
@@ -1092,7 +1092,7 @@ function renderFramePicker(){
   var cur=playerFrame(p).key;
   var rank=playerRankBanner(p);
   var rankNote=rank?'<div style="font-size:12px;color:var(--gold);background:var(--gold-bg);border:0.5px solid var(--gold-border);border-radius:var(--radius);padding:6px 10px;margin-top:12px;">🏆 Tens el banner exclusiu del <strong>Top '+rank+'</strong> actiu! Es mantindrà mentre no baixis de posició al rànquing.</div>':'';
-  host.innerHTML='<div class="stitle" style="margin-top:16px;">🖼️ Marc del perfil</div>'+rankNote
+  host.innerHTML='<div class="stitle" style="margin-top:16px;">🖼️ Banner del perfil</div>'+rankNote
     +'<div class="frame-grid">'+FRAME_TIERS.map(function(f){
       var unlocked=(p.level||1)>=f.min;
       var sw='<span class="frame-swatch"'+(f.color?' style="border-color:'+f.color+';box-shadow:0 0 6px '+f.color+';"':'')+'>'+(f.color?'':'∅')+'</span>';
