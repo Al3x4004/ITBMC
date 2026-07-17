@@ -110,6 +110,8 @@ const GACHA_COST_MULTI=900;
 const RARITY_LABEL={comun:'Comú',rara:'Rara',epica:'Èpica',legendaria:'Llegendària'};
 
 let galleryHeroIdx=0;
+let galleryOnlyOwned=false;
+var classGrowthMap={};/* {nomClasse:{attrKey:puntsPerNivell}} — punts que puja cada classe en pujar de nivell */
 
 /* ══ CARGA ══ */
 
@@ -290,7 +292,7 @@ async function saveToSupabase(){
     await fetch(`${CFG.SUPABASE_URL}/rest/v1/game_data`,{
       method:'POST',
       headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
-      body:JSON.stringify({id:'main',data:{players,arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS}})
+      body:JSON.stringify({id:'main',data:{players,arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap}})
     });
     // Save each player to players table
     for(const p of players){
@@ -341,6 +343,7 @@ async function loadData(){
       if(Array.isArray(d.custom_traits))customTraits=d.custom_traits;
       if(Array.isArray(d.widget_catalog))widgetCatalog=d.widget_catalog;
       if(Array.isArray(d.slot_defs)&&d.slot_defs.length)SLOT_DEFS=d.slot_defs;
+      if(d.class_growth&&typeof d.class_growth==='object')classGrowthMap=d.class_growth;
       if(Array.isArray(d.attr_defs)&&d.attr_defs.length){
         ATTRS=d.attr_defs.map(function(a){return {key:a.key,name:a.name,color:a.color||'#888'};});
       }else if(d.attr_names&&typeof d.attr_names==='object'){
@@ -934,39 +937,43 @@ function completeMission(id){
   renderAll();
 }
 
-/* ── level up ── */
+/* ── level up (automàtic segons classe) ── */
+function defaultGrowth(cls){
+  var g={};attrKeys().forEach(function(k){g[k]=0;});
+  var base=(cls&&cls.attrs)?cls.attrs:{};
+  var sorted=attrKeys().slice().sort(function(a,b){return (base[b]||0)-(base[a]||0);});
+  if(sorted[0])g[sorted[0]]=2;
+  if(sorted[1])g[sorted[1]]=1;
+  return g;
+}
+function classGrowthFor(p){
+  if(classGrowthMap[p.cls])return classGrowthMap[p.cls];
+  var cls=CLASSES.find(function(c){return c.name===p.cls;});
+  return defaultGrowth(cls);
+}
 function checkLevelUp(p){
   if(!p)return;
   const newLv=Math.floor(p.xp/100)+1;
   if(newLv>p.level){
-    const gained=(newLv-p.level)*3;
+    var levels=newLv-p.level;
+    var g=classGrowthFor(p);
+    var applied={};
+    for(var i=0;i<levels;i++){
+      attrKeys().forEach(function(k){var add=g[k]||0;if(add){p.attrs[k]=(p.attrs[k]||0)+add;applied[k]=(applied[k]||0)+add;}});
+    }
     p.xpNext=(newLv+1)*100;
-    p.level=newLv;p.pendingAttrPts=(p.pendingAttrPts||0)+gained;
-    showLevelUpPopup(p);
+    p.level=newLv;
+    showLevelUpPopup(p,applied,levels);
   }
 }
-function showLevelUpPopup(p){
-  luState={pid:p.id,pts:p.pendingAttrPts,spent:{}};
-  document.getElementById('lu-level').textContent='Nivell '+p.level;
-  document.getElementById('lu-pts').textContent=luState.pts;
-  document.getElementById('lu-attrs').innerHTML=attrKeys().map(function(k){var name=attrName(k);return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg3);border-radius:var(--radius);padding:8px 4px;">'    +'<div style="font-size:16px;">'+attrIcon(k)+'</div>'    +'<div style="font-size:9px;color:var(--muted);">'+name+'</div>'    +'<div style="font-size:14px;font-weight:600;" id="lu-'+k+'">'+p.attrs[k]+'</div>'    +'<button class="btn btn-sm btn-p" style="padding:1px 10px;width:100%;" onclick="addAttrPt(\''+k+'\',1)">+</button>'    +'<button class="btn btn-sm" style="padding:1px 10px;width:100%;" onclick="addAttrPt(\''+k+'\',-1)">−</button>'    +'</div>';}).join('');
+function showLevelUpPopup(p,applied,levels){
+  applied=applied||{};levels=levels||1;
+  document.getElementById('lu-level').textContent='Nivell '+p.level+(levels>1?' (+'+levels+' nivells)':'');
+  var pts=document.getElementById('lu-pts');if(pts)pts.textContent=p.cls;
+  document.getElementById('lu-attrs').innerHTML=attrKeys().map(function(k){var name=attrName(k);var add=applied[k]||0;return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg3);border-radius:var(--radius);padding:8px 4px;'+(add?'outline:2px solid var(--gold);':'')+'">'    +'<div style="font-size:16px;">'+attrIcon(k)+'</div>'    +'<div style="font-size:9px;color:var(--muted);">'+name+'</div>'    +'<div style="font-size:14px;font-weight:600;">'+p.attrs[k]+(add?' <span style="color:var(--gold);font-size:11px;">+'+add+'</span>':'')+'</div>'    +'</div>';}).join('');
   document.getElementById('levelup-pop').classList.add('show');
 }
-function addAttrPt(attr,delta){
-  const p=players.find(p=>p.id===luState.pid);if(!p)return;
-  if(delta>0){
-    if(luState.pts<=0)return;
-    luState.pts--;luState.spent[attr]=(luState.spent[attr]||0)+1;p.attrs[attr]++;
-  }else{
-    if((luState.spent[attr]||0)<=0)return;
-    luState.pts++;luState.spent[attr]--;p.attrs[attr]--;
-  }
-  document.getElementById('lu-'+attr).textContent=p.attrs[attr];
-  document.getElementById('lu-pts').textContent=luState.pts;
-}
 function confirmLevelUp(){
-  const p=players.find(p=>p.id===luState.pid);
-  if(p)p.pendingAttrPts=luState.pts;
   document.getElementById('levelup-pop').classList.remove('show');
   if(CFG.MODE==='supabase')saveToSupabase();
   renderAll();
@@ -1341,24 +1348,38 @@ function doPull(times){
   if(dupes>0)toast(dupes+' duplicat'+(dupes>1?'s':'')+' · +'+refund+' fragments ✨ retornats');
 }
 
-function renderGalleryCards(galleryEntries,mode){
-  if(!galleryEntries||!galleryEntries.length)return`<div class="gallery-empty">Sin cartas aún. ¡Ve al Gacha a invocar!</div>`;
-  // agrupar por rareza
-  const sorted=[...galleryEntries].map(e=>typeof e==='string'?e:e.cardId||e).sort((a,b)=>{
-    const ca=gachaCards.find(x=>x.id===a),cb=gachaCards.find(x=>x.id===b);
-    return RARITY_ORDER.indexOf(ca?.rarity||'comun')-RARITY_ORDER.indexOf(cb?.rarity||'comun');
-  });
-  return `<div class="gallery-grid">${sorted.map(e=>{
-    const c=gachaCards.find(x=>x.id===e);if(!c)return'';
-    const imgUrl=c?(c.imageUrl||CFG.GITHUB_RAW+c.image):'';
-    return `<div class="gallery-card">
-      <img src="${imgUrl}" alt="${c?c.name:''}" onerror="this.style.background='var(--bg3)';this.style.minHeight='120px';">
-      <div class="gallery-card-label">
-        <div class="gname">${c?c.name:'Carta desconocida'}</div>
-        <div class="grarity rarity-${c?c.rarity:'comun'}">${c?RARITY_LABEL[c.rarity]:''}</div>
-      </div>
-    </div>`;
-  }).join('')}</div>`;
+// Àlbum de cromos: mostra TOTES les cartes del joc; les que tens en color, la resta bloquejades.
+function renderGalleryCards(ownedEntries,mode){
+  if(!gachaCards.length)return`<div class="gallery-empty">Encara no hi ha cartes al joc.</div>`;
+  var owned={};(ownedEntries||[]).map(function(e){return typeof e==='string'?e:(e&&e.cardId)||e;}).forEach(function(id){owned[id]=true;});
+  var all=gachaCards.slice().sort(function(a,b){return RARITY_ORDER.indexOf(a.rarity||'comun')-RARITY_ORDER.indexOf(b.rarity||'comun');});
+  var haveCount=all.filter(function(c){return owned[c.id];}).length;
+  var list=galleryOnlyOwned?all.filter(function(c){return owned[c.id];}):all;
+  var header='<div class="gallery-head">'
+    +'<span class="gallery-count">📖 '+haveCount+' / '+all.length+'</span>'
+    +'<button class="btn btn-sm'+(galleryOnlyOwned?' btn-p':'')+'" onclick="toggleGalleryOwned()">'+(galleryOnlyOwned?'✓ Només les meves':'Només les meves')+'</button>'
+    +'</div>';
+  if(!list.length)return header+'<div class="gallery-empty">Encara no tens cap carta.</div>';
+  var grid='<div class="gallery-grid">'+list.map(function(c){
+    var mine=!!owned[c.id];
+    var imgUrl=c.imageUrl||(c.image?CFG.GITHUB_RAW+c.image:'');
+    return '<div class="gallery-card rarity-frame-'+c.rarity+(mine?'':' locked')+'">'
+      +(mine
+        ?'<img src="'+imgUrl+'" alt="'+c.name+'" onerror="this.style.background=\'var(--bg3)\';this.style.minHeight=\'120px\';">'
+        :'<div class="gallery-locked-img">?</div>')
+      +'<div class="gallery-card-label">'
+      +'<div class="gname">'+(mine?c.name:'???')+'</div>'
+      +'<div class="grarity rarity-'+c.rarity+'">'+RARITY_LABEL[c.rarity]+'</div>'
+      +'</div></div>';
+  }).join('')+'</div>';
+  return header+grid;
+}
+function toggleGalleryOwned(){
+  galleryOnlyOwned=!galleryOnlyOwned;
+  try{renderMyGallery();}catch(e){}
+  try{renderGalleryTabs();}catch(e){}
+  var g=document.getElementById('inv-my-gallery');
+  if(g){var p=players.find(function(pl){return pl.id===session.playerId;});g.innerHTML=renderGalleryCards(p?p.gallery:[]);}
 }
 
 function renderMyGallery(){
@@ -2377,6 +2398,14 @@ function renderClassesAdmin(){
             +'<input type="number" id="cls-'+k+'-'+idx+'" value="'+(cls.attrs[k]||0)+'" min="0" style="width:56px;flex-shrink:0;padding:6px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);text-align:center;"/></div>';
         }).join('')
       +'</div>'
+      +'<div class="stitle">Punts per nivell (pujada automàtica)</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-bottom:1rem;">'
+        +attrKeys().map(function(k){var gv=((classGrowthMap[cls.name]||defaultGrowth(cls))[k]||0);
+          return '<div style="display:flex;align-items:center;gap:8px;min-width:0;">'
+            +'<label style="font-size:11px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+AN[k]+'">'+AN[k]+'</label>'
+            +'<input type="number" id="clsg-'+k+'-'+idx+'" value="'+gv+'" min="0" style="width:56px;flex-shrink:0;padding:6px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);text-align:center;"/></div>';
+        }).join('')
+      +'</div>'
       +'<div class="stitle">Equipament inicial (es dóna en crear el personatge)</div>'
       +'<div style="max-height:180px;overflow-y:auto;border:0.5px solid var(--border);border-radius:var(--radius);padding:6px;margin-bottom:1rem;display:grid;grid-template-columns:1fr 1fr;gap:2px;">'
         +(shopItems.length?itemsHtml:'<div style="font-size:12px;color:var(--muted);padding:6px;">No hi ha ítems creats encara.</div>')
@@ -2399,6 +2428,10 @@ async function saveClassEdit(idx){
   attrKeys().forEach(function(k){
     cls.attrs[k]=parseInt(document.getElementById('cls-'+k+'-'+idx).value)||0;
   });
+  // Punts per nivell (creixement per classe)
+  var gm={};attrKeys().forEach(function(k){var el=document.getElementById('clsg-'+k+'-'+idx);gm[k]=el?(parseInt(el.value)||0):0;});
+  cls.growth=gm;classGrowthMap[newName]=gm;
+  if(oldName!==newName&&classGrowthMap[oldName])delete classGrowthMap[oldName];
   // Collect selected start items
   var chks=document.querySelectorAll('.cls-item-chk[data-cls="'+idx+'"]:checked');
   cls.startItems=Array.prototype.map.call(chks,function(chk){return chk.getAttribute('data-item');});
@@ -2407,7 +2440,7 @@ async function saveClassEdit(idx){
   // If name changed, update players
   if(oldName!==newName){players.forEach(function(p){if(p.cls===oldName)p.cls=newName;});}
   // Save to dedicated table
-  if(CFG.MODE==='supabase'){await saveClassToSupabase(cls,idx);if(oldName!==newName)saveToSupabase();}
+  if(CFG.MODE==='supabase'){await saveClassToSupabase(cls,idx);saveToSupabase();}
   renderClassesAdmin();
   toast('Classe "'+newName+'" actualitzada');
 }
@@ -3182,10 +3215,11 @@ function toggleDailyFields(){
 
 function populateArcSelect(){
   var sel=document.getElementById('nm-arc');
-  if(!sel)return;
-  sel.innerHTML='<option value="">Sin arco</option>'+arcs.map(function(a){
+  if(sel)sel.innerHTML='<option value="">Sin arco</option>'+arcs.map(function(a){
     return '<option value="'+a.name+'">'+a.name+'</option>';
   }).join('');
+  var asel=document.getElementById('nm-attr');
+  if(asel){var cur=asel.value;asel.innerHTML=attrKeys().map(function(k){return '<option value="'+k+'">'+attrIcon(k)+' '+attrName(k)+'</option>';}).join('');if(cur)asel.value=cur;}
 }
 
 function createMission(){
@@ -3195,6 +3229,9 @@ function createMission(){
   var isDaily=type==='daily';
   var arc=document.getElementById('nm-arc').value;
   var deadline=document.getElementById('nm-deadline').value;
+  var attrKey=document.getElementById('nm-attr')?document.getElementById('nm-attr').value:'';
+  var attrName_=attrKey?attrName(attrKey):'';
+  var attrPts=parseInt(document.getElementById('nm-attrpts')?document.getElementById('nm-attrpts').value:'0')||0;
   var newM={
     id:'m'+Date.now(),
     name:name,
@@ -3206,8 +3243,8 @@ function createMission(){
     xp:isDaily?25:75,
     gold:isDaily?10:25,
     frag:isDaily?20:50,
-    attr:isDaily?'Sabiduría':'Inteligencia',
-    attrPts:isDaily?1:2,
+    attr:attrName_,
+    attrPts:attrPts,
     deadline:isDaily?'':deadline||'',
     daily:isDaily,
     isDaily_instance:false,
@@ -3278,7 +3315,7 @@ window.addEventListener('dicebear-ready',function(){
 
 /* ══ EXPONER FUNCIONES EN WINDOW (para onclick del HTML) ══ */
 // Necesario al tener el JS en archivo externo: garantiza que los onclick="fn()" encuentren las funciones.
-try{window.addAttrPt=addAttrPt;}catch(e){}try{window.applyMenuNames=applyMenuNames;}catch(e){}try{window.assignMission=assignMission;}catch(e){}try{window.buildAttrBars=buildAttrBars;}catch(e){}try{window.buildAvatarUrl=buildAvatarUrl;}catch(e){}try{window.buildCreatorCls=buildCreatorCls;}catch(e){}try{window.buildCreatorColors=buildCreatorColors;}catch(e){}try{window.buildCreatorEmblems=buildCreatorEmblems;}catch(e){}try{window.buildPentagon=buildPentagon;}catch(e){}try{window.buildStartItemsPreview=buildStartItemsPreview;}catch(e){}try{window.buyItem=buyItem;}catch(e){}try{window.cGoTo=cGoTo;}catch(e){}try{window.cNext=cNext;}catch(e){}try{window.calNav=calNav;}catch(e){}try{window.canBuyItem=canBuyItem;}catch(e){}try{window.checkDailyMissions=checkDailyMissions;}catch(e){}try{window.checkLevelUp=checkLevelUp;}catch(e){}try{window.classToRow=classToRow;}catch(e){}try{window.cleanOldCompleted=cleanOldCompleted;}catch(e){}try{window.clearPlannerImport=clearPlannerImport;}catch(e){}try{window.closeAdminEditModal=closeAdminEditModal;}catch(e){}try{window.closeAvatarEditor=closeAvatarEditor;}catch(e){}try{window.closeEdit=closeEdit;}catch(e){}try{window.closeEventModal=closeEventModal;}catch(e){}try{window.closeMissionModal=closeMissionModal;}catch(e){}try{window.closeReward=closeReward;}catch(e){}try{window.completeMission=completeMission;}catch(e){}try{window.computeClassBonus=computeClassBonus;}catch(e){}try{window.confirmLevelUp=confirmLevelUp;}catch(e){}try{window.confirmPlannerImport=confirmPlannerImport;}catch(e){}try{window.createArc=createArc;}catch(e){}try{window.createMission=createMission;}catch(e){}try{window.createTutorialForPlayer=createTutorialForPlayer;}catch(e){}try{window.createWelcomeArc=createWelcomeArc;}catch(e){}try{window.deleteArc=deleteArc;}catch(e){}try{window.deleteEvent=deleteEvent;}catch(e){}try{window.deleteMission=deleteMission;}catch(e){}try{window.deletePlayer=deletePlayer;}catch(e){}try{window.doAdminLogin=doAdminLogin;}catch(e){}try{window.doLogout=doLogout;}catch(e){}try{window.doPull=doPull;}catch(e){}try{window.enterApp=enterApp;}catch(e){}try{window.equipItem=equipItem;}catch(e){}try{window.eventItemHTML=eventItemHTML;}catch(e){}try{window.exportJSON=exportJSON;}catch(e){}try{window.formatDate=formatDate;}catch(e){}try{window.getAdminProfile=getAdminProfile;}catch(e){}try{window.getEffectiveAttrs=getEffectiveAttrs;}catch(e){}try{window.getFilteredEvents=getFilteredEvents;}catch(e){}try{window.getPlayerAvatar=getPlayerAvatar;}catch(e){}try{window.getRarityByChance=getRarityByChance;}catch(e){}try{window.goToMyProfile=goToMyProfile;}catch(e){}try{window.initCalFilterBtns=initCalFilterBtns;}catch(e){}try{window.initTheme=initTheme;}catch(e){}try{window.invEquipSlot=invEquipSlot;}catch(e){}try{window.loadMenuNames=loadMenuNames;}catch(e){}try{window.mCard=mCard;}catch(e){}try{window.meetsReqs=meetsReqs;}catch(e){}try{window.missionToRow=missionToRow;}catch(e){}try{window.openAdminEditCarta=openAdminEditCarta;}catch(e){}try{window.openAdminEditItem=openAdminEditItem;}catch(e){}try{window.openAvatarEditor=openAvatarEditor;}catch(e){}try{window.openEditModal=openEditModal;}catch(e){}try{window.openEventModal=openEventModal;}catch(e){}try{window.openMissionModal=openMissionModal;}catch(e){}try{window.openShowcaseSelector=openShowcaseSelector;}catch(e){}try{window.parsePlannerCSV=parsePlannerCSV;}catch(e){}try{window.parsePlannerExcel=parsePlannerExcel;}catch(e){}try{window.parsePlannerFile=parsePlannerFile;}catch(e){}try{window.plannerDragOver=plannerDragOver;}catch(e){}try{window.plannerDrop=plannerDrop;}catch(e){}try{window.plannerFileSelected=plannerFileSelected;}catch(e){}try{window.populateArcSelect=populateArcSelect;}catch(e){}try{window.promptRenameMenu=promptRenameMenu;}catch(e){}try{window.pullCard=pullCard;}catch(e){}try{window.pullResult=pullResult;}catch(e){}try{window.renderAdminCartasPage=renderAdminCartasPage;}catch(e){}try{window.renderAdminItemsPage=renderAdminItemsPage;}catch(e){}try{window.renderAll=renderAll;}catch(e){}try{window.renderArcs=renderArcs;}catch(e){}try{window.renderAvatar=renderAvatar;}catch(e){}try{window.renderAvatarEditor=renderAvatarEditor;}catch(e){}try{window.renderCalendar=renderCalendar;}catch(e){}try{window.renderClassesAdmin=renderClassesAdmin;}catch(e){}try{window.renderDayEvents=renderDayEvents;}catch(e){}try{window.renderGachaGold=renderGachaGold;}catch(e){}try{window.renderGalleryCards=renderGalleryCards;}catch(e){}try{window.renderGalleryTabs=renderGalleryTabs;}catch(e){}try{window.renderHeroProfile=renderHeroProfile;}catch(e){}try{window.renderHeroTabs=renderHeroTabs;}catch(e){}try{window.renderHeroTabsOLD=renderHeroTabsOLD;}catch(e){}try{window.renderInventario=renderInventario;}catch(e){}try{window.renderMStats=renderMStats;}catch(e){}try{window.renderMissions=renderMissions;}catch(e){}try{window.renderMyGallery=renderMyGallery;}catch(e){}try{window.renderPlannerImported=renderPlannerImported;}catch(e){}try{window.renderRanking=renderRanking;}catch(e){}try{window.renderShop=renderShop;}catch(e){}try{window.renderUpcoming=renderUpcoming;}catch(e){}try{window.rowToClass=rowToClass;}catch(e){}try{window.rowToMission=rowToMission;}catch(e){}try{window.saveAvatar=saveAvatar;}catch(e){}try{window.saveEdit=saveEdit;}catch(e){}try{window.saveEvent=saveEvent;}catch(e){}try{window.saveNewChar=saveNewChar;}catch(e){}try{window.selectCalDay=selectCalDay;}catch(e){}try{window.selectDiff=selectDiff;}catch(e){}try{window.selectGalleryHero=selectGalleryHero;}catch(e){}try{window.showInvTab=showInvTab;}catch(e){}try{window.saveAvatarInline=saveAvatarInline;}catch(e){}try{window.avaOptLabel=avaOptLabel;}catch(e){}try{window.setPlayerFrame=setPlayerFrame;}catch(e){}try{window.renderFramePicker=renderFramePicker;}catch(e){}try{window.selectHero=selectHero;}catch(e){}try{window.setAvatarOpt=setAvatarOpt;}catch(e){}try{window.setCalFilter=setCalFilter;}catch(e){}try{window.showLevelUpPopup=showLevelUpPopup;}catch(e){}try{window.showPage=showPage;}catch(e){}try{window.showPage_planner=showPage_planner;}catch(e){}try{window.showPlannerPreview=showPlannerPreview;}catch(e){}try{window.showRewardPopup=showRewardPopup;}catch(e){}try{window.showScreen=showScreen;}catch(e){}try{window.switchAdminTab=switchAdminTab;}catch(e){}try{window.switchPTab=switchPTab;}catch(e){}try{window.toast=toast;}catch(e){}try{window.toggleDailyFields=toggleDailyFields;}catch(e){}try{window.toggleTheme=toggleTheme;}catch(e){}try{window.toggleUMenu=toggleUMenu;}catch(e){}try{window.unequipItem=unequipItem;}catch(e){}try{window.updateArcCounts=updateArcCounts;}catch(e){}try{window.updateSidebarAvatar=updateSidebarAvatar;}catch(e){}
+try{window.addAttrPt=addAttrPt;}catch(e){}try{window.applyMenuNames=applyMenuNames;}catch(e){}try{window.assignMission=assignMission;}catch(e){}try{window.buildAttrBars=buildAttrBars;}catch(e){}try{window.buildAvatarUrl=buildAvatarUrl;}catch(e){}try{window.buildCreatorCls=buildCreatorCls;}catch(e){}try{window.buildCreatorColors=buildCreatorColors;}catch(e){}try{window.buildCreatorEmblems=buildCreatorEmblems;}catch(e){}try{window.buildPentagon=buildPentagon;}catch(e){}try{window.buildStartItemsPreview=buildStartItemsPreview;}catch(e){}try{window.buyItem=buyItem;}catch(e){}try{window.cGoTo=cGoTo;}catch(e){}try{window.cNext=cNext;}catch(e){}try{window.calNav=calNav;}catch(e){}try{window.canBuyItem=canBuyItem;}catch(e){}try{window.checkDailyMissions=checkDailyMissions;}catch(e){}try{window.checkLevelUp=checkLevelUp;}catch(e){}try{window.classToRow=classToRow;}catch(e){}try{window.cleanOldCompleted=cleanOldCompleted;}catch(e){}try{window.clearPlannerImport=clearPlannerImport;}catch(e){}try{window.closeAdminEditModal=closeAdminEditModal;}catch(e){}try{window.closeAvatarEditor=closeAvatarEditor;}catch(e){}try{window.closeEdit=closeEdit;}catch(e){}try{window.closeEventModal=closeEventModal;}catch(e){}try{window.closeMissionModal=closeMissionModal;}catch(e){}try{window.closeReward=closeReward;}catch(e){}try{window.completeMission=completeMission;}catch(e){}try{window.computeClassBonus=computeClassBonus;}catch(e){}try{window.confirmLevelUp=confirmLevelUp;}catch(e){}try{window.confirmPlannerImport=confirmPlannerImport;}catch(e){}try{window.createArc=createArc;}catch(e){}try{window.createMission=createMission;}catch(e){}try{window.createTutorialForPlayer=createTutorialForPlayer;}catch(e){}try{window.createWelcomeArc=createWelcomeArc;}catch(e){}try{window.deleteArc=deleteArc;}catch(e){}try{window.deleteEvent=deleteEvent;}catch(e){}try{window.deleteMission=deleteMission;}catch(e){}try{window.deletePlayer=deletePlayer;}catch(e){}try{window.doAdminLogin=doAdminLogin;}catch(e){}try{window.doLogout=doLogout;}catch(e){}try{window.doPull=doPull;}catch(e){}try{window.enterApp=enterApp;}catch(e){}try{window.equipItem=equipItem;}catch(e){}try{window.eventItemHTML=eventItemHTML;}catch(e){}try{window.exportJSON=exportJSON;}catch(e){}try{window.formatDate=formatDate;}catch(e){}try{window.getAdminProfile=getAdminProfile;}catch(e){}try{window.getEffectiveAttrs=getEffectiveAttrs;}catch(e){}try{window.getFilteredEvents=getFilteredEvents;}catch(e){}try{window.getPlayerAvatar=getPlayerAvatar;}catch(e){}try{window.getRarityByChance=getRarityByChance;}catch(e){}try{window.goToMyProfile=goToMyProfile;}catch(e){}try{window.initCalFilterBtns=initCalFilterBtns;}catch(e){}try{window.initTheme=initTheme;}catch(e){}try{window.invEquipSlot=invEquipSlot;}catch(e){}try{window.loadMenuNames=loadMenuNames;}catch(e){}try{window.mCard=mCard;}catch(e){}try{window.meetsReqs=meetsReqs;}catch(e){}try{window.missionToRow=missionToRow;}catch(e){}try{window.openAdminEditCarta=openAdminEditCarta;}catch(e){}try{window.openAdminEditItem=openAdminEditItem;}catch(e){}try{window.openAvatarEditor=openAvatarEditor;}catch(e){}try{window.openEditModal=openEditModal;}catch(e){}try{window.openEventModal=openEventModal;}catch(e){}try{window.openMissionModal=openMissionModal;}catch(e){}try{window.openShowcaseSelector=openShowcaseSelector;}catch(e){}try{window.parsePlannerCSV=parsePlannerCSV;}catch(e){}try{window.parsePlannerExcel=parsePlannerExcel;}catch(e){}try{window.parsePlannerFile=parsePlannerFile;}catch(e){}try{window.plannerDragOver=plannerDragOver;}catch(e){}try{window.plannerDrop=plannerDrop;}catch(e){}try{window.plannerFileSelected=plannerFileSelected;}catch(e){}try{window.populateArcSelect=populateArcSelect;}catch(e){}try{window.promptRenameMenu=promptRenameMenu;}catch(e){}try{window.pullCard=pullCard;}catch(e){}try{window.pullResult=pullResult;}catch(e){}try{window.renderAdminCartasPage=renderAdminCartasPage;}catch(e){}try{window.renderAdminItemsPage=renderAdminItemsPage;}catch(e){}try{window.renderAll=renderAll;}catch(e){}try{window.renderArcs=renderArcs;}catch(e){}try{window.renderAvatar=renderAvatar;}catch(e){}try{window.renderAvatarEditor=renderAvatarEditor;}catch(e){}try{window.renderCalendar=renderCalendar;}catch(e){}try{window.renderClassesAdmin=renderClassesAdmin;}catch(e){}try{window.renderDayEvents=renderDayEvents;}catch(e){}try{window.renderGachaGold=renderGachaGold;}catch(e){}try{window.renderGalleryCards=renderGalleryCards;}catch(e){}try{window.renderGalleryTabs=renderGalleryTabs;}catch(e){}try{window.renderHeroProfile=renderHeroProfile;}catch(e){}try{window.renderHeroTabs=renderHeroTabs;}catch(e){}try{window.renderHeroTabsOLD=renderHeroTabsOLD;}catch(e){}try{window.renderInventario=renderInventario;}catch(e){}try{window.renderMStats=renderMStats;}catch(e){}try{window.renderMissions=renderMissions;}catch(e){}try{window.renderMyGallery=renderMyGallery;}catch(e){}try{window.renderPlannerImported=renderPlannerImported;}catch(e){}try{window.renderRanking=renderRanking;}catch(e){}try{window.renderShop=renderShop;}catch(e){}try{window.renderUpcoming=renderUpcoming;}catch(e){}try{window.rowToClass=rowToClass;}catch(e){}try{window.rowToMission=rowToMission;}catch(e){}try{window.saveAvatar=saveAvatar;}catch(e){}try{window.saveEdit=saveEdit;}catch(e){}try{window.saveEvent=saveEvent;}catch(e){}try{window.saveNewChar=saveNewChar;}catch(e){}try{window.selectCalDay=selectCalDay;}catch(e){}try{window.selectDiff=selectDiff;}catch(e){}try{window.selectGalleryHero=selectGalleryHero;}catch(e){}try{window.showInvTab=showInvTab;}catch(e){}try{window.toggleGalleryOwned=toggleGalleryOwned;}catch(e){}try{window.saveAvatarInline=saveAvatarInline;}catch(e){}try{window.avaOptLabel=avaOptLabel;}catch(e){}try{window.setPlayerFrame=setPlayerFrame;}catch(e){}try{window.renderFramePicker=renderFramePicker;}catch(e){}try{window.selectHero=selectHero;}catch(e){}try{window.setAvatarOpt=setAvatarOpt;}catch(e){}try{window.setCalFilter=setCalFilter;}catch(e){}try{window.showLevelUpPopup=showLevelUpPopup;}catch(e){}try{window.showPage=showPage;}catch(e){}try{window.showPage_planner=showPage_planner;}catch(e){}try{window.showPlannerPreview=showPlannerPreview;}catch(e){}try{window.showRewardPopup=showRewardPopup;}catch(e){}try{window.showScreen=showScreen;}catch(e){}try{window.switchAdminTab=switchAdminTab;}catch(e){}try{window.switchPTab=switchPTab;}catch(e){}try{window.toast=toast;}catch(e){}try{window.toggleDailyFields=toggleDailyFields;}catch(e){}try{window.toggleTheme=toggleTheme;}catch(e){}try{window.toggleUMenu=toggleUMenu;}catch(e){}try{window.unequipItem=unequipItem;}catch(e){}try{window.updateArcCounts=updateArcCounts;}catch(e){}try{window.updateSidebarAvatar=updateSidebarAvatar;}catch(e){}
 try{window.adminChangeVia=adminChangeVia;}catch(e){}try{window.adminCreateCarta=adminCreateCarta;}catch(e){}try{window.adminCreateItemFull=adminCreateItemFull;}catch(e){}try{window.adminDeleteCarta=adminDeleteCarta;}catch(e){}try{window.adminDeleteItemFull=adminDeleteItemFull;}catch(e){}try{window.deleteCartaFromSupabase=deleteCartaFromSupabase;}catch(e){}try{window.deleteItemFromSupabase=deleteItemFromSupabase;}catch(e){}try{window.deleteMissionFromSupabase=deleteMissionFromSupabase;}catch(e){}try{window.doLogin=doLogin;}catch(e){}try{window.loadClassesFromSupabase=loadClassesFromSupabase;}catch(e){}try{window.loadData=loadData;}catch(e){}try{window.loadFromSupabase=loadFromSupabase;}catch(e){}try{window.loadMissionsFromSupabase=loadMissionsFromSupabase;}catch(e){}try{window.saveAdminEdit=saveAdminEdit;}catch(e){}try{window.saveAllMissionsToSupabase=saveAllMissionsToSupabase;}catch(e){}try{window.saveCartaToSupabase=saveCartaToSupabase;}catch(e){}try{window.saveClassEdit=saveClassEdit;}catch(e){}try{window.saveClassToSupabase=saveClassToSupabase;}catch(e){}try{window.saveItemToSupabase=saveItemToSupabase;}catch(e){}try{window.saveMissionToSupabase=saveMissionToSupabase;}catch(e){}try{window.saveToSupabase=saveToSupabase;}catch(e){}
 try{window.saveAttrNames=saveAttrNames;}catch(e){}
 try{window.attrKeyFromName=attrKeyFromName;}catch(e){}

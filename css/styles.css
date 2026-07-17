@@ -217,6 +217,11 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .gallery-card-label .gname{font-size:11px;font-weight:500;color:var(--text);}
 .gallery-card-label .grarity{font-size:10px;margin-top:1px;}
 .gallery-empty{font-size:13px;color:var(--muted);text-align:center;padding:2rem;}
+.gallery-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:1rem;}
+.gallery-count{font-size:14px;font-weight:700;color:var(--text);}
+.gallery-card.locked{opacity:.85;}
+.gallery-card.locked .gallery-locked-img{width:100%;aspect-ratio:2/3;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:800;color:var(--faint);background:repeating-linear-gradient(45deg,var(--bg3),var(--bg3) 8px,var(--bg2) 8px,var(--bg2) 16px);}
+.gallery-card.locked .gname{color:var(--muted);}
 .pull-anim{animation:pullPop .4s ease;}
 @keyframes pullPop{0%{transform:scale(.5);opacity:0;}70%{transform:scale(1.1);}100%{transform:scale(1);opacity:1;}}
 /* ══ REWARD POPUP ══ */
