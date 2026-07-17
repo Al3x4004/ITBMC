@@ -1309,9 +1309,9 @@ function doPull(times){
   var refund=0,dupes=0;
   results.forEach(r=>{
     if(r.type==='card'){
-      var already=p.gallery.indexOf(r.data.id)>=0;
-      if(already){refund+=Math.floor(costPerPull/2);dupes++;r._dupe=true;}
-      else p.gallery.push(r.data.id);
+      // Les cartes s'acumulen (duplicats): els pots vendre/intercanviar al mercat negre
+      if(p.gallery.indexOf(r.data.id)>=0){dupes++;r._dupe=true;}
+      p.gallery.push(r.data.id);
     }else if(r.type==='item'){
       var haveItem=p.inventory.indexOf(r.data.id)>=0;
       if(haveItem){refund+=Math.floor(costPerPull/2);dupes++;r._dupe=true;}
@@ -1326,7 +1326,7 @@ function doPull(times){
     const div=document.createElement('div');div.className='gacha-card pull-anim rarity-frame-'+rarity;
     div.style.animationDelay=`${i*0.08}s`;
     div.style.position='relative';
-    var dupeMsg=r._dupe?'<div class="gacha-dupe-msg">✨ Ja el tenies · +'+Math.floor(costPerPull/2)+' retornats</div>':'';
+    var dupeMsg=(r._dupe&&r.type==='card')?'<div class="gacha-dupe-msg">🔁 Duplicat! El pots vendre o intercanviar</div>':(r._dupe?'<div class="gacha-dupe-msg">✨ Ja el tenies · +'+Math.floor(costPerPull/2)+' retornats</div>':'');
     if(r.type==='card'){
       const imgUrl=r.data.imageUrl||(r.data.image?CFG.GITHUB_RAW+r.data.image:'');
       div.innerHTML=`<div class="gacha-card-imgwrap rarity-bg-${rarity}"><img src="${imgUrl}" alt="${r.data.name}" onerror="this.style.opacity=0;"></div>
@@ -1395,17 +1395,33 @@ function renderGalleryTabs(){
 function selectGalleryHero(i){galleryHeroIdx=i;renderGalleryTabs();}
 
 /* ══ MERCAT NEGRE ══ */
+const QUICK_SELL={comun:50,rara:75,epica:150,legendaria:300};
 function mkCardById(id){return gachaCards.find(function(c){return c.id===id;});}
-function renderMarketForms(){
+function galleryCounts(p){var m={};((p&&p.gallery)?p.gallery:[]).forEach(function(id){m[id]=(m[id]||0)+1;});return m;}
+function dupIds(p){var m=galleryCounts(p);return Object.keys(m).filter(function(id){return m[id]>1;});}
+var mlSelCard=null,mlSelWant=null;
+function selectSellCard(id){mlSelCard=id;renderCardPickers();}
+function selectWantCard(id){mlSelWant=id;renderCardPickers();}
+function mkThumb(c,selected,onclick,extra){
+  var img=c.imageUrl||(c.image?CFG.GITHUB_RAW+c.image:'');
+  return '<div class="cpick'+(selected?' sel':'')+'" onclick="'+onclick+'">'
+    +'<img src="'+img+'" alt="'+c.name+'" onerror="this.style.background=\'var(--bg3)\';this.style.minHeight=\'64px\';">'
+    +'<div class="cpick-lbl">'+c.name+'</div>'
+    +'<div class="grarity rarity-'+c.rarity+'" style="font-size:9px;">'+RARITY_LABEL[c.rarity]+'</div>'
+    +(extra||'')+'</div>';
+}
+function renderCardPickers(){
   var p=players.find(function(pl){return pl.id===session.playerId;});
-  var cardSel=document.getElementById('ml-card');
-  if(cardSel){
-    var owned=((p&&p.gallery)?p.gallery:[]).map(mkCardById).filter(Boolean);
-    cardSel.innerHTML=owned.length?owned.map(function(c){return '<option value="'+c.id+'">'+c.name+' ('+RARITY_LABEL[c.rarity]+')</option>';}).join(''):'<option value="">No tens cartes</option>';
+  var cg=document.getElementById('ml-card-grid');
+  if(cg){
+    var counts=galleryCounts(p);
+    var dups=dupIds(p).map(mkCardById).filter(Boolean);
+    if(mlSelCard&&dups.every(function(c){return c.id!==mlSelCard;}))mlSelCard=null;
+    cg.innerHTML=dups.length?dups.map(function(c){return mkThumb(c,mlSelCard===c.id,'selectSellCard(\''+c.id+'\')','<div class="cpick-x">x'+counts[c.id]+'</div>');}).join(''):'<div style="font-size:12px;color:var(--muted);">No tens cartes duplicades. Aconsegueix-ne repetides al gacha per vendre-les o intercanviar-les.</div>';
   }
-  var wantSel=document.getElementById('ml-want');
-  if(wantSel){
-    wantSel.innerHTML=gachaCards.slice().sort(function(a,b){return RARITY_ORDER.indexOf(a.rarity)-RARITY_ORDER.indexOf(b.rarity);}).map(function(c){return '<option value="'+c.id+'">'+c.name+' ('+RARITY_LABEL[c.rarity]+')</option>';}).join('');
+  var wg=document.getElementById('ml-want-grid');
+  if(wg){
+    wg.innerHTML=gachaCards.slice().sort(function(a,b){return RARITY_ORDER.indexOf(a.rarity)-RARITY_ORDER.indexOf(b.rarity);}).map(function(c){return mkThumb(c,mlSelWant===c.id,'selectWantCard(\''+c.id+'\')');}).join('');
   }
 }
 function onListingModeChange(){
@@ -1414,8 +1430,37 @@ function onListingModeChange(){
   if(pw)pw.style.display=mode==='trade'?'none':'';
   if(ww)ww.style.display=mode==='trade'?'':'none';
 }
+function renderQuickSell(){
+  var host=document.getElementById('quicksell-grid');if(!host)return;
+  var p=players.find(function(pl){return pl.id===session.playerId;});
+  if(!p){host.innerHTML='<div style="font-size:12px;color:var(--muted);">Entra amb un personatge.</div>';return;}
+  var counts=galleryCounts(p);
+  var dups=dupIds(p).map(mkCardById).filter(Boolean);
+  if(!dups.length){host.innerHTML='<div style="font-size:12px;color:var(--muted);">No tens duplicats per vendre.</div>';return;}
+  host.innerHTML='<div class="gallery-grid">'+dups.map(function(c){
+    var val=QUICK_SELL[c.rarity]||0;
+    var img=c.imageUrl||(c.image?CFG.GITHUB_RAW+c.image:'');
+    return '<div class="gallery-card rarity-frame-'+c.rarity+'">'
+      +'<img src="'+img+'" alt="'+c.name+'" onerror="this.style.background=\'var(--bg3)\';this.style.minHeight=\'120px\';">'
+      +'<div class="gallery-card-label"><div class="gname">'+c.name+' <span style="color:var(--muted);">x'+counts[c.id]+'</span></div>'
+      +'<button class="btn btn-sm btn-gold" style="width:100%;margin-top:5px;" onclick="quickSellCard(\''+c.id+'\')">Vendre +'+val+' ✨</button>'
+      +'</div></div>';
+  }).join('')+'</div>';
+}
+function quickSellCard(cardId){
+  var p=players.find(function(pl){return pl.id===session.playerId;});if(!p)return;
+  var counts=galleryCounts(p);
+  if(!(counts[cardId]>1)){toast('Només pots vendre duplicats (has de conservar-ne una).');return;}
+  var c=mkCardById(cardId);if(!c)return;
+  var val=QUICK_SELL[c.rarity]||0;
+  var idx=p.gallery.indexOf(cardId);if(idx>=0)p.gallery.splice(idx,1);
+  p.fragments=(p.fragments||0)+val;
+  if(CFG.MODE==='supabase')saveToSupabase();
+  renderMarket();renderAll();
+  toast('+'+val+' ✨ per '+c.name);
+}
 function renderMarket(){
-  renderMarketForms();
+  renderCardPickers();renderQuickSell();
   var p=players.find(function(pl){return pl.id===session.playerId;});
   var w=document.getElementById('mercat-wallet');
   if(w)w.innerHTML=p?('El teu moneder: 🪙 '+p.gold+' or · ✨ '+(p.fragments||0)+' fragments'):'Entra amb un personatge per operar al mercat.';
@@ -1426,6 +1471,7 @@ function renderMarket(){
     var seller=players.find(function(pl){return pl.id===l.sellerId;});
     var sellerName=seller?seller.name.split(' ')[0]:'?';
     var mine=p&&l.sellerId===p.id;
+    var counts=galleryCounts(p);
     var imgUrl=c.imageUrl||(c.image?CFG.GITHUB_RAW+c.image:'');
     var priceLine='';
     if(l.mode==='gold')priceLine='🪙 '+l.price+' or';
@@ -1436,13 +1482,12 @@ function renderMarket(){
       btn='<button class="btn btn-sm" style="width:100%;color:var(--coral);border-color:var(--coral-border);" onclick="cancelListing(\''+l.id+'\')">Retirar</button>';
     }else if(p){
       if(l.mode==='trade'){
-        var canTrade=(p.gallery||[]).indexOf(l.wantCardId)>=0 && (p.gallery||[]).indexOf(l.cardId)<0;
-        btn='<button class="btn btn-sm btn-p" style="width:100%;" '+(canTrade?'':'disabled')+' onclick="tradeListing(\''+l.id+'\')">'+((p.gallery||[]).indexOf(l.cardId)>=0?'Ja la tens':(canTrade?'Intercanviar':'No tens la carta'))+'</button>';
+        var canTrade=(counts[l.wantCardId]||0)>1;/* cal un duplicat de la carta demanada */
+        btn='<button class="btn btn-sm btn-p" style="width:100%;" '+(canTrade?'':'disabled')+' onclick="tradeListing(\''+l.id+'\')">'+(canTrade?'Intercanviar':'Necessites un duplicat')+'</button>';
       }else{
         var cur=l.mode==='gold'?(p.gold||0):(p.fragments||0);
-        var have=(p.gallery||[]).indexOf(l.cardId)>=0;
-        var can=cur>=l.price&&!have;
-        btn='<button class="btn btn-sm btn-p" style="width:100%;" '+(can?'':'disabled')+' onclick="buyListing(\''+l.id+'\')">'+(have?'Ja la tens':(can?'Comprar':'Sense saldo'))+'</button>';
+        var can=cur>=l.price;
+        btn='<button class="btn btn-sm btn-p" style="width:100%;" '+(can?'':'disabled')+' onclick="buyListing(\''+l.id+'\')">'+(can?'Comprar':'Sense saldo')+'</button>';
       }
     }
     return '<div class="gallery-card rarity-frame-'+c.rarity+'">'
@@ -1459,21 +1504,23 @@ function renderMarket(){
 function createListing(){
   var p=players.find(function(pl){return pl.id===session.playerId;});
   if(!p){toast('Entra amb un personatge.');return;}
-  var cardId=document.getElementById('ml-card').value;
-  if(!cardId||(p.gallery||[]).indexOf(cardId)<0){toast('Tria una carta que tinguis.');return;}
+  var cardId=mlSelCard;
+  var counts=galleryCounts(p);
+  if(!cardId||!(counts[cardId]>1)){toast('Tria una carta DUPLICADA (n\'has de tenir més d\'una).');return;}
   var mode=document.getElementById('ml-mode').value;
   var listing={id:'mk'+Date.now(),sellerId:p.id,cardId:cardId,mode:mode};
   if(mode==='trade'){
-    var want=document.getElementById('ml-want').value;
-    if(!want){toast('Tria la carta que vols.');return;}
+    var want=mlSelWant;
+    if(!want){toast('Tria la carta que vols a canvi.');return;}
     listing.wantCardId=want;
   }else{
     var price=parseInt(document.getElementById('ml-price').value)||0;
     if(price<=0){toast('Posa un preu vàlid.');return;}
     listing.price=price;
   }
-  p.gallery=(p.gallery||[]).filter(function(id){return id!==cardId;});/* escrow */
+  var _ei=p.gallery.indexOf(cardId);if(_ei>=0)p.gallery.splice(_ei,1);/* escrow: treu una còpia */
   market.push(listing);
+  mlSelCard=null;mlSelWant=null;
   if(CFG.MODE==='supabase')saveToSupabase();
   var pn=document.getElementById('panel-new-listing');if(pn)pn.removeAttribute('open');
   renderMarket();renderAll();
@@ -1494,7 +1541,6 @@ function buyListing(id){
   var l=market.find(function(x){return x.id===id;});if(!l||l.mode==='trade')return;
   var p=players.find(function(pl){return pl.id===session.playerId;});
   if(!p||l.sellerId===p.id)return;
-  if((p.gallery||[]).indexOf(l.cardId)>=0){toast('Ja tens aquesta carta.');return;}
   var cur=l.mode==='gold'?(p.gold||0):(p.fragments||0);
   if(cur<l.price){toast('No tens prou saldo.');return;}
   var seller=players.find(function(pl){return pl.id===l.sellerId;});
@@ -1510,12 +1556,12 @@ function tradeListing(id){
   var l=market.find(function(x){return x.id===id;});if(!l||l.mode!=='trade')return;
   var p=players.find(function(pl){return pl.id===session.playerId;});
   if(!p||l.sellerId===p.id)return;
-  if((p.gallery||[]).indexOf(l.wantCardId)<0){toast('No tens la carta que demanen.');return;}
-  if((p.gallery||[]).indexOf(l.cardId)>=0){toast('Ja tens la carta oferta.');return;}
+  var counts=galleryCounts(p);
+  if(!(counts[l.wantCardId]>1)){toast('Necessites un DUPLICAT de la carta que demanen.');return;}
   var seller=players.find(function(pl){return pl.id===l.sellerId;});
-  p.gallery=p.gallery.filter(function(x){return x!==l.wantCardId;});
-  p.gallery.push(l.cardId);
-  if(seller){if(!seller.gallery)seller.gallery=[];if(seller.gallery.indexOf(l.wantCardId)<0)seller.gallery.push(l.wantCardId);}
+  var _wi=p.gallery.indexOf(l.wantCardId);if(_wi>=0)p.gallery.splice(_wi,1);/* dóna una còpia */
+  p.gallery.push(l.cardId);/* rep la carta oferta */
+  if(seller){if(!seller.gallery)seller.gallery=[];seller.gallery.push(l.wantCardId);}
   market=market.filter(function(x){return x.id!==id;});
   if(CFG.MODE==='supabase')saveToSupabase();
   renderMarket();renderAll();
@@ -3438,7 +3484,7 @@ window.addEventListener('dicebear-ready',function(){
 /* ══ EXPONER FUNCIONES EN WINDOW (para onclick del HTML) ══ */
 // Necesario al tener el JS en archivo externo: garantiza que los onclick="fn()" encuentren las funciones.
 try{window.addAttrPt=addAttrPt;}catch(e){}try{window.applyMenuNames=applyMenuNames;}catch(e){}try{window.assignMission=assignMission;}catch(e){}try{window.buildAttrBars=buildAttrBars;}catch(e){}try{window.buildAvatarUrl=buildAvatarUrl;}catch(e){}try{window.buildCreatorCls=buildCreatorCls;}catch(e){}try{window.buildCreatorColors=buildCreatorColors;}catch(e){}try{window.buildCreatorEmblems=buildCreatorEmblems;}catch(e){}try{window.buildPentagon=buildPentagon;}catch(e){}try{window.buildStartItemsPreview=buildStartItemsPreview;}catch(e){}try{window.buyItem=buyItem;}catch(e){}try{window.cGoTo=cGoTo;}catch(e){}try{window.cNext=cNext;}catch(e){}try{window.calNav=calNav;}catch(e){}try{window.canBuyItem=canBuyItem;}catch(e){}try{window.checkDailyMissions=checkDailyMissions;}catch(e){}try{window.checkLevelUp=checkLevelUp;}catch(e){}try{window.classToRow=classToRow;}catch(e){}try{window.cleanOldCompleted=cleanOldCompleted;}catch(e){}try{window.clearPlannerImport=clearPlannerImport;}catch(e){}try{window.closeAdminEditModal=closeAdminEditModal;}catch(e){}try{window.closeAvatarEditor=closeAvatarEditor;}catch(e){}try{window.closeEdit=closeEdit;}catch(e){}try{window.closeEventModal=closeEventModal;}catch(e){}try{window.closeMissionModal=closeMissionModal;}catch(e){}try{window.closeReward=closeReward;}catch(e){}try{window.completeMission=completeMission;}catch(e){}try{window.computeClassBonus=computeClassBonus;}catch(e){}try{window.confirmLevelUp=confirmLevelUp;}catch(e){}try{window.confirmPlannerImport=confirmPlannerImport;}catch(e){}try{window.createArc=createArc;}catch(e){}try{window.createMission=createMission;}catch(e){}try{window.createTutorialForPlayer=createTutorialForPlayer;}catch(e){}try{window.createWelcomeArc=createWelcomeArc;}catch(e){}try{window.deleteArc=deleteArc;}catch(e){}try{window.deleteEvent=deleteEvent;}catch(e){}try{window.deleteMission=deleteMission;}catch(e){}try{window.deletePlayer=deletePlayer;}catch(e){}try{window.doAdminLogin=doAdminLogin;}catch(e){}try{window.doLogout=doLogout;}catch(e){}try{window.doPull=doPull;}catch(e){}try{window.enterApp=enterApp;}catch(e){}try{window.equipItem=equipItem;}catch(e){}try{window.eventItemHTML=eventItemHTML;}catch(e){}try{window.exportJSON=exportJSON;}catch(e){}try{window.formatDate=formatDate;}catch(e){}try{window.getAdminProfile=getAdminProfile;}catch(e){}try{window.getEffectiveAttrs=getEffectiveAttrs;}catch(e){}try{window.getFilteredEvents=getFilteredEvents;}catch(e){}try{window.getPlayerAvatar=getPlayerAvatar;}catch(e){}try{window.getRarityByChance=getRarityByChance;}catch(e){}try{window.goToMyProfile=goToMyProfile;}catch(e){}try{window.initCalFilterBtns=initCalFilterBtns;}catch(e){}try{window.initTheme=initTheme;}catch(e){}try{window.invEquipSlot=invEquipSlot;}catch(e){}try{window.loadMenuNames=loadMenuNames;}catch(e){}try{window.mCard=mCard;}catch(e){}try{window.meetsReqs=meetsReqs;}catch(e){}try{window.missionToRow=missionToRow;}catch(e){}try{window.openAdminEditCarta=openAdminEditCarta;}catch(e){}try{window.openAdminEditItem=openAdminEditItem;}catch(e){}try{window.openAvatarEditor=openAvatarEditor;}catch(e){}try{window.openEditModal=openEditModal;}catch(e){}try{window.openEventModal=openEventModal;}catch(e){}try{window.openMissionModal=openMissionModal;}catch(e){}try{window.openShowcaseSelector=openShowcaseSelector;}catch(e){}try{window.parsePlannerCSV=parsePlannerCSV;}catch(e){}try{window.parsePlannerExcel=parsePlannerExcel;}catch(e){}try{window.parsePlannerFile=parsePlannerFile;}catch(e){}try{window.plannerDragOver=plannerDragOver;}catch(e){}try{window.plannerDrop=plannerDrop;}catch(e){}try{window.plannerFileSelected=plannerFileSelected;}catch(e){}try{window.populateArcSelect=populateArcSelect;}catch(e){}try{window.promptRenameMenu=promptRenameMenu;}catch(e){}try{window.pullCard=pullCard;}catch(e){}try{window.pullResult=pullResult;}catch(e){}try{window.renderAdminCartasPage=renderAdminCartasPage;}catch(e){}try{window.renderAdminItemsPage=renderAdminItemsPage;}catch(e){}try{window.renderAll=renderAll;}catch(e){}try{window.renderArcs=renderArcs;}catch(e){}try{window.renderAvatar=renderAvatar;}catch(e){}try{window.renderAvatarEditor=renderAvatarEditor;}catch(e){}try{window.renderCalendar=renderCalendar;}catch(e){}try{window.renderClassesAdmin=renderClassesAdmin;}catch(e){}try{window.renderDayEvents=renderDayEvents;}catch(e){}try{window.renderGachaGold=renderGachaGold;}catch(e){}try{window.renderGalleryCards=renderGalleryCards;}catch(e){}try{window.renderGalleryTabs=renderGalleryTabs;}catch(e){}try{window.renderHeroProfile=renderHeroProfile;}catch(e){}try{window.renderHeroTabs=renderHeroTabs;}catch(e){}try{window.renderHeroTabsOLD=renderHeroTabsOLD;}catch(e){}try{window.renderInventario=renderInventario;}catch(e){}try{window.renderMStats=renderMStats;}catch(e){}try{window.renderMissions=renderMissions;}catch(e){}try{window.renderMyGallery=renderMyGallery;}catch(e){}try{window.renderPlannerImported=renderPlannerImported;}catch(e){}try{window.renderRanking=renderRanking;}catch(e){}try{window.renderShop=renderShop;}catch(e){}try{window.renderUpcoming=renderUpcoming;}catch(e){}try{window.rowToClass=rowToClass;}catch(e){}try{window.rowToMission=rowToMission;}catch(e){}try{window.saveAvatar=saveAvatar;}catch(e){}try{window.saveEdit=saveEdit;}catch(e){}try{window.saveEvent=saveEvent;}catch(e){}try{window.saveNewChar=saveNewChar;}catch(e){}try{window.selectCalDay=selectCalDay;}catch(e){}try{window.selectDiff=selectDiff;}catch(e){}try{window.selectGalleryHero=selectGalleryHero;}catch(e){}try{window.showInvTab=showInvTab;}catch(e){}try{window.toggleGalleryOwned=toggleGalleryOwned;}catch(e){}
-try{window.renderMarket=renderMarket;}catch(e){}try{window.createListing=createListing;}catch(e){}try{window.cancelListing=cancelListing;}catch(e){}try{window.buyListing=buyListing;}catch(e){}try{window.tradeListing=tradeListing;}catch(e){}try{window.onListingModeChange=onListingModeChange;}catch(e){}try{window.saveAvatarInline=saveAvatarInline;}catch(e){}try{window.avaOptLabel=avaOptLabel;}catch(e){}try{window.setPlayerFrame=setPlayerFrame;}catch(e){}try{window.renderFramePicker=renderFramePicker;}catch(e){}try{window.selectHero=selectHero;}catch(e){}try{window.setAvatarOpt=setAvatarOpt;}catch(e){}try{window.setCalFilter=setCalFilter;}catch(e){}try{window.showLevelUpPopup=showLevelUpPopup;}catch(e){}try{window.showPage=showPage;}catch(e){}try{window.showPage_planner=showPage_planner;}catch(e){}try{window.showPlannerPreview=showPlannerPreview;}catch(e){}try{window.showRewardPopup=showRewardPopup;}catch(e){}try{window.showScreen=showScreen;}catch(e){}try{window.switchAdminTab=switchAdminTab;}catch(e){}try{window.switchPTab=switchPTab;}catch(e){}try{window.toast=toast;}catch(e){}try{window.toggleDailyFields=toggleDailyFields;}catch(e){}try{window.toggleTheme=toggleTheme;}catch(e){}try{window.toggleUMenu=toggleUMenu;}catch(e){}try{window.unequipItem=unequipItem;}catch(e){}try{window.updateArcCounts=updateArcCounts;}catch(e){}try{window.updateSidebarAvatar=updateSidebarAvatar;}catch(e){}
+try{window.renderMarket=renderMarket;}catch(e){}try{window.createListing=createListing;}catch(e){}try{window.cancelListing=cancelListing;}catch(e){}try{window.buyListing=buyListing;}catch(e){}try{window.tradeListing=tradeListing;}catch(e){}try{window.onListingModeChange=onListingModeChange;}catch(e){}try{window.quickSellCard=quickSellCard;}catch(e){}try{window.selectSellCard=selectSellCard;}catch(e){}try{window.selectWantCard=selectWantCard;}catch(e){}try{window.renderQuickSell=renderQuickSell;}catch(e){}try{window.renderCardPickers=renderCardPickers;}catch(e){}try{window.saveAvatarInline=saveAvatarInline;}catch(e){}try{window.avaOptLabel=avaOptLabel;}catch(e){}try{window.setPlayerFrame=setPlayerFrame;}catch(e){}try{window.renderFramePicker=renderFramePicker;}catch(e){}try{window.selectHero=selectHero;}catch(e){}try{window.setAvatarOpt=setAvatarOpt;}catch(e){}try{window.setCalFilter=setCalFilter;}catch(e){}try{window.showLevelUpPopup=showLevelUpPopup;}catch(e){}try{window.showPage=showPage;}catch(e){}try{window.showPage_planner=showPage_planner;}catch(e){}try{window.showPlannerPreview=showPlannerPreview;}catch(e){}try{window.showRewardPopup=showRewardPopup;}catch(e){}try{window.showScreen=showScreen;}catch(e){}try{window.switchAdminTab=switchAdminTab;}catch(e){}try{window.switchPTab=switchPTab;}catch(e){}try{window.toast=toast;}catch(e){}try{window.toggleDailyFields=toggleDailyFields;}catch(e){}try{window.toggleTheme=toggleTheme;}catch(e){}try{window.toggleUMenu=toggleUMenu;}catch(e){}try{window.unequipItem=unequipItem;}catch(e){}try{window.updateArcCounts=updateArcCounts;}catch(e){}try{window.updateSidebarAvatar=updateSidebarAvatar;}catch(e){}
 try{window.adminChangeVia=adminChangeVia;}catch(e){}try{window.adminCreateCarta=adminCreateCarta;}catch(e){}try{window.adminCreateItemFull=adminCreateItemFull;}catch(e){}try{window.adminDeleteCarta=adminDeleteCarta;}catch(e){}try{window.adminDeleteItemFull=adminDeleteItemFull;}catch(e){}try{window.deleteCartaFromSupabase=deleteCartaFromSupabase;}catch(e){}try{window.deleteItemFromSupabase=deleteItemFromSupabase;}catch(e){}try{window.deleteMissionFromSupabase=deleteMissionFromSupabase;}catch(e){}try{window.doLogin=doLogin;}catch(e){}try{window.loadClassesFromSupabase=loadClassesFromSupabase;}catch(e){}try{window.loadData=loadData;}catch(e){}try{window.loadFromSupabase=loadFromSupabase;}catch(e){}try{window.loadMissionsFromSupabase=loadMissionsFromSupabase;}catch(e){}try{window.saveAdminEdit=saveAdminEdit;}catch(e){}try{window.saveAllMissionsToSupabase=saveAllMissionsToSupabase;}catch(e){}try{window.saveCartaToSupabase=saveCartaToSupabase;}catch(e){}try{window.saveClassEdit=saveClassEdit;}catch(e){}try{window.saveClassToSupabase=saveClassToSupabase;}catch(e){}try{window.saveItemToSupabase=saveItemToSupabase;}catch(e){}try{window.saveMissionToSupabase=saveMissionToSupabase;}catch(e){}try{window.saveToSupabase=saveToSupabase;}catch(e){}
 try{window.saveAttrNames=saveAttrNames;}catch(e){}
 try{window.attrKeyFromName=attrKeyFromName;}catch(e){}
