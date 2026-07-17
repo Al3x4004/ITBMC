@@ -1194,7 +1194,8 @@ function renderArcs(){
 
 /* ── ranking ── */
 function renderRanking(){
-  const sorted=[...players].filter(p=>p.id!=='admin_special').sort((a,b)=>b.xp-a.xp);
+  const score=p=>(p.xp||0)+(p.gold||0);
+  const sorted=[...players].filter(p=>p.id!=='admin_special').sort((a,b)=>score(b)-score(a));
   document.getElementById('rank-list').innerHTML=sorted.map((p,i)=>{
     const rc=i===0?'gold':i===1?'silver':i===2?'bronze':'';
     const rs=i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`;
@@ -1202,7 +1203,7 @@ function renderRanking(){
       <span class="lbrnk ${rc}">${rs}</span>
       <div class="av av-sm" style="background:${p.colorBg};border-color:${p.color};">${p.emblem}</div>
       <div style="flex:1;"><div style="font-size:13px;font-weight:500;">${p.name}</div><div style="font-size:11px;color:var(--muted);">${p.cls} · Nv.${p.level}</div></div>
-      <div class="lbxp">${p.xp.toLocaleString()} XP</div>
+      <div class="lbxp" title="${p.xp.toLocaleString()} XP + 🪙 ${p.gold}">${score(p).toLocaleString()} pts</div>
       <span style="font-size:13px;color:var(--gold);width:70px;text-align:right;">🪙 ${p.gold}</span>
     </div>`;
   }).join('');
