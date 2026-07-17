@@ -1082,25 +1082,29 @@ function setPlayerFrame(key){
   p.avatarFrame=key;
   if(CFG.MODE==='supabase')saveToSupabase();
   renderFramePicker();
-  var pv=document.getElementById('inv-ava-preview');if(pv)pv.innerHTML=frameWrap(p,renderAvatar(p,'pixel-avatar-lg'));
+  ['inv-ava-preview','inline-avatar-preview'].forEach(function(id){var pv=document.getElementById(id);if(pv)pv.innerHTML=frameWrap(p,renderAvatar(p,'pixel-avatar-lg'));});
   updateSidebarAvatar();
 }
 function renderFramePicker(){
-  var host=document.getElementById('inv-frame-picker');if(!host)return;
+  var hosts=document.querySelectorAll('.frame-picker-host');
+  if(!hosts.length)return;
   var p=players.find(function(pl){return pl.id===session.playerId;});
-  if(!p){host.innerHTML='';return;}
-  var cur=playerFrame(p).key;
-  var rank=playerRankBanner(p);
-  var rankNote=rank?'<div style="font-size:12px;color:var(--gold);background:var(--gold-bg);border:0.5px solid var(--gold-border);border-radius:var(--radius);padding:6px 10px;margin-top:12px;">🏆 Tens el banner exclusiu del <strong>Top '+rank+'</strong> actiu! Es mantindrà mentre no baixis de posició al rànquing.</div>':'';
-  host.innerHTML='<div class="stitle" style="margin-top:16px;">🖼️ Banner del perfil</div>'+rankNote
-    +'<div class="frame-grid">'+FRAME_TIERS.map(function(f){
-      var unlocked=(p.level||1)>=f.min;
-      var sw='<span class="frame-swatch"'+(f.color?' style="border-color:'+f.color+';box-shadow:0 0 6px '+f.color+';"':'')+'>'+(f.color?'':'∅')+'</span>';
-      return '<button class="frame-opt'+(cur===f.key?' active':'')+'"'+(unlocked?' onclick="setPlayerFrame(\''+f.key+'\')"':' disabled')+'>'
-        +sw+'<span style="font-size:11px;margin-top:4px;">'+f.label+'</span>'
-        +(unlocked?'':'<span style="font-size:10px;color:var(--muted);">🔒 Nv.'+f.min+'</span>')
-        +'</button>';
-    }).join('')+'</div>';
+  var html='';
+  if(p){
+    var cur=playerFrame(p).key;
+    var rank=playerRankBanner(p);
+    var rankNote=rank?'<div style="font-size:12px;color:var(--gold);background:var(--gold-bg);border:0.5px solid var(--gold-border);border-radius:var(--radius);padding:6px 10px;margin-top:12px;">🏆 Tens el banner exclusiu del <strong>Top '+rank+'</strong> actiu! Es mantindrà mentre no baixis de posició al rànquing.</div>':'';
+    html='<div class="stitle" style="margin-top:16px;">🖼️ Banner del perfil</div>'+rankNote
+      +'<div class="frame-grid">'+FRAME_TIERS.map(function(f){
+        var unlocked=(p.level||1)>=f.min;
+        var sw='<span class="frame-swatch"'+(f.color?' style="border-color:'+f.color+';box-shadow:0 0 6px '+f.color+';"':'')+'>'+(f.color?'':'∅')+'</span>';
+        return '<button class="frame-opt'+(cur===f.key?' active':'')+'"'+(unlocked?' onclick="setPlayerFrame(\''+f.key+'\')"':' disabled')+'>'
+          +sw+'<span style="font-size:11px;margin-top:4px;">'+f.label+'</span>'
+          +(unlocked?'':'<span style="font-size:10px;color:var(--muted);">🔒 Nv.'+f.min+'</span>')
+          +'</button>';
+      }).join('')+'</div>';
+  }
+  [].forEach.call(hosts,function(h){h.innerHTML=html;});
 }
 function renderHeroProfile(i){
   const p=(session.isAdmin&&i==='admin')?getAdminProfile():players[i];if(!p)return;
@@ -1175,6 +1179,7 @@ function renderHeroProfile(i){
           <div class="pcustom-avatar">
             <div id="inline-avatar-preview"></div>
             <button class="btn btn-p btn-sm" style="margin-top:10px;" onclick="saveInlineAvatar('${p.id}')">💾 Desar avatar</button>
+            <div id="pcustom-frame-picker" class="frame-picker-host" style="width:100%;"></div>
           </div>
           <div id="inline-avatar-controls" class="pcustom-controls"></div>
         </div>
@@ -2593,6 +2598,7 @@ function renderInlineAvatarEditor(pid){
   _avatarEditPid=pid;
   renderAvatarEditor('inline-avatar-preview','inline-avatar-controls');
   enableAvatarDrag('inline-avatar-preview');
+  renderFramePicker();
 }
 function refreshAvatarPreview(){
   var p=players.find(function(pl){return pl.id===_avatarEditPid;});
