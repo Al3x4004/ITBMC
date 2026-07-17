@@ -1651,7 +1651,7 @@ function renderSlotManager(){
   var host=document.getElementById('slot-manager');if(!host)return;
   host.innerHTML=equipmentSlots().map(function(s){
     return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
-      +'<span style="font-size:18px;flex-shrink:0;">'+(s.icon||'📦')+'</span>'
+      +'<input type="text" value="'+(s.icon||'📦').replace(/"/g,'&quot;')+'" maxlength="2" title="Icona (emoji)" onchange="setSlotIcon(\''+s.key+'\',this.value)" style="width:44px;flex-shrink:0;padding:6px;font-size:18px;text-align:center;border:2px solid var(--border2);background:var(--bg2);color:var(--text);"/>'
       +'<input type="text" value="'+(s.label||'').replace(/"/g,'&quot;')+'" onchange="renameSlot(\''+s.key+'\',this.value)" style="flex:1;padding:6px 10px;font-size:13px;border:2px solid var(--border2);background:var(--bg2);color:var(--text);"/>'
       +'<button class="btn btn-sm" style="color:var(--coral);border-color:var(--coral-border);" onclick="deleteSlot(\''+s.key+'\')">✕</button>'
       +'</div>';
@@ -1677,6 +1677,12 @@ function addSlot(){
 function renameSlot(key,val){
   var s=SLOT_DEFS.find(function(x){return x.key===key;});if(!s)return;
   s.label=(val||'').trim()||s.label;
+  if(CFG.MODE==='supabase')saveToSupabase();
+  slotRefresh();
+}
+function setSlotIcon(key,val){
+  var s=SLOT_DEFS.find(function(x){return x.key===key;});if(!s)return;
+  s.icon=(val||'').trim()||s.icon;
   if(CFG.MODE==='supabase')saveToSupabase();
   slotRefresh();
 }
@@ -3304,7 +3310,7 @@ try{window.refreshAvatarPreview=refreshAvatarPreview;}catch(e){}
 try{window.pickShowcaseCard=pickShowcaseCard;}catch(e){}
 try{window.closeShowcaseModal=closeShowcaseModal;}catch(e){}
 try{window.renderWidgetAdmin=renderWidgetAdmin;}catch(e){}
-try{window.addSlot=addSlot;}catch(e){}try{window.renameSlot=renameSlot;}catch(e){}try{window.deleteSlot=deleteSlot;}catch(e){}try{window.renderSlotManager=renderSlotManager;}catch(e){}try{window.populateSlotSelects=populateSlotSelects;}catch(e){}
+try{window.addSlot=addSlot;}catch(e){}try{window.renameSlot=renameSlot;}catch(e){}try{window.deleteSlot=deleteSlot;}catch(e){}try{window.setSlotIcon=setSlotIcon;}catch(e){}try{window.renderSlotManager=renderSlotManager;}catch(e){}try{window.populateSlotSelects=populateSlotSelects;}catch(e){}
 try{window.createWidget=createWidget;}catch(e){}
 try{window.deleteWidget=deleteWidget;}catch(e){}
 try{window.editWidget=editWidget;}catch(e){}
