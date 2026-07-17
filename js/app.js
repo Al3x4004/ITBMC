@@ -1473,10 +1473,18 @@ function renderMarket(){
     var mine=p&&l.sellerId===p.id;
     var counts=galleryCounts(p);
     var imgUrl=c.imageUrl||(c.image?CFG.GITHUB_RAW+c.image:'');
-    var priceLine='';
+    var priceLine='',wantBlock='';
     if(l.mode==='gold')priceLine='🪙 '+l.price+' or';
     else if(l.mode==='frag')priceLine='✨ '+l.price+' fragments';
-    else{var wc=mkCardById(l.wantCardId);priceLine='🔄 Vol: '+(wc?wc.name:'?');}
+    else{
+      var wc=mkCardById(l.wantCardId);
+      var wimg=wc?(wc.imageUrl||(wc.image?CFG.GITHUB_RAW+wc.image:'')):'';
+      priceLine='🔄 Vol a canvi:';
+      wantBlock='<div class="trade-want">'
+        +(wc?'<img src="'+wimg+'" alt="'+wc.name+'" onerror="this.style.background=\'var(--bg3)\';">':'')
+        +'<div><div class="tw-name">'+(wc?wc.name:'?')+'</div><div class="grarity rarity-'+(wc?wc.rarity:'comun')+'" style="font-size:9px;">'+(wc?RARITY_LABEL[wc.rarity]:'')+'</div></div>'
+        +'</div>';
+    }
     var btn='';
     if(mine||session.isAdmin){
       btn='<button class="btn btn-sm" style="width:100%;color:var(--coral);border-color:var(--coral-border);" onclick="cancelListing(\''+l.id+'\')">Retirar</button>';
@@ -1493,10 +1501,12 @@ function renderMarket(){
     return '<div class="gallery-card rarity-frame-'+c.rarity+'">'
       +'<img src="'+imgUrl+'" alt="'+c.name+'" onerror="this.style.background=\'var(--bg3)\';this.style.minHeight=\'120px\';">'
       +'<div class="gallery-card-label">'
+      +(l.mode==='trade'?'<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Ofereix</div>':'')
       +'<div class="gname">'+c.name+'</div>'
       +'<div class="grarity rarity-'+c.rarity+'">'+RARITY_LABEL[c.rarity]+'</div>'
       +'<div style="font-size:11px;margin-top:3px;font-weight:600;">'+priceLine+'</div>'
-      +'<div style="font-size:10px;color:var(--muted);margin:2px 0 5px;">de '+sellerName+'</div>'
+      +wantBlock
+      +'<div style="font-size:10px;color:var(--muted);margin:4px 0 5px;">de '+sellerName+'</div>'
       +btn
       +'</div></div>';
   }).join('')+'</div>';
