@@ -157,6 +157,7 @@
         <button class="nb" onclick="showPage('ranking',this)" id="nav-ranking"><span class="nb-icon">🏆</span>Rànquing</button>
         <button class="nb" onclick="showPage('gacha',this)" id="nav-gacha"><span class="nb-icon">✨</span>Gacha</button>
         <button class="nb" onclick="showPage('tienda',this)" id="nav-tienda"><span class="nb-icon">🛒</span>Botiga</button>
+        <button class="nb" onclick="showPage('mercat',this)" id="nav-mercat"><span class="nb-icon">🕶️</span>Mercat negre</button>
         <button class="nb" onclick="showPage('inventario',this)" id="nav-inventario"><span class="nb-icon">🎒</span>Inventari</button>
         <button class="nb" onclick="showPage('calendario',this)" id="nav-calendario"><span class="nb-icon">📅</span>Calendari</button>
         <button class="nb" onclick="showPage('planner',this)" id="nav-planner"><span class="nb-icon">📋</span>Planner</button>
@@ -358,6 +359,34 @@
         <div class="htabs" id="gallery-tabs"></div>
         <div id="team-gallery"></div>
       </div>
+    </div>
+
+    <!-- MERCAT NEGRE -->
+    <div id="page-mercat" class="page">
+      <div style="margin-bottom:1.25rem;">
+        <div style="font-size:18px;font-weight:500;margin-bottom:4px;">🕶️ Mercat negre</div>
+        <div style="font-size:13px;color:var(--muted);">Ven les teves cartes per or o fragments, o intercanvia-les amb altres jugadors.</div>
+      </div>
+      <div id="mercat-wallet" style="font-size:13px;color:var(--muted);margin-bottom:1rem;"></div>
+      <details class="create-panel" id="panel-new-listing">
+        <summary>Posar una carta al mercat</summary>
+        <div class="create-form">
+          <div class="field"><label>Carta (de la teva galeria)</label><select id="ml-card"></select></div>
+          <div class="field"><label>Tipus d'oferta</label>
+            <select id="ml-mode" onchange="onListingModeChange()">
+              <option value="gold">💰 Vendre per or</option>
+              <option value="frag">✨ Vendre per fragments</option>
+              <option value="trade">🔄 Intercanviar per una carta</option>
+            </select>
+          </div>
+          <div class="field" id="ml-price-wrap"><label>Preu</label><input type="number" id="ml-price" value="100" min="1"/></div>
+          <div class="field" id="ml-want-wrap" style="display:none;"><label>Carta que vols a canvi</label><select id="ml-want"></select></div>
+          <div class="field full" style="display:flex;justify-content:flex-end;">
+            <button class="btn btn-p" onclick="createListing()">Publicar al mercat</button>
+          </div>
+        </div>
+      </details>
+      <div id="mercat-list"></div>
     </div>
 
     <!-- TIENDA -->
