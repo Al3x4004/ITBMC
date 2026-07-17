@@ -810,12 +810,12 @@ function showPage(name,btn){
 function renderMStats(){
   const act=missions.filter(m=>m.status==='active').length;
   const don=missions.filter(m=>m.status==='done').length;
-  const txp=players.reduce((s,p)=>s+p.xp,0);
+  const tlvl=players.reduce((s,p)=>s+(p.level||1),0);
   const tg=players.reduce((s,p)=>s+p.gold,0);
   document.getElementById('mstats').innerHTML=`
     <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">En curso</div><div style="font-size:22px;font-weight:700;">${act}</div></div>
     <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Completades</div><div style="font-size:22px;font-weight:700;">${don}</div></div>
-    <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">XP del equipo</div><div style="font-size:22px;font-weight:700;">${txp.toLocaleString()}</div></div>
+    <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Nivell del equip</div><div style="font-size:22px;font-weight:700;">${tlvl.toLocaleString()}</div></div>
     <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">🪙 Oro del equipo</div><div style="font-size:22px;font-weight:700;">${tg.toLocaleString()}</div></div>`;
 }
 
