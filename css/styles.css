@@ -154,6 +154,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .lbrnk.silver{color:var(--muted);}
 .lbrnk.bronze{color:var(--coral);}
 .lbxp{font-size:14px;font-weight:500;color:var(--text);}
+.lbstat{width:72px;text-align:center;flex-shrink:0;}
+.lbstat-v{font-size:14px;font-weight:600;color:var(--text);}
+.lbstat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:1px;}
+@media(max-width:600px){.lbstat{width:56px;}.lbstat-v{font-size:12px;}}
 /* ══ HERO PROFILE ══ */
 .phead{display:flex;gap:1.25rem;align-items:flex-start;margin-bottom:1.25rem;}
 .pname{font-size:20px;font-weight:500;letter-spacing:-.01em;margin-bottom:2px;}
@@ -534,9 +538,9 @@ body::after{
 
 
 /* ── Layout pestaña Personalització ── */
-.pcustom-layout{display:grid;grid-template-columns:190px 1fr;gap:1.25rem;align-items:start;}
+.pcustom-layout{display:grid;grid-template-columns:230px 1fr;gap:1.25rem;align-items:start;}
 .pcustom-avatar{display:flex;flex-direction:column;align-items:center;position:sticky;top:72px;}
-.pcustom-avatar .pixel-avatar-lg{width:120px;height:120px;}
+.pcustom-avatar .pixel-avatar-lg{width:190px;height:190px;}
 .pcustom-controls{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;align-items:start;}
 .pcustom-controls .ava-opt-row{margin-bottom:4px;}
 .pcustom-controls .ava-opt-row label{font-size:11px;width:96px;}

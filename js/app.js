@@ -1229,9 +1229,10 @@ function renderRanking(){
     return `<div class="lbrow">
       <span class="lbrnk ${rc}">${rs}</span>
       <div class="av av-sm" style="background:${p.colorBg};border-color:${p.color};">${p.emblem}</div>
-      <div style="flex:1;"><div style="font-size:13px;font-weight:500;">${p.name}</div><div style="font-size:11px;color:var(--muted);">${p.cls} · Nv.${p.level}</div></div>
-      <div class="lbxp" title="${p.xp.toLocaleString()} XP + 🪙 ${p.gold}">${score(p).toLocaleString()} pts</div>
-      <span style="font-size:13px;color:var(--gold);width:70px;text-align:right;">🪙 ${p.gold}</span>
+      <div style="flex:1;"><div style="font-size:13px;font-weight:500;">${p.name}</div><div style="font-size:11px;color:var(--muted);">${p.cls}</div></div>
+      <div class="lbstat"><div class="lbstat-v">${score(p).toLocaleString()}</div><div class="lbstat-l">punts</div></div>
+      <div class="lbstat"><div class="lbstat-v">${p.level}</div><div class="lbstat-l">nivell</div></div>
+      <div class="lbstat"><div class="lbstat-v" style="color:var(--gold);">🪙 ${p.gold.toLocaleString()}</div><div class="lbstat-l">or</div></div>
     </div>`;
   }).join('');
 }
