@@ -290,7 +290,7 @@ async function saveToSupabase(){
     await fetch(`${CFG.SUPABASE_URL}/rest/v1/game_data`,{
       method:'POST',
       headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
-      body:JSON.stringify({id:'main',data:{players,arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog}})
+      body:JSON.stringify({id:'main',data:{players,arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS}})
     });
     // Save each player to players table
     for(const p of players){
@@ -340,6 +340,7 @@ async function loadData(){
       else calEvents=[];
       if(Array.isArray(d.custom_traits))customTraits=d.custom_traits;
       if(Array.isArray(d.widget_catalog))widgetCatalog=d.widget_catalog;
+      if(Array.isArray(d.slot_defs)&&d.slot_defs.length)SLOT_DEFS=d.slot_defs;
       if(Array.isArray(d.attr_defs)&&d.attr_defs.length){
         ATTRS=d.attr_defs.map(function(a){return {key:a.key,name:a.name,color:a.color||'#888'};});
       }else if(d.attr_names&&typeof d.attr_names==='object'){
@@ -487,6 +488,7 @@ function enterApp(){
   (function(){var _x=document.getElementById('umname');if(_x)_x.textContent=session.isAdmin?'👑 Dios':(p?p.name:'—');})();
   renderAll();
   try{renderInicio();}catch(e){}
+  try{populateSlotSelects();}catch(e){}
 }
 function toggleUMenu(){
   const m=document.getElementById('umenu-inline');
@@ -1505,15 +1507,13 @@ function renderShop(){
     if(!p){
       eqWrap.innerHTML='<div class="stitle">Equipamiento (admin no tiene personaje)</div>';
     }else{
-    var slots=['arma','armadura','accesorio','casco','botas'];
-    var slotIcons={arma:'⚔️',armadura:'🛡️',accesorio:'💎',casco:'⛑️',botas:'👟'};
     eqWrap.innerHTML='<div class="stitle">Equipat actualment</div><div class="equipped-slots">'
-      +slots.map(function(slot){
-        var itemId=p.equipped?p.equipped[slot]:null;
+      +SLOT_DEFS.filter(function(s){return !s.cosmetic;}).map(function(sl){
+        var itemId=p.equipped?p.equipped[sl.key]:null;
         var item=shopItems.find(function(i){return i.id===itemId;});
         return '<div class="eslot '+(item?'filled':'')+'">'
-          +'<span>'+(item?item.icon:slotIcons[slot])+'</span>'
-          +'<div><div class="eslot-label">'+slot+'</div>'
+          +'<span>'+(item?item.icon:sl.icon)+'</span>'
+          +'<div><div class="eslot-label">'+sl.label+'</div>'
           +'<div style="font-size:11px;color:'+(item?'var(--text)':'var(--muted)')+';">'+(item?item.name:'Vacío')+'</div></div>'
           +'</div>';
       }).join('')+'</div>';
@@ -1528,6 +1528,7 @@ function renderShop(){
   var shopSortBy=(document.getElementById('shop-sort')?document.getElementById('shop-sort').value:'rarity');
   var filteredShop=shopItems.filter(function(item){
     if(item.via==='gacha')return false;
+    if(p&&(p.inventory||[]).indexOf(item.id)>=0)return false; // ja el tens
     if(shopSearch&&item.name.toLowerCase().indexOf(shopSearch)<0)return false;
     if(shopSlot&&item.slot!==shopSlot)return false;
     if(shopRarity&&item.rareza!==shopRarity)return false;
@@ -1637,7 +1638,59 @@ async function adminDeleteItemFull(itemId){
   renderAdminItemsPage();
   renderShop();
 }
+/* ══ GESTOR DE CATEGORIES / SLOTS D'EQUIPAMENT ══ */
+function equipmentSlots(){return SLOT_DEFS.filter(function(s){return !s.cosmetic;});}
+function populateSlotSelects(){
+  var opts=equipmentSlots().map(function(s){return '<option value="'+s.key+'">'+(s.icon||'📦')+' '+s.label+'</option>';}).join('');
+  var ai=document.getElementById('ai-slot');
+  if(ai){var cur=ai.value;ai.innerHTML=opts;if(cur&&equipmentSlots().some(function(s){return s.key===cur;}))ai.value=cur;}
+  var withAll='<option value="">Tots els slots</option>'+opts;
+  ['ai-filter-slot','shop-filter-slot'].forEach(function(id){var el=document.getElementById(id);if(el){var c=el.value;el.innerHTML=withAll;el.value=c;}});
+}
+function renderSlotManager(){
+  var host=document.getElementById('slot-manager');if(!host)return;
+  host.innerHTML=equipmentSlots().map(function(s){
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
+      +'<span style="font-size:18px;flex-shrink:0;">'+(s.icon||'📦')+'</span>'
+      +'<input type="text" value="'+(s.label||'').replace(/"/g,'&quot;')+'" onchange="renameSlot(\''+s.key+'\',this.value)" style="flex:1;padding:6px 10px;font-size:13px;border:2px solid var(--border2);background:var(--bg2);color:var(--text);"/>'
+      +'<button class="btn btn-sm" style="color:var(--coral);border-color:var(--coral-border);" onclick="deleteSlot(\''+s.key+'\')">✕</button>'
+      +'</div>';
+  }).join('');
+}
+function slotRefresh(){
+  populateSlotSelects();renderSlotManager();
+  try{renderInventario();}catch(e){}
+  try{renderShop();}catch(e){}
+  try{renderAdminItemsPage();}catch(e){}
+}
+function addSlot(){
+  var inp=document.getElementById('new-slot-name');if(!inp)return;
+  var label=inp.value.trim();if(!label){toast('Posa un nom');return;}
+  var base=label.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g,'').slice(0,12)||'slot';
+  var key=base,n=1;while(SLOT_DEFS.some(function(s){return s.key===key;})){key=base+(n++);}
+  SLOT_DEFS.push({key:key,label:label,icon:'📦',pos:{x:20,y:20,w:60,z:5}});
+  inp.value='';
+  if(CFG.MODE==='supabase')saveToSupabase();
+  slotRefresh();
+  toast('Categoria afegida');
+}
+function renameSlot(key,val){
+  var s=SLOT_DEFS.find(function(x){return x.key===key;});if(!s)return;
+  s.label=(val||'').trim()||s.label;
+  if(CFG.MODE==='supabase')saveToSupabase();
+  slotRefresh();
+}
+function deleteSlot(key){
+  var s=SLOT_DEFS.find(function(x){return x.key===key;});if(!s)return;
+  if(!confirm('Eliminar la categoria "'+s.label+'"? Es desequiparà de tots els personatges i els ítems d\'aquesta categoria deixaran de ser equipables.'))return;
+  SLOT_DEFS=SLOT_DEFS.filter(function(x){return x.key!==key;});
+  players.forEach(function(p){if(p.equipped&&p.equipped[key])p.equipped[key]=null;});
+  if(CFG.MODE==='supabase')saveToSupabase();
+  slotRefresh();
+  toast('Categoria eliminada');
+}
 function renderAdminItemsPage(){
+  renderSlotManager();populateSlotSelects();
   var filterVia=document.getElementById('ai-filter-via')?document.getElementById('ai-filter-via').value:'';
   var filterSlot=document.getElementById('ai-filter-slot')?document.getElementById('ai-filter-slot').value:'';
   var filterRarity=document.getElementById('ai-filter-rarity')?document.getElementById('ai-filter-rarity').value:'';
@@ -3251,6 +3304,7 @@ try{window.refreshAvatarPreview=refreshAvatarPreview;}catch(e){}
 try{window.pickShowcaseCard=pickShowcaseCard;}catch(e){}
 try{window.closeShowcaseModal=closeShowcaseModal;}catch(e){}
 try{window.renderWidgetAdmin=renderWidgetAdmin;}catch(e){}
+try{window.addSlot=addSlot;}catch(e){}try{window.renameSlot=renameSlot;}catch(e){}try{window.deleteSlot=deleteSlot;}catch(e){}try{window.renderSlotManager=renderSlotManager;}catch(e){}try{window.populateSlotSelects=populateSlotSelects;}catch(e){}
 try{window.createWidget=createWidget;}catch(e){}
 try{window.deleteWidget=deleteWidget;}catch(e){}
 try{window.editWidget=editWidget;}catch(e){}

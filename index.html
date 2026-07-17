@@ -439,6 +439,16 @@
         <div class="ptab" onclick="switchAdminTab(this,'tab-custom')" id="admin-tab-custom">Customitzables</div>
       </div>
       <div id="tab-items">
+      <!-- Gestor de categories (slots d'equipament) -->
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="stitle">🗂️ Categories d'equipament</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Reanomena, afegeix o elimina categories. Cada categoria és un slot d'equipament.</div>
+        <div id="slot-manager"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <input type="text" id="new-slot-name" placeholder="Nom de la nova categoria (ex: Anell)" style="flex:1;padding:7px 12px;font-size:13px;border:2px solid var(--border2);background:var(--bg2);color:var(--text);"/>
+          <button class="btn btn-p" onclick="addSlot()">+ Afegir categoria</button>
+        </div>
+      </div>
       <!-- Crear item -->
       <div class="card" style="margin-bottom:1.25rem;">
         <div class="stitle">Nou ítem</div>
