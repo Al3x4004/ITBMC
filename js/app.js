@@ -1369,8 +1369,8 @@ function renderGalleryCards(ownedEntries,mode){
         :'<div class="gallery-locked-img">?</div>')
       +(n>1?'<div class="cpick-x" style="top:5px;right:5px;">x'+n+'</div>':'')
       +'<div class="gallery-card-label">'
-      +'<div class="gname">'+(mine?c.name:'???')+'</div>'
-      +'<div class="grarity rarity-'+c.rarity+'">'+RARITY_LABEL[c.rarity]+'</div>'
+      +'<div class="gname">'+(mine?c.name:'???')+(n>1?' <span style="color:var(--gold);">×'+n+'</span>':'')+'</div>'
+      +'<div class="grarity rarity-'+c.rarity+'">'+RARITY_LABEL[c.rarity]+(n>1?' · '+(n-1)+' duplicada'+(n-1>1?'es':''):'')+'</div>'
       +'</div></div>';
   }).join('')+'</div>';
   return header+grid;
