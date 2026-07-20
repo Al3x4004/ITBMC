@@ -1354,7 +1354,7 @@ function renderGalleryCards(ownedEntries,mode){
   if(galleryDupOnly)list=all.filter(function(c){return counts[c.id]>1;});
   else if(galleryOnlyOwned)list=all.filter(function(c){return counts[c.id];});
   var header='<div class="gallery-head">'
-    +'<span class="gallery-count">📖 '+haveCount+' / '+all.length+'</span>'
+    +'<span class="gallery-count">📖 '+haveCount+' / '+all.length+' <span style="font-weight:500;color:var(--muted);font-size:12px;">· 🔁 '+dupCount+' duplicades</span></span>'
     +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
     +'<button class="btn btn-sm'+(galleryOnlyOwned&&!galleryDupOnly?' btn-p':'')+'" onclick="toggleGalleryOwned()">'+(galleryOnlyOwned&&!galleryDupOnly?'✓ Només les meves':'Només les meves')+'</button>'
     +'<button class="btn btn-sm'+(galleryDupOnly?' btn-p':'')+'" onclick="toggleGalleryDup()">'+(galleryDupOnly?'✓ ':'')+'Només duplicats ('+dupCount+')</button>'
@@ -3267,7 +3267,8 @@ function openShowcaseSelector(idx){
   if(!p||!(p.gallery||[]).length)return;
   if(!p.showcase)p.showcase=[null,null,null];
   _showcaseIdx=idx;
-  var allIds=typeof p.gallery[0]==='string'?p.gallery:p.gallery.map(function(e){return e.cardId||e;});
+  var rawIds=typeof p.gallery[0]==='string'?p.gallery:p.gallery.map(function(e){return e.cardId||e;});
+  var _seen={};var allIds=rawIds.filter(function(id){if(_seen[id])return false;_seen[id]=true;return true;});/* nomes 1 per carta, sense duplicats */
   // Cartas disponibles: las que no están ya en OTROS huecos del showcase
   var grid=document.getElementById('showcase-grid');
   var html='';
