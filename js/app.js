@@ -1357,7 +1357,7 @@ function renderGalleryCards(ownedEntries,mode){
     +'<span class="gallery-count">📖 '+haveCount+' / '+all.length+'</span>'
     +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
     +'<button class="btn btn-sm'+(galleryOnlyOwned&&!galleryDupOnly?' btn-p':'')+'" onclick="toggleGalleryOwned()">'+(galleryOnlyOwned&&!galleryDupOnly?'✓ Només les meves':'Només les meves')+'</button>'
-    +'<button class="btn btn-sm'+(galleryDupOnly?' btn-p':'')+'" onclick="toggleGalleryDup()">'+(galleryDupOnly?'✓ Només duplicats':'Només duplicats ('+dupCount+')')+'</button>'
+    +'<button class="btn btn-sm'+(galleryDupOnly?' btn-p':'')+'" onclick="toggleGalleryDup()">'+(galleryDupOnly?'✓ ':'')+'Només duplicats ('+dupCount+')</button>'
     +'</div></div>';
   if(!list.length)return header+'<div class="gallery-empty">'+(galleryDupOnly?'No tens cap carta duplicada.':'Encara no tens cap carta.')+'</div>';
   var grid='<div class="gallery-grid">'+list.map(function(c){
