@@ -288,23 +288,34 @@ async function saveClassToSupabase(cls,idx){
   }catch(e){console.error('Error saving class',e);}
 }
 
-async function saveToSupabase(){
+/* Config compartida (no és dada de compte). */
+function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market};}
+/*
+ Desa fent FUSIÓ de jugadors: només sobreescriu els personatges que aquest client ha canviat
+ (el de la sessió + els passats a extraPlayerIds). Per a la resta manté la versió de la BD.
+ Així dos usuaris alhora no es piseguen les dades de compte. removedIds s'exclouen (esborrat).
+*/
+async function saveToSupabase(extraPlayerIds,removedIds){
   try{
-    // Save main game data
+    var mine={};[session.playerId].concat(extraPlayerIds||[]).forEach(function(id){if(id)mine[id]=true;});
+    var removed={};(removedIds||[]).forEach(function(id){if(id)removed[id]=true;});
+    // Llegir l'estat actual per fusionar (evita pisar canvis d'altres usuaris)
+    var dbPlayers=[];
+    try{
+      var _lat=await fetch(`${CFG.SUPABASE_URL}/rest/v1/game_data?id=eq.main&select=data`,{headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}}).then(function(r){return r.json();});
+      if(_lat&&_lat[0]&&_lat[0].data&&Array.isArray(_lat[0].data.players))dbPlayers=_lat[0].data.players;
+    }catch(e){dbPlayers=players.slice();}
+    var byId={};
+    dbPlayers.forEach(function(p){if(p&&!removed[p.id])byId[p.id]=p;});
+    players.forEach(function(p){if(!removed[p.id]&&(mine[p.id]||!byId[p.id]))byId[p.id]=p;});
+    Object.keys(removed).forEach(function(id){delete byId[id];});
+    var merged=Object.keys(byId).map(function(k){return byId[k];});
+    var data=Object.assign({},_sharedGameData(),{players:merged});
     await fetch(`${CFG.SUPABASE_URL}/rest/v1/game_data`,{
       method:'POST',
       headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
-      body:JSON.stringify({id:'main',data:{players,arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market}})
+      body:JSON.stringify({id:'main',data:data})
     });
-    // Save each player to players table
-    for(const p of players){
-      await fetch(`${CFG.SUPABASE_URL}/rest/v1/players`,{
-        method:'POST',
-        headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
-        body:JSON.stringify({id:p.id,data:p,updated_at:new Date().toISOString()})
-      });
-    }
-    // Save all missions to dedicated table
     await saveAllMissionsToSupabase();
   }catch(e){console.error('Supabase save error',e);}
 }
@@ -976,7 +987,7 @@ function completeMission(id){
   checkLevelUp(p);
   updateArcCounts();
   cleanOldCompleted();
-  if(CFG.MODE==='supabase')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase(p?[p.id]:[]);
   renderAll();
 }
 
@@ -1598,7 +1609,7 @@ function cancelListing(id){
   var seller=players.find(function(pl){return pl.id===l.sellerId;});
   if(seller){if(!seller.gallery)seller.gallery=[];if(seller.gallery.indexOf(l.cardId)<0)seller.gallery.push(l.cardId);}
   market=market.filter(function(x){return x.id!==id;});
-  if(CFG.MODE==='supabase')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase([l.sellerId]);
   renderMarket();renderAll();
   toast('Oferta retirada');
 }
@@ -1613,7 +1624,7 @@ function buyListing(id){
   else{p.fragments=(p.fragments||0)-l.price;if(seller)seller.fragments=(seller.fragments||0)+l.price;}
   if(!p.gallery)p.gallery=[];p.gallery.push(l.cardId);
   market=market.filter(function(x){return x.id!==id;});
-  if(CFG.MODE==='supabase')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase([l.sellerId]);
   renderMarket();renderAll();
   toast('Carta comprada!');
 }
@@ -1628,7 +1639,7 @@ function tradeListing(id){
   p.gallery.push(l.cardId);/* rep la carta oferta */
   if(seller){if(!seller.gallery)seller.gallery=[];seller.gallery.push(l.wantCardId);}
   market=market.filter(function(x){return x.id!==id;});
-  if(CFG.MODE==='supabase')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase([l.sellerId]);
   renderMarket();renderAll();
   toast('Intercanvi fet!');
 }
@@ -1694,7 +1705,7 @@ function deletePlayer(){
   missions=missions.map(m=>m.playerId===_delId?{...m,playerId:''}:m);
   arcs=arcs.filter(a=>!a.id.includes(_delId));
   if(CFG.MODE==='supabase'){
-    saveToSupabase();
+    saveToSupabase([],[_delId]);
     fetch(`${CFG.SUPABASE_URL}/rest/v1/players?id=eq.`+_delId,{
       method:'DELETE',
       headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
@@ -1728,7 +1739,7 @@ function saveEdit(){
       if(el)p.attrs[k]=parseInt(el.value)||0;
     });
   }
-  if(CFG.MODE==='supabase')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase([editPid]);
   closeEdit();renderAll();
 }
 
@@ -2576,7 +2587,7 @@ function removeAttr(key){
   players.forEach(function(p){if(p.attrs)delete p.attrs[key];});
   CLASSES.forEach(function(cl){if(cl.attrs)delete cl.attrs[key];});
   persistAttrs();
-  if(CFG.MODE==='supabase')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase(players.map(function(p){return p.id;}));
   try{renderClassesAdmin();renderAll();}catch(e){console.error(e);}
   toast('Atribut tret');
 }
