@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BMC Global — Cuartel General</title>
 <link rel="icon" type="image/png" href="https://i.imgur.com/Z1wFN0q.png">
-<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/styles.css?v=2">
 </head>
 <body>
 <div id="toast"></div>
@@ -176,7 +176,9 @@
             <div style="padding:6px 8px;font-size:12px;color:var(--muted);border-bottom:0.5px solid var(--border);margin-bottom:4px;" id="umname">—</div>
             <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="goToMyProfile()">👤 Mi perfil</button>
             <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="openEditModal(session.playerId)">✏️ Editar personaje</button>
-            <button class="btn btn-sm btn-g" style="width:100%;text-align:left;margin-bottom:2px;" onclick="exportJSON()">⬇️ Exportar JSON</button>
+            <button class="btn btn-sm btn-g" style="width:100%;text-align:left;margin-bottom:2px;" onclick="backupData()">💾 Còpia de seguretat</button>
+            <button class="btn btn-sm" id="menu-restore" style="width:100%;text-align:left;margin-bottom:2px;display:none;" onclick="document.getElementById('restore-file').click()">♻️ Restaurar còpia</button>
+            <input type="file" id="restore-file" accept=".json" style="display:none;" onchange="restoreData(this)"/>
             <button class="btn btn-sm" style="width:100%;text-align:left;" onclick="doLogout()">← Cerrar sesión</button>
           </div>
         </div>
@@ -881,6 +883,6 @@
   window.DiceBearPixelArt = pixelArt;
   window.dispatchEvent(new Event('dicebear-ready'));
 </script>
-<script src="js/app.js"></script>
+<script src="js/app.js?v=2"></script>
 </body>
 </html>
