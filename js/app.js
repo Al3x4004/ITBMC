@@ -359,7 +359,7 @@ async function loadData(){
       if(d.class_growth&&typeof d.class_growth==='object')classGrowthMap=d.class_growth;
       if(Array.isArray(d.market))market=d.market;
       if(Array.isArray(d.attr_defs)&&d.attr_defs.length){
-        ATTRS=d.attr_defs.map(function(a){return {key:a.key,name:a.name,color:a.color||'#888'};});
+        ATTRS=d.attr_defs.map(function(a){return {key:a.key,name:a.name,color:a.color||'#888',icon:a.icon||''};});
       }else if(d.attr_names&&typeof d.attr_names==='object'){
         ATTRS.forEach(function(a){if(d.attr_names[a.key])a.name=d.attr_names[a.key];});
       }
