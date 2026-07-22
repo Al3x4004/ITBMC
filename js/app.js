@@ -991,12 +991,12 @@ function showPage(name,btn){
 
 /* ── misiones stats ── */
 function renderMStats(){
-  const act=missions.filter(m=>m.status==='active').length;
+  const act=missions.filter(m=>m.status!=='done'&&!m.isDaily_instance&&!_isWeekly(m)).length;
   const don=missions.filter(m=>m.status==='done').length;
   const tlvl=players.reduce((s,p)=>s+(p.level||1),0);
   const tg=players.reduce((s,p)=>s+p.gold,0);
   document.getElementById('mstats').innerHTML=`
-    <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">En curso</div><div style="font-size:22px;font-weight:700;">${act}</div></div>
+    <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Pendents</div><div style="font-size:22px;font-weight:700;">${act}</div></div>
     <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Completades</div><div style="font-size:22px;font-weight:700;">${don}</div></div>
     <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Nivell del equip</div><div style="font-size:22px;font-weight:700;">${tlvl.toLocaleString()}</div></div>
     <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">🪙 Oro del equipo</div><div style="font-size:22px;font-weight:700;">${tg.toLocaleString()}</div></div>`;
@@ -1022,8 +1022,8 @@ function renderMissions(){
   const today=new Date().toISOString().slice(0,10);
   const daily   =missions.filter(m=>m.daily&&m.isDaily_instance&&m.status!=='done'&&(session.isAdmin||m.playerId===session.playerId)&&_passMissionFilter(m));
   const weekly  =missions.filter(m=>_isWeekly(m)&&(session.isAdmin||m.playerId===session.playerId)&&_passMissionFilter(m));
-  const active  =missions.filter(m=>!m.daily&&!_isWeekly(m)&&m.status==='active'&&_passMissionFilter(m));
-  const pending =missions.filter(m=>!m.daily&&!_isWeekly(m)&&m.status==='pending'&&_passMissionFilter(m));
+  // Només 2 estats: pendent (tot el que no està fet) o completada
+  const pending =missions.filter(m=>!m.daily&&!_isWeekly(m)&&m.status!=='done'&&_passMissionFilter(m));
   const done    =missions.filter(m=>m.status==='done'&&!m.isDaily_instance&&!_isWeekly(m)&&_passMissionFilter(m));
   var mwk=document.getElementById('m-weekly');
   if(mwk)mwk.innerHTML=weekly.length?weekly.map(m=>mCard(m)).join(''):`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones semanales.</div>`;
@@ -1033,10 +1033,20 @@ function renderMissions(){
     mwt.innerHTML=myTpls.length?('<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">'+myTpls.map(t=>'<span class="filter-chip" style="cursor:default;">🗓️ '+t.name+' <span style="color:var(--coral);cursor:pointer;font-weight:700;" onclick="deleteWeeklyTemplate(\''+t.id+'\')">✕</span></span>').join('')+'</div>'):'';
   }
   document.getElementById('m-daily').innerHTML  =daily.length  ?daily.map(m=>mCard(m)).join('')  :`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones diarias.</div>`;
-  document.getElementById('m-active').innerHTML =active.length ?active.map(m=>mCard(m)).join('') :`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones activas.</div>`;
   document.getElementById('m-pending').innerHTML=pending.length?pending.map(m=>mCard(m)).join(''):`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones pendientes.</div>`;
-  document.getElementById('m-done').innerHTML   =done.length   ?done.map(m=>mCard(m)).join('')   :`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones completadas.</div>`;
+  // Completades: mostra només les primeres N (5 + "ver más" de 10 en 10)
+  var shown=done.slice(0,doneLimit);
+  document.getElementById('m-done').innerHTML   =done.length   ?shown.map(m=>mCard(m)).join('')   :`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones completadas.</div>`;
+  var moreBox=document.getElementById('m-done-more');
+  if(moreBox){
+    if(done.length>doneLimit){moreBox.innerHTML='<button class="btn btn-sm" onclick="showMoreDone()">Ver más ('+(done.length-doneLimit)+' restants)</button>';}
+    else if(doneLimit>5&&done.length>5){moreBox.innerHTML='<button class="btn btn-sm" onclick="resetDone()">Veure\'n menys</button>';}
+    else{moreBox.innerHTML='';}
+  }
 }
+var doneLimit=5;
+function showMoreDone(){doneLimit+=10;renderMissions();}
+function resetDone(){doneLimit=5;renderMissions();}
 
 function mCard(m){
   const player=players.find(p=>p.id===m.playerId);
@@ -1045,7 +1055,11 @@ function mCard(m){
   const dailyBadge=_isWeekly(m)?`<span class="daily-rib" style="background:var(--teal-bg,var(--accent-bg));color:var(--teal);">🗓️ Setmanal</span>`:(m.daily&&m.isDaily_instance?`<span class="daily-rib">Diaria</span>`:(m.daily&&!m.isDaily_instance?`<span class="daily-rib" style="background:var(--accent-bg);color:var(--accent);">📌 Diaria personal</span>`:''));
   const completedBtn=canComplete&&m.status!=='done'
     ?`<button class="btn-complete" onclick="event.stopPropagation();completeMission('${m.id}')">✓ Completar</button>`:'';
-  const statusBadge=m.status==='done'?`<span class="badge b-teal">Completada</span>`:m.status==='active'?`<span class="badge b-gold">En curso</span>`:`<span class="badge b-gray">Pendiente</span>`;
+  const statusBadge=m.status==='done'?`<span class="badge b-teal">Completada</span>`:`<span class="badge b-gray">Pendent</span>`;
+  var _prio={A:['Urgente','b-coral'],B:['Importante','b-gold'],C:['Media','b-gray'],D:['Baja','b-teal']}[m.diff]||['Media','b-gray'];
+  const prioBadge=`<span class="badge ${_prio[1]}">${_prio[0]}</span>`;
+  var _tags=(m.plannerTags&&m.plannerTags.indexOf('weekly:')!==0)?m.plannerTags:'';
+  const tagsHtml=_tags?_tags.split(';').map(t=>t.trim()).filter(Boolean).map(t=>`<span class="mtag">${t}</span>`).join(''):'';
   const assignSel=session.isAdmin?`<select class="sstat" onclick="event.stopPropagation()" onchange="event.stopPropagation();assignMission('${m.id}',this.value)" style="font-size:11px;">
     <option value="">Sense assignar</option>
     ${players.map(p=>`<option value="${p.id}" ${m.playerId===p.id?'selected':''}>${p.emblem} ${p.name.split(' ')[0]}</option>`).join('')}
@@ -1054,12 +1068,12 @@ function mCard(m){
     <div class="minfo">
       <div class="mname">${m.name}${dailyBadge}</div>
       <div class="mmeta">${m.arc}${player?' · '+player.emblem+' '+player.name:' · Sense assignar'}</div>
+      ${tagsHtml?`<div class="mtags">${tagsHtml}</div>`:''}
     </div>
     <div class="mrews">
       <span class="rchip"><span>${m.xp}</span> XP</span>
       <span class="rchip"><span>🪙 ${m.gold}</span></span>
-      <span class="badge dS" style="display:none"></span>
-      <span class="badge d${m.diff}">${m.diff}</span>
+      ${prioBadge}
       ${statusBadge}
       ${assignSel}
       ${completedBtn}
@@ -2678,10 +2692,9 @@ function confirmPlannerImport(){
     var existingId='planner_'+title.replace(/\s+/g,'_').toLowerCase().slice(0,30);
     if(missions.find(function(m){return m.plannerId===existingId;}))return;
 
-    // Map status
+    // Map status — només 2 estats: completada o pendent
     var plannerStatus=(row[statusCol]||'').toLowerCase();
-    var status=plannerStatus.includes('complet')||plannerStatus.includes('done')?'done':
-               plannerStatus.includes('curso')||plannerStatus.includes('progres')||plannerStatus.includes('progress')?'active':'pending';
+    var status=(plannerStatus.includes('complet')||plannerStatus.includes('done')||plannerStatus.includes('acabad')||plannerStatus.includes('finalitz'))?'done':'pending';
 
     // Find assignee by real name
     var assigneeName=(row[assignCol]||'').trim();
@@ -3559,13 +3572,18 @@ function openMissionModal(id){
   const m=missions.find(mx=>mx.id===id);if(!m)return;
   const p=players.find(px=>px.id===m.playerId);
   document.getElementById('mm-name').textContent=m.name;
-  const statusLabel=m.status==='done'?'Completada':m.status==='active'?'En curs':'Pendiente';
-  const statusCls=m.status==='done'?'b-teal':m.status==='active'?'b-gold':'b-gray';
+  const statusLabel=m.status==='done'?'Completada':'Pendent';
+  const statusCls=m.status==='done'?'b-teal':'b-gray';
+  var _prio={A:['Urgente','b-coral'],B:['Importante','b-gold'],C:['Media','b-gray'],D:['Baja','b-teal']}[m.diff]||['Media','b-gray'];
+  var _tags=(m.plannerTags&&m.plannerTags.indexOf('weekly:')!==0)?m.plannerTags:'';
   document.getElementById('mm-badges').innerHTML=
     `<span class="badge ${statusCls}">${statusLabel}</span>`
+    +`<span class="badge ${_prio[1]}">${_prio[0]}</span>`
     +(m.daily?'<span class="badge b-gold">Diaria</span>':'')
+    +(_isWeekly(m)?'<span class="badge b-teal">🗓️ Setmanal</span>':'')
     +`<span class="badge b-gray">${m.arc}</span>`
-    +(p?`<span class="badge b-purple">${p.emblem} ${p.name}</span>`:'');
+    +(p?`<span class="badge b-purple">${p.emblem} ${p.name}</span>`:'')
+    +(_tags?_tags.split(';').map(t=>t.trim()).filter(Boolean).map(t=>`<span class="badge b-gray">${t}</span>`).join(''):'');
   document.getElementById('mm-desc').textContent=m.desc||m.name+' — Completa esta misión para obtener recompensas.';
   document.getElementById('mm-stats').innerHTML=
     `<div class="smini"><div class="v">${m.xp}</div><div class="l">XP</div></div>`
@@ -3573,8 +3591,10 @@ function openMissionModal(id){
     +`<div class="smini"><div class="v">${m.diff||'C'}</div><div class="l">Dificultad</div></div>`;
   const canComplete=(session.isAdmin||(session.playerId===m.playerId))&&m.status!=='done';
   const canDel=session.isAdmin||(m.createdBy===session.playerId);
+  var assignHtml=session.isAdmin?`<select class="sstat" style="font-size:12px;" onchange="assignMission('${m.id}',this.value);openMissionModal('${m.id}')"><option value="">Sense assignar</option>`+players.map(function(pl){return '<option value="'+pl.id+'"'+(m.playerId===pl.id?' selected':'')+'>'+pl.emblem+' '+pl.name+'</option>';}).join('')+`</select>`:'';
   document.getElementById('mm-actions').innerHTML=
-    (canComplete?`<button class="btn btn-p" onclick="completeMission('${m.id}');closeMissionModal();">✓ Completar</button>`:'')
+    assignHtml
+    +(canComplete?`<button class="btn btn-p" onclick="completeMission('${m.id}');closeMissionModal();">✓ Completar</button>`:'')
     +(canDel?`<button class="btn" style="background:var(--coral-bg);color:var(--coral);" onclick="deleteMission('${m.id}');closeMissionModal();">🗑️ Eliminar</button>`:'')
     +`<button class="btn" onclick="closeMissionModal()">Tancar</button>`;
   const modal=document.getElementById('mission-modal');
@@ -3665,6 +3685,15 @@ function populateArcSelect(){
   }).join('');
   var asel=document.getElementById('nm-attr');
   if(asel){var cur=asel.value;asel.innerHTML=attrKeys().map(function(k){return '<option value="'+k+'">'+attrIcon(k)+' '+attrName(k)+'</option>';}).join('');if(cur)asel.value=cur;}
+  // Selector d'assignació (només admin el veu; si no, s'assigna a un mateix)
+  var asg=document.getElementById('nm-assign');
+  var asgWrap=document.getElementById('nm-assign-wrap');
+  if(asgWrap)asgWrap.style.display=session.isAdmin?'':'none';
+  if(asg){
+    var curA=asg.value;
+    asg.innerHTML='<option value="">Sense assignar</option>'+players.map(function(p){return '<option value="'+p.id+'">'+p.emblem+' '+p.name+'</option>';}).join('');
+    if(curA)asg.value=curA;
+  }
 }
 
 function createMission(){
@@ -3678,8 +3707,16 @@ function createMission(){
   var attrKey=document.getElementById('nm-attr')?document.getElementById('nm-attr').value:'';
   var attrName_=attrKey?attrName(attrKey):'';
   var attrPts=parseInt(document.getElementById('nm-attrpts')?document.getElementById('nm-attrpts').value:'0')||0;
+  // Prioritat → dificultat/recompensa
+  var priorityMap={'urgente':'A','importante':'B','media':'C','baja':'D'};
+  var prio=(document.getElementById('nm-priority')?document.getElementById('nm-priority').value:'media');
+  var prioDiff=priorityMap[prio]||'C';
+  // Assignació: admin tria; la resta s'assigna a un mateix
+  var assignTo=session.isAdmin?(document.getElementById('nm-assign')?document.getElementById('nm-assign').value:''):session.playerId;
+  // Etiquetes
+  var tags=(document.getElementById('nm-tags')?document.getElementById('nm-tags').value.trim():'');
   if(isWeekly){
-    weeklyTemplates.push({id:'wt'+Date.now(),name:name,desc:document.getElementById('nm-desc')?document.getElementById('nm-desc').value.trim():'',arc:arc||'General',playerId:session.playerId,diff:'C',xp:150,gold:60,frag:80,attr:attrName_,attrPts:attrPts});
+    weeklyTemplates.push({id:'wt'+Date.now(),name:name,desc:document.getElementById('nm-desc')?document.getElementById('nm-desc').value.trim():'',arc:arc||'General',playerId:assignTo||session.playerId,diff:prioDiff,xp:150,gold:60,frag:80,attr:attrName_,attrPts:attrPts});
     checkWeeklyMissions();
     if(CFG.MODE==='supabase')saveToSupabase();
     document.getElementById('nm-name').value='';
@@ -3688,24 +3725,26 @@ function createMission(){
     renderAll();
     return;
   }
+  var _rw=(typeof DIFF_REWARDS!=='undefined'&&DIFF_REWARDS[prioDiff])?DIFF_REWARDS[prioDiff]:{xp:75,gold:25,frag:50};
   var newM={
     id:'m'+Date.now(),
     name:name,
     desc:document.getElementById('nm-desc')?document.getElementById('nm-desc').value.trim():'',
     arc:arc||'General',
-    playerId:session.playerId,
+    playerId:isDaily?session.playerId:(assignTo||''),
     status:'pending',
-    diff:isDaily?'D':'C',
-    xp:isDaily?25:75,
-    gold:isDaily?10:25,
-    frag:isDaily?20:50,
+    diff:isDaily?'D':prioDiff,
+    xp:isDaily?25:_rw.xp,
+    gold:isDaily?10:_rw.gold,
+    frag:isDaily?20:(_rw.frag||50),
     attr:attrName_,
     attrPts:attrPts,
     deadline:isDaily?'':deadline||'',
     daily:isDaily,
     isDaily_instance:false,
     plannerId:'',
-    createdBy:session.playerId
+    createdBy:session.playerId,
+    plannerTags:(!isDaily&&tags)?tags:''
   };
   // Check daily limit
   if(isDaily){
@@ -3717,6 +3756,7 @@ function createMission(){
   if(CFG.MODE==='supabase')saveToSupabase();
   document.getElementById('nm-name').value='';
   document.getElementById('nm-deadline').value='';
+  var _nt=document.getElementById('nm-tags');if(_nt)_nt.value='';
   document.getElementById('panel-new-mission').removeAttribute('open');
   renderAll();
 }

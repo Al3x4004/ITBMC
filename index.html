@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BMC Global — Cuartel General</title>
 <link rel="icon" type="image/png" href="https://i.imgur.com/Z1wFN0q.png">
-<link rel="stylesheet" href="css/styles.css?v=11">
+<link rel="stylesheet" href="css/styles.css?v=12">
 </head>
 <body>
 <div id="toast"></div>
@@ -224,8 +224,18 @@
             </select>
           </div>
           <div class="field full" id="nm-diff-wrap" style="display:none;"></div>
+          <div class="field"><label>Prioritat</label>
+            <select id="nm-priority">
+              <option value="media">Media</option>
+              <option value="importante">Importante</option>
+              <option value="urgente">Urgente</option>
+              <option value="baja">Baja</option>
+            </select>
+          </div>
+          <div class="field" id="nm-assign-wrap"><label>Assignar a</label><select id="nm-assign"></select></div>
           <div class="field"><label>Atribut que puja</label><select id="nm-attr"></select></div>
           <div class="field"><label>Punts d'atribut</label><input type="number" id="nm-attrpts" value="2" min="0" max="20"/></div>
+          <div class="field full"><label>Etiquetes (separa amb ;)</label><input type="text" id="nm-tags" placeholder="Ej: 🛠️ Material IT; 📧 Outlook"/></div>
           <div class="field full"><label>Descripció (opcional)</label><textarea id="nm-desc" placeholder="Describe en qué consiste esta misión..." style="min-height:56px;"></textarea></div>
           <div class="field"><label>Data límit (opcional)</label><input type="date" id="nm-deadline"/></div>
           <div class="field full" style="display:flex;justify-content:flex-end;">
@@ -255,9 +265,8 @@
       </div>
       <div><div class="stitle">Diàries <span class="daily-rib">HOY</span></div><div id="m-daily"></div></div>
       <div style="margin-top:1.25rem;"><div class="stitle">Setmanals <span class="daily-rib" style="background:var(--accent-bg);color:var(--teal);">🗓️</span></div><div id="m-weekly"></div><div id="m-weekly-templates"></div></div>
-      <div style="margin-top:1.25rem;"><div class="stitle">En curso</div><div id="m-active"></div></div>
       <div style="margin-top:1.25rem;"><div class="stitle">Pendents</div><div id="m-pending"></div></div>
-      <div style="margin-top:1.25rem;"><div class="stitle">Completades</div><div id="m-done"></div></div>
+      <div style="margin-top:1.25rem;"><div class="stitle">Completades</div><div id="m-done"></div><div id="m-done-more" style="margin-top:.75rem;text-align:center;"></div></div>
     </div>
 
     <!-- HÉROES -->
@@ -906,6 +915,6 @@
   window.dispatchEvent(new Event('dicebear-ready'));
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="js/app.js?v=16"></script>
+<script src="js/app.js?v=17"></script>
 </body>
 </html>
