@@ -2607,21 +2607,30 @@ function parsePlannerCSV(text){
 }
 
 function parsePlannerExcel(buffer){
-  // Parse XLSX manually (simple version - read as text looking for shared strings)
-  // For full xlsx support we'd need a library, but Planner exports simple xlsx
-  // Try to convert to CSV-like by extracting text
-  try {
-    var arr=new Uint8Array(buffer);
-    var str=String.fromCharCode.apply(null,arr);
-    // Check if it's actually a CSV saved as xlsx
-    if(str.startsWith('Task Name')||str.startsWith('Nombre')){
-      parsePlannerCSV(str);return;
-    }
-    // Show message to save as CSV
-    toast('Por favor exporta el archivo como CSV desde Excel: Archivo → Guardar como → CSV');
-    document.getElementById('planner-drop').innerHTML='<div style="font-size:14px;color:var(--coral);">⚠️ Guarda el archivo como CSV (.csv) desde Excel y vuelve a subirlo.</div>';
-  } catch(e) {
-    toast('Error al leer el archivo. Guárdalo como CSV e inténtalo de nuevo.');
+  if(typeof XLSX==='undefined'){
+    document.getElementById('planner-drop').innerHTML='<div style="font-size:14px;color:var(--coral);">⚠️ No s\'ha pogut carregar el lector d\'Excel. Comprova la connexió i torna-ho a provar (o exporta com a CSV).</div>';
+    return;
+  }
+  try{
+    var wb=XLSX.read(new Uint8Array(buffer),{type:'array'});
+    // Preferim la fulla "Tareas"; si no, la primera
+    var sheetName=wb.SheetNames.indexOf('Tareas')>=0?'Tareas':
+                  (wb.SheetNames.indexOf('Tasques')>=0?'Tasques':wb.SheetNames[0]);
+    var ws=wb.Sheets[sheetName];
+    var matrix=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false,blankrows:false});
+    if(!matrix.length){toast('La fulla "'+sheetName+'" està buida.');return;}
+    // Primera fila amb contingut = capçaleres
+    var hdrIdx=0;
+    for(var i=0;i<matrix.length;i++){if(matrix[i].some(function(c){return (''+c).trim();})){hdrIdx=i;break;}}
+    plannerHeaders=matrix[hdrIdx].map(function(h){return (''+h).trim();});
+    plannerRows=matrix.slice(hdrIdx+1).map(function(cols){
+      var row={};plannerHeaders.forEach(function(h,i){if(h)row[h]=(''+(cols[i]!=null?cols[i]:'')).trim();});
+      return row;
+    }).filter(function(r){return Object.values(r).some(function(v){return v;});});
+    showPlannerPreview();
+  }catch(e){
+    console.error('Excel parse error',e);
+    toast('Error llegint l\'Excel. Prova a exportar-lo com a CSV.');
   }
 }
 
