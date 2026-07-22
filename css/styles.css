@@ -373,7 +373,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .inv-item:hover{border-color:var(--border2);}
 .inv-item.equipped{border-color:var(--gold-border);background:var(--gold-bg);}
 /* ══ SHOWCASE ══ */
-.hero-showcase{display:flex;gap:12px;margin-top:.75rem;flex-wrap:wrap;}
+#pinfo{position:relative;}
+.pedit-btn{position:absolute;top:0;right:0;z-index:2;}
+.hero-showcase{display:flex;gap:12px;margin-top:.75rem;flex-wrap:wrap;justify-content:center;}
 .showcase-img{width:140px;height:196px;border-radius:var(--radius);border:0.5px solid var(--border);object-fit:cover;background:var(--bg3);cursor:pointer;transition:border-color .15s,transform .1s;}
 .showcase-img:hover{border-color:var(--accent);transform:translateY(-2px);}
 .showcase-empty{width:140px;height:196px;border-radius:var(--radius);border:2px dashed var(--border2);display:flex;align-items:center;justify-content:center;font-size:32px;cursor:pointer;transition:border-color .15s;background:var(--bg3);}

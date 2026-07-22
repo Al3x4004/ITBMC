@@ -1190,8 +1190,8 @@ function renderHeroProfile(i){
             <div class="pclass">${p.role}</div>
             <div class="pquote">"${p.quote}"</div>
           </div>
-          ${canEdit?`<button class="btn btn-sm" onclick="openEditModal('${p.id}')">✏️ Editar</button>`:''}
         </div>
+        ${canEdit?`<button class="btn btn-sm pedit-btn" onclick="openEditModal('${p.id}')">✏️ Editar</button>`:''}
         <div class="xpw">
           <div class="xpl"><span>XP: ${p.xp.toLocaleString()}</span><span>Nivel ${p.level+1} en ${(p.xpNext-p.xp).toLocaleString()} XP</span></div>
           <div class="xpt"><div class="xpf" style="width:${xpPct}%;background:${p.color};"></div></div>
@@ -3210,7 +3210,7 @@ function saveAvatar(){
 /* ══ PENTAGON ══ */
 function buildPentagon(attrs,color){
   var keys=attrKeys();
-  var labels=keys.map(function(k){var n=attrName(k)||k;return {icon:attrIcon(k),txt:n.slice(0,3).toUpperCase()};});
+  var labels=keys.map(function(k){var n=(attrName(k)||k).replace(/^[^\p{L}]+/u,'').trim();var t=n.slice(0,3);return {icon:attrIcon(k),txt:t.charAt(0).toUpperCase()+t.slice(1).toLowerCase()};});
   var cx=200,cy=200,r=155,n=keys.length||1;
   var bgLvls=[0.25,0.5,0.75,1.0];
   var bgSvg=bgLvls.map(function(lv){
@@ -3221,7 +3221,7 @@ function buildPentagon(attrs,color){
   var dataPts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;var v=Math.min(100,attrs[k]||0)/100;return {x:cx+r*v*Math.cos(a),y:cy+r*v*Math.sin(a),lx:cx+(r+30)*Math.cos(a),ly:cy+(r+30)*Math.sin(a),label:labels[i],val:attrs[k]||0};});
   var fillPts=dataPts.map(function(p){return p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');
   var dots=dataPts.map(function(p){return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="3.5" fill="'+color+'"/>';}).join('');
-  var lblSvg=dataPts.map(function(p){return '<text class="penta-icon" x="'+p.lx.toFixed(1)+'" y="'+(p.ly-8).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle">'+p.label.icon+'</text><text class="penta-label" x="'+p.lx.toFixed(1)+'" y="'+(p.ly+10).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle">'+p.label.txt+'</text><text class="penta-value" x="'+(p.x+(p.lx-p.x)*0.35).toFixed(1)+'" y="'+(p.y+(p.ly-p.y)*0.35).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" fill="'+color+'">'+p.val+'</text>';}).join('');
+  var lblSvg=dataPts.map(function(p){return '<text class="penta-label" x="'+p.lx.toFixed(1)+'" y="'+p.ly.toFixed(1)+'" text-anchor="middle" dominant-baseline="middle"><tspan class="penta-icon">'+p.label.icon+'</tspan>'+p.label.txt+'</text><text class="penta-value" x="'+(p.x+(p.lx-p.x)*0.35).toFixed(1)+'" y="'+(p.y+(p.ly-p.y)*0.35).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" fill="'+color+'">'+p.val+'</text>';}).join('');
   return '<svg width="400" height="400" viewBox="0 0 400 400" style="overflow:visible;max-width:100%;">'+bgSvg+axes+'<polygon class="penta-fill" points="'+fillPts+'" fill="'+color+'" stroke="'+color+'"/>'+dots+lblSvg+'</svg>';
 }
 
