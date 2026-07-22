@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BMC Global — Cuartel General</title>
 <link rel="icon" type="image/png" href="https://i.imgur.com/Z1wFN0q.png">
-<link rel="stylesheet" href="css/styles.css?v=9">
+<link rel="stylesheet" href="css/styles.css?v=10">
 </head>
 <body>
 <div id="toast"></div>
@@ -26,6 +26,17 @@
       <button class="btn btn-sm" onclick="closeShowcaseModal()">✕</button>
     </div>
     <div id="showcase-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;"></div>
+  </div>
+</div>
+
+<div id="server-backups-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;padding:1rem;" onclick="if(event.target===this)closeServerBackups()">
+  <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);max-width:560px;width:100%;max-height:80vh;overflow-y:auto;padding:1.25rem;box-shadow:0 10px 40px rgba(0,0,0,.4);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <div class="stitle" style="margin:0;">☁️ Còpies del servidor</div>
+      <button class="btn btn-sm" onclick="closeServerBackups()">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Còpies automàtiques desades a cada canvi. Restaurar substitueix les dades actuals per la còpia triada.</div>
+    <div id="server-backups-list"><div style="font-size:13px;color:var(--muted);">Carregant…</div></div>
   </div>
 </div>
 
@@ -177,8 +188,9 @@
             <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="goToMyProfile()">👤 Mi perfil</button>
             <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="openEditModal(session.playerId)">✏️ Editar personaje</button>
             <button class="btn btn-sm btn-g" style="width:100%;text-align:left;margin-bottom:2px;" onclick="backupData()">💾 Còpia de seguretat</button>
-            <button class="btn btn-sm" id="menu-restore" style="width:100%;text-align:left;margin-bottom:2px;display:none;" onclick="document.getElementById('restore-file').click()">♻️ Restaurar còpia</button>
+            <button class="btn btn-sm" id="menu-restore" style="width:100%;text-align:left;margin-bottom:2px;display:none;" onclick="document.getElementById('restore-file').click()">♻️ Restaurar còpia (fitxer)</button>
             <input type="file" id="restore-file" accept=".json" style="display:none;" onchange="restoreData(this)"/>
+            <button class="btn btn-sm" id="menu-server-backups" style="width:100%;text-align:left;margin-bottom:2px;display:none;" onclick="openServerBackups()">☁️ Còpies del servidor</button>
             <button class="btn btn-sm" style="width:100%;text-align:left;" onclick="doLogout()">← Cerrar sesión</button>
           </div>
         </div>
@@ -893,6 +905,6 @@
   window.DiceBearPixelArt = pixelArt;
   window.dispatchEvent(new Event('dicebear-ready'));
 </script>
-<script src="js/app.js?v=9"></script>
+<script src="js/app.js?v=10"></script>
 </body>
 </html>

@@ -546,6 +546,56 @@ function restoreData(input){
   rd.readAsText(f);
 }
 
+/* ══ CÒPIES DEL SERVIDOR (RPC) ══ */
+var _adminPwCache=null;
+function _askAdminPw(){
+  if(_adminPwCache)return _adminPwCache;
+  var pw=prompt('Contrasenya d\'admin per gestionar còpies del servidor:');
+  if(pw)_adminPwCache=pw;
+  return pw;
+}
+async function openServerBackups(){
+  if(!session.isAdmin)return;
+  var _x=document.getElementById('umenu-inline');if(_x)_x.style.display='none';
+  var m=document.getElementById('server-backups-modal');if(m)m.style.display='flex';
+  var list=document.getElementById('server-backups-list');
+  if(list)list.innerHTML='<div style="font-size:13px;color:var(--muted);">Carregant…</div>';
+  var pw=_askAdminPw();if(!pw){closeServerBackups();return;}
+  try{
+    var r=await fetch(CFG.SUPABASE_URL+'/rest/v1/rpc/list_backups',{
+      method:'POST',
+      headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({pw:pw})
+    });
+    if(!r.ok){var t=await r.text();list.innerHTML='<div style="font-size:13px;color:var(--coral);">No s\'ha pogut carregar (encara no has executat el SQL de còpies?).<br><span style="color:var(--muted);">'+r.status+': '+t.slice(0,120)+'</span></div>';return;}
+    var rows=await r.json();
+    if(!Array.isArray(rows)||!rows.length){list.innerHTML='<div style="font-size:13px;color:var(--muted);">Encara no hi ha còpies.</div>';return;}
+    list.innerHTML='<div style="display:flex;flex-direction:column;gap:8px;">'+rows.map(function(b){
+      var when='';try{when=new Date(b.snapshot_at).toLocaleString();}catch(e){}
+      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 11px;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);">'
+        +'<div><div style="font-size:13px;font-weight:600;">'+when+'</div><div style="font-size:11px;color:var(--muted);">👥 '+(b.player_count!=null?b.player_count:'?')+' jugadors</div></div>'
+        +'<button class="btn btn-sm btn-p" onclick="restoreServerBackup('+b.id+')">Restaurar</button></div>';
+    }).join('')+'</div>';
+  }catch(e){if(list)list.innerHTML='<div style="font-size:13px;color:var(--coral);">Error: '+e+'</div>';}
+}
+function closeServerBackups(){var m=document.getElementById('server-backups-modal');if(m)m.style.display='none';}
+async function restoreServerBackup(bid){
+  if(!session.isAdmin)return;
+  var pw=_askAdminPw();if(!pw)return;
+  if(!confirm('Restaurar aquesta còpia? SOBREESCRIU les dades actuals del servidor.'))return;
+  try{
+    var r=await fetch(CFG.SUPABASE_URL+'/rest/v1/rpc/restore_backup',{
+      method:'POST',
+      headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({pw:pw,bid:bid})
+    });
+    if(!r.ok){var t=await r.text();alert('No s\'ha pogut restaurar: '+r.status+' '+t.slice(0,160));return;}
+    closeServerBackups();
+    alert('Còpia restaurada. Es recarregarà l\'app.');
+    location.reload();
+  }catch(e){alert('Error: '+e);}
+}
+
 /* ══ AUTH ══ */
 function showScreen(id){
   ['screen-welcome','screen-login','screen-admin','screen-new','screen-app'].forEach(s=>{
@@ -571,9 +621,24 @@ async function doLogin(){
   localStorage.setItem('cg_pid',p.id);
   enterApp();
 }
-function doAdminLogin(){
+async function verifyAdminServer(pin){
+  // Retorna true/false si el RPC existeix; null si no està configurat (per fer fallback)
+  try{
+    var r=await fetch(CFG.SUPABASE_URL+'/rest/v1/rpc/verify_admin',{
+      method:'POST',
+      headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({pw:pin})
+    });
+    if(!r.ok)return null; // funció no existeix encara (404) → fallback
+    var v=await r.json();
+    return v===true;
+  }catch(e){return null;}
+}
+async function doAdminLogin(){
   const pin=document.getElementById('ap').value;
-  if(pin!==CFG.ADMIN_PW){document.getElementById('aerr').style.display='block';return;}
+  var ok=await verifyAdminServer(pin);
+  if(ok===null)ok=(pin===CFG.ADMIN_PW); // fallback mentre no s'hagi configurat el RPC
+  if(!ok){document.getElementById('aerr').style.display='block';return;}
   document.getElementById('aerr').style.display='none';
   session={loggedIn:true,isAdmin:true,playerId:'admin'};
   enterApp();
@@ -595,6 +660,8 @@ function enterApp(){
   if(wgNav)wgNav.style.display=session.isAdmin?'flex':'none';
   var rb=document.getElementById('menu-restore');
   if(rb)rb.style.display=session.isAdmin?'block':'none';
+  var sb=document.getElementById('menu-server-backups');
+  if(sb)sb.style.display=session.isAdmin?'block':'none';
   const p=players.find(p=>p.id===session.playerId);
   if(p){const _idx=players.findIndex(function(pl){return pl.id===session.playerId;});if(_idx>=0)curHero=_idx;}
   document.getElementById('ulabel').textContent=session.isAdmin?'Dios 👑':(p?p.name.split(' ')[0]:'—');
