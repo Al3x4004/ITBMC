@@ -34,7 +34,7 @@ var widgetCatalog=[];/* catálogo de widgets del admin: {id,name,icon,type,embed
 const CFG={
   MODE:'supabase',
   GITHUB_RAW:'https://raw.githubusercontent.com/Al3x4004/ITBMC/main/',
-  ADMIN_PW:'admin1234',
+  ADMIN_PW:'',/* la contrasenya es verifica al servidor (RPC verify_admin); ja no viu al codi */
   SUPABASE_URL:'https://ksmxclenaeglnahinkvm.supabase.co',
   SUPABASE_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzbXhjbGVuYWVnbG5haGlua3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MjY0MzQsImV4cCI6MjA5ODMwMjQzNH0.pBaUUXSDGjXPLbAjIOAdtM0nvAgfxul7BUzfcQaWqNc',
 };
@@ -637,7 +637,7 @@ async function verifyAdminServer(pin){
 async function doAdminLogin(){
   const pin=document.getElementById('ap').value;
   var ok=await verifyAdminServer(pin);
-  if(ok===null)ok=(pin===CFG.ADMIN_PW); // fallback mentre no s'hagi configurat el RPC
+  if(ok===null)ok=(!!CFG.ADMIN_PW&&pin===CFG.ADMIN_PW); // fallback només si hi ha contrasenya al codi (ara buida)
   if(!ok){document.getElementById('aerr').style.display='block';return;}
   document.getElementById('aerr').style.display='none';
   session={loggedIn:true,isAdmin:true,playerId:'admin'};
