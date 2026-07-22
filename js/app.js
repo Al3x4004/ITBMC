@@ -112,8 +112,11 @@ const RARITY_LABEL={comun:'Comú',rara:'Rara',epica:'Èpica',legendaria:'Llegend
 let galleryHeroIdx=0;
 let galleryOnlyOwned=false;
 let galleryDupOnly=false;
+let galleryRarity='';
 var classGrowthMap={};/* {nomClasse:{attrKey:puntsPerNivell}} — punts que puja cada classe en pujar de nivell */
 var market=[];/* mercat negre: [{id,sellerId,cardId,mode:'gold'|'frag'|'trade',price,wantCardId}] */
+var marketHistory=[];/* historial: [{ts,type:'buy'|'trade',cardId,wantCardId,mode,price,fromId,toId}] (últimes 60) */
+var weeklyTemplates=[];/* plantilles setmanals: [{id,name,desc,arc,playerId,diff,xp,gold,frag,attr,attrPts}] (a game_data) */
 
 /* ══ CARGA ══ */
 
@@ -289,13 +292,34 @@ async function saveClassToSupabase(cls,idx){
 }
 
 /* Config compartida (no és dada de compte). */
-function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market};}
+function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market,market_history:marketHistory,weekly_templates:weeklyTemplates};}
 /*
  Desa fent FUSIÓ de jugadors: només sobreescriu els personatges que aquest client ha canviat
  (el de la sessió + els passats a extraPlayerIds). Per a la resta manté la versió de la BD.
  Així dos usuaris alhora no es piseguen les dades de compte. removedIds s'exclouen (esborrat).
 */
+var _saveStatusTimer=null;
+function saveStatus(state){
+  var el=document.getElementById('save-status');
+  if(!el){el=document.createElement('div');el.id='save-status';document.body.appendChild(el);}
+  if(_saveStatusTimer){clearTimeout(_saveStatusTimer);_saveStatusTimer=null;}
+  if(state==='saving'){el.className='show saving';el.innerHTML='<span class="ss-dot"></span> Desant…';}
+  else if(state==='saved'){el.className='show saved';el.innerHTML='✓ Desat';_saveStatusTimer=setTimeout(function(){el.className='';},1800);}
+  else if(state==='error'){el.className='show error';el.innerHTML='⚠️ Error en desar';_saveStatusTimer=setTimeout(function(){el.className='';},4000);}
+}
+var _undoTimer=null;
+function showUndo(msg,undoFn){
+  var el=document.getElementById('undo-bar');
+  if(!el){el=document.createElement('div');el.id='undo-bar';document.body.appendChild(el);}
+  el.innerHTML='<span>'+msg+'</span><button type="button">↩️ Desfer</button>';
+  el.classList.add('show');
+  if(_undoTimer)clearTimeout(_undoTimer);
+  var hide=function(){el.classList.remove('show');if(_undoTimer){clearTimeout(_undoTimer);_undoTimer=null;}};
+  el.querySelector('button').onclick=function(){hide();try{undoFn();}catch(e){console.error(e);}};
+  _undoTimer=setTimeout(hide,6500);
+}
 async function saveToSupabase(extraPlayerIds,removedIds){
+  saveStatus('saving');
   try{
     var mine={};[session.playerId].concat(extraPlayerIds||[]).forEach(function(id){if(id)mine[id]=true;});
     var removed={};(removedIds||[]).forEach(function(id){if(id)removed[id]=true;});
@@ -317,7 +341,8 @@ async function saveToSupabase(extraPlayerIds,removedIds){
       body:JSON.stringify({id:'main',data:data})
     });
     await saveAllMissionsToSupabase();
-  }catch(e){console.error('Supabase save error',e);}
+    saveStatus('saved');
+  }catch(e){console.error('Supabase save error',e);saveStatus('error');}
 }
 
 async function loadData(){
@@ -358,6 +383,8 @@ async function loadData(){
       if(Array.isArray(d.slot_defs)&&d.slot_defs.length)SLOT_DEFS=d.slot_defs;
       if(d.class_growth&&typeof d.class_growth==='object')classGrowthMap=d.class_growth;
       if(Array.isArray(d.market))market=d.market;
+      if(Array.isArray(d.market_history))marketHistory=d.market_history;
+      if(Array.isArray(d.weekly_templates))weeklyTemplates=d.weekly_templates;
       if(Array.isArray(d.attr_defs)&&d.attr_defs.length){
         ATTRS=d.attr_defs.map(function(a){return {key:a.key,name:a.name,color:a.color||'#888',icon:a.icon||''};});
       }else if(d.attr_names&&typeof d.attr_names==='object'){
@@ -409,6 +436,7 @@ async function loadData(){
     if(!p.pendingAttrPts)p.pendingAttrPts=0;
   });
   checkDailyMissions();
+  checkWeeklyMissions();
 }
 
 /* ══ MISIONES DIARIAS ══ */
@@ -445,6 +473,34 @@ function checkDailyMissions(){
   });
 }
 
+/* ── misiones SEMANALES (guardades a game_data, no toquen la taula misiones) ── */
+function weekKey(d){var dd=d?new Date(d):new Date();var off=(dd.getDay()+6)%7;var mon=new Date(dd);mon.setDate(dd.getDate()-off);return mon.toISOString().slice(0,10);}
+function _isWeekly(m){return !!(m&&m.plannerTags&&m.plannerTags.indexOf('weekly:')===0);}
+function checkWeeklyMissions(){
+  var wk=weekKey();
+  // Treure instàncies setmanals que no són d'aquesta setmana (reset setmanal)
+  missions=missions.filter(function(m){if(_isWeekly(m)){return m.plannerTags.slice(7)===wk;}return true;});
+  var mon=new Date(wk);var end=new Date(mon);end.setDate(mon.getDate()+6);var endStr=end.toISOString().slice(0,10);
+  weeklyTemplates.forEach(function(tpl){
+    var instId=tpl.id+'__'+wk;
+    if(missions.find(function(m){return m.id===instId;}))return;
+    missions.push({
+      id:instId,name:tpl.name,desc:tpl.desc||'',arc:tpl.arc||'General',
+      playerId:tpl.playerId||'',status:'pending',diff:tpl.diff||'C',
+      xp:tpl.xp||75,gold:tpl.gold||25,frag:tpl.frag||50,
+      attr:tpl.attr||'',attrPts:tpl.attrPts||0,
+      deadline:endStr,daily:false,isDaily_instance:false,
+      templateId:tpl.id,plannerId:'',createdBy:tpl.playerId||'',plannerTags:'weekly:'+wk
+    });
+  });
+}
+function deleteWeeklyTemplate(id){
+  var tpl=weeklyTemplates.find(function(t){return t.id===id;});if(!tpl)return;
+  weeklyTemplates=weeklyTemplates.filter(function(t){return t.id!==id;});
+  missions=missions.filter(function(m){return m.templateId!==id||!_isWeekly(m);});
+  if(CFG.MODE==='supabase')saveToSupabase();
+  renderAll();
+}
 function exportJSON(){
   // Guardar en Supabase (ya no hay modo local)
   saveToSupabase();
@@ -472,6 +528,8 @@ function restoreData(input){
       players=d.players;
       if(Array.isArray(d.arcs))arcs=d.arcs;
       if(Array.isArray(d.market))market=d.market;
+      if(Array.isArray(d.market_history))marketHistory=d.market_history;
+      if(Array.isArray(d.weekly_templates))weeklyTemplates=d.weekly_templates;
       if(Array.isArray(d.cal_events))calEvents=d.cal_events;
       if(Array.isArray(d.custom_traits))customTraits=d.custom_traits;
       if(Array.isArray(d.widget_catalog))widgetCatalog=d.widget_catalog;
@@ -879,12 +937,35 @@ function renderMStats(){
 }
 
 /* ── misiones ── */
+var missionFilter={q:'',arc:''};
+function setMissionSearch(v){missionFilter.q=(v||'').toLowerCase();renderMissions();}
+function setMissionArc(v){missionFilter.arc=v||'';renderMissions();}
+function _passMissionFilter(m){
+  if(missionFilter.q&&(m.name||'').toLowerCase().indexOf(missionFilter.q)<0)return false;
+  if(missionFilter.arc&&m.arc!==missionFilter.arc)return false;
+  return true;
+}
+function _fillMissionArcFilter(){
+  var sel=document.getElementById('m-arc-filter');if(!sel)return;
+  var uniq=[];missions.forEach(function(m){if(m.arc&&uniq.indexOf(m.arc)<0)uniq.push(m.arc);});
+  var cur=missionFilter.arc;
+  sel.innerHTML='<option value="">Tots els arcs</option>'+uniq.map(function(a){return '<option value="'+a+'"'+(a===cur?' selected':'')+'>'+a+'</option>';}).join('');
+}
 function renderMissions(){
+  _fillMissionArcFilter();
   const today=new Date().toISOString().slice(0,10);
-  const daily   =missions.filter(m=>m.daily&&m.isDaily_instance&&m.status!=='done'&&(session.isAdmin||m.playerId===session.playerId));
-  const active  =missions.filter(m=>!m.daily&&m.status==='active');
-  const pending =missions.filter(m=>!m.daily&&m.status==='pending');
-  const done    =missions.filter(m=>m.status==='done'&&!m.isDaily_instance);
+  const daily   =missions.filter(m=>m.daily&&m.isDaily_instance&&m.status!=='done'&&(session.isAdmin||m.playerId===session.playerId)&&_passMissionFilter(m));
+  const weekly  =missions.filter(m=>_isWeekly(m)&&(session.isAdmin||m.playerId===session.playerId)&&_passMissionFilter(m));
+  const active  =missions.filter(m=>!m.daily&&!_isWeekly(m)&&m.status==='active'&&_passMissionFilter(m));
+  const pending =missions.filter(m=>!m.daily&&!_isWeekly(m)&&m.status==='pending'&&_passMissionFilter(m));
+  const done    =missions.filter(m=>m.status==='done'&&!m.isDaily_instance&&!_isWeekly(m)&&_passMissionFilter(m));
+  var mwk=document.getElementById('m-weekly');
+  if(mwk)mwk.innerHTML=weekly.length?weekly.map(m=>mCard(m)).join(''):`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones semanales.</div>`;
+  var mwt=document.getElementById('m-weekly-templates');
+  if(mwt){
+    var myTpls=weeklyTemplates.filter(t=>session.isAdmin||t.playerId===session.playerId);
+    mwt.innerHTML=myTpls.length?('<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">'+myTpls.map(t=>'<span class="filter-chip" style="cursor:default;">🗓️ '+t.name+' <span style="color:var(--coral);cursor:pointer;font-weight:700;" onclick="deleteWeeklyTemplate(\''+t.id+'\')">✕</span></span>').join('')+'</div>'):'';
+  }
   document.getElementById('m-daily').innerHTML  =daily.length  ?daily.map(m=>mCard(m)).join('')  :`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones diarias.</div>`;
   document.getElementById('m-active').innerHTML =active.length ?active.map(m=>mCard(m)).join('') :`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones activas.</div>`;
   document.getElementById('m-pending').innerHTML=pending.length?pending.map(m=>mCard(m)).join(''):`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones pendientes.</div>`;
@@ -895,7 +976,7 @@ function mCard(m){
   const player=players.find(p=>p.id===m.playerId);
   const canComplete=session.isAdmin||(session.playerId===m.playerId&&m.status!=='done');
   const canEdit=session.isAdmin||session.playerId===m.playerId;
-  const dailyBadge=m.daily&&m.isDaily_instance?`<span class="daily-rib">Diaria</span>`:(m.daily&&!m.isDaily_instance?`<span class="daily-rib" style="background:var(--accent-bg);color:var(--accent);">📌 Diaria personal</span>`:'');
+  const dailyBadge=_isWeekly(m)?`<span class="daily-rib" style="background:var(--teal-bg,var(--accent-bg));color:var(--teal);">🗓️ Setmanal</span>`:(m.daily&&m.isDaily_instance?`<span class="daily-rib">Diaria</span>`:(m.daily&&!m.isDaily_instance?`<span class="daily-rib" style="background:var(--accent-bg);color:var(--accent);">📌 Diaria personal</span>`:''));
   const completedBtn=canComplete&&m.status!=='done'
     ?`<button class="btn-complete" onclick="completeMission('${m.id}')">✓ Completar</button>`:'';
   const statusBadge=m.status==='done'?`<span class="badge b-teal">Completada</span>`:m.status==='active'?`<span class="badge b-gold">En curso</span>`:`<span class="badge b-gray">Pendiente</span>`;
@@ -935,10 +1016,15 @@ function deleteArc(id){
   renderAll();
 }
 function deleteMission(id){
-  if(!confirm('¿Eliminar esta misión?'))return;
-  missions=missions.filter(function(m){return m.id!==id;});
+  var m=missions.find(function(x){return x.id===id;});if(!m)return;
+  missions=missions.filter(function(x){return x.id!==id;});
   if(CFG.MODE==='supabase'){deleteMissionFromSupabase(id);saveToSupabase();}
   renderAll();
+  showUndo('Missió eliminada: '+(m.name||''),function(){
+    missions.push(m);
+    if(CFG.MODE==='supabase')saveToSupabase();
+    renderAll();
+  });
 }
 
 function assignMission(missionId, playerId){
@@ -1403,12 +1489,17 @@ function renderGalleryCards(ownedEntries,mode){
   var list=all;
   if(galleryDupOnly)list=all.filter(function(c){return counts[c.id]>1;});
   else if(galleryOnlyOwned)list=all.filter(function(c){return counts[c.id];});
+  if(galleryRarity)list=list.filter(function(c){return (c.rarity||'comun')===galleryRarity;});
+  var rarChips=[['','Totes']].concat(RARITY_ORDER.map(function(r){return [r,RARITY_LABEL[r]];})).map(function(rc){
+    return '<span class="filter-chip'+(galleryRarity===rc[0]?' active':'')+'" onclick="setGalleryRarity(\''+rc[0]+'\')">'+rc[1]+'</span>';
+  }).join('');
   var header='<div class="gallery-head">'
     +'<span class="gallery-count">📖 '+haveCount+' / '+all.length+' <span style="font-weight:500;color:var(--muted);font-size:12px;">· 🔁 '+dupCount+' duplicades</span></span>'
     +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
     +'<button class="btn btn-sm'+(galleryOnlyOwned&&!galleryDupOnly?' btn-p':'')+'" onclick="toggleGalleryOwned()">'+(galleryOnlyOwned&&!galleryDupOnly?'✓ Només les meves':'Només les meves')+'</button>'
     +'<button class="btn btn-sm'+(galleryDupOnly?' btn-p':'')+'" onclick="toggleGalleryDup()">'+(galleryDupOnly?'✓ ':'')+'Només duplicats ('+dupCount+')</button>'
-    +'</div></div>';
+    +'</div></div>'
+    +'<div class="filter-bar" style="margin-top:.5rem;">'+rarChips+'</div>';
   if(!list.length)return header+'<div class="gallery-empty">'+(galleryDupOnly?'No tens cap carta duplicada.':'Encara no tens cap carta.')+'</div>';
   var grid='<div class="gallery-grid">'+list.map(function(c){
     var n=counts[c.id]||0;var mine=n>0;
@@ -1441,6 +1532,7 @@ function toggleGalleryDup(){
   galleryDupOnly=!galleryDupOnly;if(galleryDupOnly)galleryOnlyOwned=false;
   refreshGalleries();
 }
+function setGalleryRarity(r){galleryRarity=(galleryRarity===r)?'':r;refreshGalleries();}
 
 function renderMyGallery(){
   const p=players.find(pl=>pl.id===session.playerId);
@@ -1523,10 +1615,35 @@ function quickSellCard(cardId){
   p.fragments=(p.fragments||0)+val;
   if(CFG.MODE==='supabase')saveToSupabase();
   renderMarket();renderAll();
-  toast('+'+val+' ✨ per '+c.name);
+  showUndo('Venuda '+c.name+' per +'+val+' ✨',function(){
+    p.gallery.push(cardId);
+    p.fragments=Math.max(0,(p.fragments||0)-val);
+    if(CFG.MODE==='supabase')saveToSupabase();
+    renderMarket();renderAll();
+  });
+}
+function logMarket(entry){
+  entry.ts=new Date().toISOString();
+  marketHistory.unshift(entry);
+  if(marketHistory.length>60)marketHistory=marketHistory.slice(0,60);
+}
+function renderMarketHistory(){
+  var host=document.getElementById('mercat-history');if(!host)return;
+  if(!marketHistory.length){host.innerHTML='<div style="font-size:13px;color:var(--muted);">Encara no hi ha operacions.</div>';return;}
+  function pname(id){var p=players.find(function(x){return x.id===id;});return p?p.name.split(' ')[0]:'?';}
+  function cname(id){var c=mkCardById(id);return c?c.name:'?';}
+  function when(ts){try{var d=new Date(ts);return d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
+  host.innerHTML='<div style="display:flex;flex-direction:column;gap:6px;">'+marketHistory.map(function(h){
+    var desc;
+    if(h.type==='trade')desc='🔄 <b>'+pname(h.toId)+'</b> va donar <b>'+cname(h.wantCardId)+'</b> i va rebre <b>'+cname(h.cardId)+'</b> de <b>'+pname(h.fromId)+'</b>';
+    else desc='🛒 <b>'+pname(h.toId)+'</b> va comprar <b>'+cname(h.cardId)+'</b> a <b>'+pname(h.fromId)+'</b> per '+(h.mode==='gold'?('🪙 '+h.price):('✨ '+h.price));
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;">'
+      +'<span style="color:var(--text);">'+desc+'</span>'
+      +'<span style="color:var(--muted);white-space:nowrap;font-size:11px;">'+when(h.ts)+'</span></div>';
+  }).join('')+'</div>';
 }
 function renderMarket(){
-  renderCardPickers();renderQuickSell();
+  renderCardPickers();renderQuickSell();renderMarketHistory();
   var p=players.find(function(pl){return pl.id===session.playerId;});
   var w=document.getElementById('mercat-wallet');
   if(w)w.innerHTML=p?('El teu moneder: 🪙 '+p.gold+' or · ✨ '+(p.fragments||0)+' fragments'):'Entra amb un personatge per operar al mercat.';
@@ -1624,9 +1741,9 @@ function buyListing(id){
   else{p.fragments=(p.fragments||0)-l.price;if(seller)seller.fragments=(seller.fragments||0)+l.price;}
   if(!p.gallery)p.gallery=[];p.gallery.push(l.cardId);
   market=market.filter(function(x){return x.id!==id;});
+  logMarket({type:'buy',cardId:l.cardId,mode:l.mode,price:l.price,fromId:l.sellerId,toId:p.id});
   if(CFG.MODE==='supabase')saveToSupabase([l.sellerId]);
   renderMarket();renderAll();
-  toast('Carta comprada!');
 }
 function tradeListing(id){
   var l=market.find(function(x){return x.id===id;});if(!l||l.mode!=='trade')return;
@@ -1639,9 +1756,9 @@ function tradeListing(id){
   p.gallery.push(l.cardId);/* rep la carta oferta */
   if(seller){if(!seller.gallery)seller.gallery=[];seller.gallery.push(l.wantCardId);}
   market=market.filter(function(x){return x.id!==id;});
+  logMarket({type:'trade',cardId:l.cardId,wantCardId:l.wantCardId,fromId:l.sellerId,toId:p.id});
   if(CFG.MODE==='supabase')saveToSupabase([l.sellerId]);
   renderMarket();renderAll();
-  toast('Intercanvi fet!');
 }
 
 function showInvTab(name,btn){
@@ -3463,7 +3580,7 @@ function selectDiff(btn,diff){
 function toggleDailyFields(){
   var type=document.getElementById('nm-type').value;
   var diffWrap=document.getElementById('nm-diff-wrap');
-  if(diffWrap)diffWrap.style.display=type==='daily'?'none':'block';
+  if(diffWrap)diffWrap.style.display=(type==='daily'||type==='weekly')?'none':'block';
 }
 
 function populateArcSelect(){
@@ -3480,11 +3597,22 @@ function createMission(){
   if(!name){toast('La misión necesita un nombre.');return;}
   var type=document.getElementById('nm-type').value;
   var isDaily=type==='daily';
+  var isWeekly=type==='weekly';
   var arc=document.getElementById('nm-arc').value;
   var deadline=document.getElementById('nm-deadline').value;
   var attrKey=document.getElementById('nm-attr')?document.getElementById('nm-attr').value:'';
   var attrName_=attrKey?attrName(attrKey):'';
   var attrPts=parseInt(document.getElementById('nm-attrpts')?document.getElementById('nm-attrpts').value:'0')||0;
+  if(isWeekly){
+    weeklyTemplates.push({id:'wt'+Date.now(),name:name,desc:document.getElementById('nm-desc')?document.getElementById('nm-desc').value.trim():'',arc:arc||'General',playerId:session.playerId,diff:'C',xp:150,gold:60,frag:80,attr:attrName_,attrPts:attrPts});
+    checkWeeklyMissions();
+    if(CFG.MODE==='supabase')saveToSupabase();
+    document.getElementById('nm-name').value='';
+    document.getElementById('nm-deadline').value='';
+    var _pw=document.getElementById('panel-new-mission');if(_pw)_pw.removeAttribute('open');
+    renderAll();
+    return;
+  }
   var newM={
     id:'m'+Date.now(),
     name:name,
