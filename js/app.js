@@ -217,13 +217,12 @@ async function saveMissionToSupabase(m){
 }
 async function saveAllMissionsToSupabase(){
   if(!missions.length)return;
-  try{
-    await fetch(CFG.SUPABASE_URL+'/rest/v1/misiones',{
-      method:'POST',
-      headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
-      body:JSON.stringify(missions.map(missionToRow))
-    });
-  }catch(e){console.error('Error saving all missions',e);}
+  var r=await fetch(CFG.SUPABASE_URL+'/rest/v1/misiones',{
+    method:'POST',
+    headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+    body:JSON.stringify(missions.map(missionToRow))
+  });
+  if(!r.ok){var t='';try{t=await r.text();}catch(e){}throw new Error('misiones save '+r.status+' '+t.slice(0,200));}
 }
 async function deleteMissionFromSupabase(id){
   try{
