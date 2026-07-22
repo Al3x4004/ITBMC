@@ -3210,7 +3210,15 @@ function saveAvatar(){
 /* ══ PENTAGON ══ */
 function buildPentagon(attrs,color){
   var keys=attrKeys();
-  var labels=keys.map(function(k){var n=(attrName(k)||k).replace(/^[^\p{L}]+/u,'').trim();var t=n.slice(0,3);return {icon:attrIcon(k),txt:t.charAt(0).toUpperCase()+t.slice(1).toLowerCase()};});
+  var labels=keys.map(function(k){
+    var raw=(attrName(k)||k);
+    var def=ATTRS.find(function(x){return x.key===k;});
+    var lead=(raw.match(/^[^\p{L}]+/u)||[''])[0].trim();
+    var ic=(def&&def.icon&&def.icon!=='⭐')?def.icon:(lead||'⭐');
+    var rest=raw.replace(/^[^\p{L}]+/u,'').trim();
+    var t=rest.slice(0,3);
+    return {icon:ic,txt:t.charAt(0).toUpperCase()+t.slice(1).toLowerCase()};
+  });
   var cx=200,cy=200,r=155,n=keys.length||1;
   var bgLvls=[0.25,0.5,0.75,1.0];
   var bgSvg=bgLvls.map(function(lv){
