@@ -159,7 +159,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .lbstat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:1px;}
 @media(max-width:600px){.lbstat{width:56px;}.lbstat-v{font-size:12px;}}
 /* ══ HERO PROFILE ══ */
-.phead{display:flex;gap:1.25rem;align-items:flex-start;margin-bottom:1.25rem;}
+.phead{display:flex;flex-direction:column;gap:.75rem;align-items:center;text-align:center;margin-bottom:1.5rem;}
 .pname{font-size:20px;font-weight:500;letter-spacing:-.01em;margin-bottom:2px;}
 .pclass{font-size:13px;color:var(--muted);margin-bottom:8px;}
 .pquote{font-size:13px;color:var(--muted);font-style:italic;line-height:1.6;}
@@ -169,9 +169,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .smini .v{font-size:17px;font-weight:500;}
 .smini .l{font-size:10px;color:var(--muted);margin-top:2px;}
 .phead-ava{flex-shrink:0;}
-.phead-info{flex:1;min-width:0;}
-.pstats-row{display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin-bottom:1rem;}
-.pstats-bars{flex:1;min-width:220px;}
+.phead-info{max-width:520px;}
+.pstats-row{display:flex;gap:28px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:1rem;}
+.pstats-bars{flex:1;min-width:260px;max-width:420px;}
 .pstats-radar{flex-shrink:0;display:flex;justify-content:center;align-items:center;}
 .peq-group{margin-top:1rem;}
 .epill-eq{border-color:var(--gold)!important;color:var(--gold)!important;background:var(--gold-bg)!important;}
@@ -357,8 +357,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .pentagon-wrap{display:flex;justify-content:center;margin:1rem 0;}
 .penta-bg{fill:none;stroke:var(--border);stroke-width:1;}
 .penta-fill{fill-opacity:.15;stroke-width:2;}
-.penta-label{font-size:12px;fill:var(--muted);font-family:inherit;font-weight:500;}
-.penta-value{font-size:13px;font-weight:700;font-family:inherit;}
+.penta-label{font-size:12px;fill:var(--muted);font-family:inherit;font-weight:600;letter-spacing:.03em;}
+.penta-icon{font-size:18px;}
+.penta-value{font-size:14px;font-weight:700;font-family:inherit;}
 /* ══ INVENTARIO ══ */
 .inv-slots{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:1.25rem;}
 .inv-slot{background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius);padding:.75rem;text-align:center;cursor:pointer;transition:all .15s;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;}
@@ -372,10 +373,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .inv-item:hover{border-color:var(--border2);}
 .inv-item.equipped{border-color:var(--gold-border);background:var(--gold-bg);}
 /* ══ SHOWCASE ══ */
-.hero-showcase{display:flex;gap:8px;margin-top:.75rem;flex-wrap:wrap;}
-.showcase-img{width:95px;height:133px;border-radius:var(--radius);border:0.5px solid var(--border);object-fit:cover;background:var(--bg3);cursor:pointer;transition:border-color .15s;}
-.showcase-img:hover{border-color:var(--accent);}
-.showcase-empty{width:95px;height:133px;border-radius:var(--radius);border:2px dashed var(--border2);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:border-color .15s;background:var(--bg3);}
+.hero-showcase{display:flex;gap:12px;margin-top:.75rem;flex-wrap:wrap;}
+.showcase-img{width:140px;height:196px;border-radius:var(--radius);border:0.5px solid var(--border);object-fit:cover;background:var(--bg3);cursor:pointer;transition:border-color .15s,transform .1s;}
+.showcase-img:hover{border-color:var(--accent);transform:translateY(-2px);}
+.showcase-empty{width:140px;height:196px;border-radius:var(--radius);border:2px dashed var(--border2);display:flex;align-items:center;justify-content:center;font-size:32px;cursor:pointer;transition:border-color .15s;background:var(--bg3);}
 .showcase-empty:hover{border-color:var(--accent);}
 
 .nb-edit-btn{display:none;font-size:10px;padding:2px 6px;border-radius:3px;border:0.5px solid var(--accent-border);background:var(--accent-bg);cursor:pointer;color:var(--accent);margin-left:auto;line-height:1;}
