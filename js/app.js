@@ -117,6 +117,7 @@ var classGrowthMap={};/* {nomClasse:{attrKey:puntsPerNivell}} — punts que puja
 var market=[];/* mercat negre: [{id,sellerId,cardId,mode:'gold'|'frag'|'trade',price,wantCardId}] */
 var marketHistory=[];/* historial: [{ts,type:'buy'|'trade',cardId,wantCardId,mode,price,fromId,toId}] (últimes 60) */
 var weeklyTemplates=[];/* plantilles setmanals: [{id,name,desc,arc,playerId,diff,xp,gold,frag,attr,attrPts}] (a game_data) */
+var missionAssignees={};/* {missionId:[playerId,...]} assignació múltiple (a game_data) */
 
 /* ══ CARGA ══ */
 
@@ -291,7 +292,7 @@ async function saveClassToSupabase(cls,idx){
 }
 
 /* Config compartida (no és dada de compte). */
-function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market,market_history:marketHistory,weekly_templates:weeklyTemplates};}
+function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market,market_history:marketHistory,weekly_templates:weeklyTemplates,mission_assignees:missionAssignees};}
 /*
  Desa fent FUSIÓ de jugadors: només sobreescriu els personatges que aquest client ha canviat
  (el de la sessió + els passats a extraPlayerIds). Per a la resta manté la versió de la BD.
@@ -384,6 +385,7 @@ async function loadData(){
       if(Array.isArray(d.market))market=d.market;
       if(Array.isArray(d.market_history))marketHistory=d.market_history;
       if(Array.isArray(d.weekly_templates))weeklyTemplates=d.weekly_templates;
+      if(d.mission_assignees&&typeof d.mission_assignees==='object')missionAssignees=d.mission_assignees;
       if(Array.isArray(d.attr_defs)&&d.attr_defs.length){
         ATTRS=d.attr_defs.map(function(a){return {key:a.key,name:a.name,color:a.color||'#888',icon:a.icon||''};});
       }else if(d.attr_names&&typeof d.attr_names==='object'){
@@ -529,6 +531,7 @@ function restoreData(input){
       if(Array.isArray(d.market))market=d.market;
       if(Array.isArray(d.market_history))marketHistory=d.market_history;
       if(Array.isArray(d.weekly_templates))weeklyTemplates=d.weekly_templates;
+      if(d.mission_assignees&&typeof d.mission_assignees==='object')missionAssignees=d.mission_assignees;
       if(Array.isArray(d.cal_events))calEvents=d.cal_events;
       if(Array.isArray(d.custom_traits))customTraits=d.custom_traits;
       if(Array.isArray(d.widget_catalog))widgetCatalog=d.widget_catalog;
@@ -1049,9 +1052,11 @@ function showMoreDone(){doneLimit+=10;renderMissions();}
 function resetDone(){doneLimit=5;renderMissions();}
 
 function mCard(m){
-  const player=players.find(p=>p.id===m.playerId);
-  const canComplete=session.isAdmin||(session.playerId===m.playerId&&m.status!=='done');
-  const canEdit=session.isAdmin||session.playerId===m.playerId;
+  const assignees=getAssignees(m);
+  const isMine=assignees.some(function(a){return a.id===session.playerId;});
+  const assigneesLabel=assignees.length?assignees.map(function(a){return a.emblem+' '+a.name.split(' ')[0];}).join(', '):'Sense assignar';
+  const canComplete=session.isAdmin||(isMine&&m.status!=='done');
+  const canEdit=session.isAdmin||isMine;
   const dailyBadge=_isWeekly(m)?`<span class="daily-rib" style="background:var(--teal-bg,var(--accent-bg));color:var(--teal);">🗓️ Setmanal</span>`:(m.daily&&m.isDaily_instance?`<span class="daily-rib">Diaria</span>`:(m.daily&&!m.isDaily_instance?`<span class="daily-rib" style="background:var(--accent-bg);color:var(--accent);">📌 Diaria personal</span>`:''));
   const completedBtn=canComplete&&m.status!=='done'
     ?`<button class="btn-complete" onclick="event.stopPropagation();completeMission('${m.id}')">✓ Completar</button>`:'';
@@ -1060,14 +1065,11 @@ function mCard(m){
   const prioBadge=`<span class="badge ${_prio[1]}">${_prio[0]}</span>`;
   var _tags=(m.plannerTags&&m.plannerTags.indexOf('weekly:')!==0)?m.plannerTags:'';
   const tagsHtml=_tags?_tags.split(';').map(t=>t.trim()).filter(Boolean).map(t=>`<span class="mtag">${t}</span>`).join(''):'';
-  const assignSel=session.isAdmin?`<select class="sstat" onclick="event.stopPropagation()" onchange="event.stopPropagation();assignMission('${m.id}',this.value)" style="font-size:11px;">
-    <option value="">Sense assignar</option>
-    ${players.map(p=>`<option value="${p.id}" ${m.playerId===p.id?'selected':''}>${p.emblem} ${p.name.split(' ')[0]}</option>`).join('')}
-    </select>`:'';
+  const assignBtn=session.isAdmin?`<button class="btn-complete" onclick="event.stopPropagation();openMissionModal('${m.id}')" title="Assignar persones">👥</button>`:'';
   return `<div class="mcrd ${m.daily?'daily-mission':''}" onclick="openMissionModal('${m.id}')" style="cursor:pointer;">
     <div class="minfo">
       <div class="mname">${m.name}${dailyBadge}</div>
-      <div class="mmeta">${m.arc}${player?' · '+player.emblem+' '+player.name:' · Sense assignar'}</div>
+      <div class="mmeta">${m.arc} · ${assigneesLabel}</div>
       ${tagsHtml?`<div class="mtags">${tagsHtml}</div>`:''}
     </div>
     <div class="mrews">
@@ -1075,7 +1077,7 @@ function mCard(m){
       <span class="rchip"><span>🪙 ${m.gold}</span></span>
       ${prioBadge}
       ${statusBadge}
-      ${assignSel}
+      ${assignBtn}
       ${completedBtn}
       ${(session.isAdmin||m.createdBy===session.playerId)?`<button class="btn-complete" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);" onclick="event.stopPropagation();deleteMission('${m.id}')">✕</button>`:''}
     </div>
@@ -1097,34 +1099,62 @@ function deleteArc(id){
 }
 function deleteMission(id){
   var m=missions.find(function(x){return x.id===id;});if(!m)return;
+  var _savedAssignees=missionAssignees[id];
   missions=missions.filter(function(x){return x.id!==id;});
+  delete missionAssignees[id];
   if(CFG.MODE==='supabase'){deleteMissionFromSupabase(id);saveToSupabase();}
   renderAll();
   showUndo('Missió eliminada: '+(m.name||''),function(){
+    if(_savedAssignees)missionAssignees[id]=_savedAssignees;
     missions.push(m);
     if(CFG.MODE==='supabase')saveToSupabase();
     renderAll();
   });
 }
 
-function assignMission(missionId, playerId){
-  const m=missions.find(m=>m.id===missionId);if(!m)return;
-  m.playerId=playerId;
-  if(CFG.MODE==='supabase')saveToSupabase();
+function getAssignees(m){
+  if(!m)return [];
+  var ids=[];
+  var extra=missionAssignees[m.id];
+  if(Array.isArray(extra))ids=extra.slice();
+  if(m.playerId&&ids.indexOf(m.playerId)<0)ids.unshift(m.playerId);
+  return ids.filter(function(id){return players.find(function(p){return p.id===id;});});
+}
+function setMissionAssignees(missionId,ids){
+  var m=missions.find(function(x){return x.id===missionId;});if(!m)return;
+  ids=(ids||[]).filter(function(id){return id&&players.find(function(p){return p.id===id;});});
+  m.playerId=ids[0]||'';
+  if(ids.length>1)missionAssignees[missionId]=ids.slice();
+  else delete missionAssignees[missionId];
+  if(CFG.MODE==='supabase')saveToSupabase(ids);
   renderAll();
+}
+function toggleMissionAssignee(missionId,playerId){
+  var m=missions.find(function(x){return x.id===missionId;});if(!m)return;
+  var cur=getAssignees(m);
+  var i=cur.indexOf(playerId);
+  if(i>=0)cur.splice(i,1);else cur.push(playerId);
+  setMissionAssignees(missionId,cur);
+}
+function assignMission(missionId, playerId){
+  // reassignació ràpida a UNA persona (substitueix)
+  setMissionAssignees(missionId, playerId?[playerId]:[]);
 }
 
 function completeMission(id){
   const m=missions.find(m=>m.id===id);if(!m||m.status==='done')return;
+  var assignees=getAssignees(m);
   const p=players.find(p=>p.id===m.playerId);
   m.status='done';
-  if(p){
-    var mFrag=m.frag||({D:20,C:50,B:100,A:200,S:400}[m.diff]||50);
-    p.xp+=m.xp;p.gold+=m.gold;p.fragments=(p.fragments||0)+mFrag;p.missions++;
-    if(m.attrPts&&m.attr){var k=attrKeyFromName(m.attr);if(k)p.attrs[k]=(p.attrs[k]||0)+m.attrPts;}
-    p.level=Math.floor(p.xp/100)+1;
-    showRewardPopup(m,p);
-  }
+  var mFrag=m.frag||({D:20,C:50,B:100,A:200,S:400}[m.diff]||50);
+  // Recompensa a TOTES les persones assignades
+  assignees.forEach(function(ap){
+    ap.xp+=m.xp;ap.gold+=m.gold;ap.fragments=(ap.fragments||0)+mFrag;ap.missions++;
+    if(m.attrPts&&m.attr){var k=attrKeyFromName(m.attr);if(k)ap.attrs[k]=(ap.attrs[k]||0)+m.attrPts;}
+    ap.level=Math.floor(ap.xp/100)+1;
+    checkLevelUp(ap);
+  });
+  if(assignees.length){showRewardPopup(m,assignees[0]);}
   // Bonus diarias
   if(m.daily&&p){
     const myDailies=missions.filter(mx=>mx.daily&&mx.playerId===p.id);
@@ -1149,11 +1179,9 @@ function completeMission(id){
       }
     }
   }
-  // Level up
-  checkLevelUp(p);
   updateArcCounts();
   cleanOldCompleted();
-  if(CFG.MODE==='supabase')saveToSupabase(p?[p.id]:[]);
+  if(CFG.MODE==='supabase')saveToSupabase(assignees.map(function(a){return a.id;}));
   renderAll();
 }
 
@@ -3591,10 +3619,22 @@ function openMissionModal(id){
     +`<div class="smini"><div class="v">${m.diff||'C'}</div><div class="l">Dificultad</div></div>`;
   const canComplete=(session.isAdmin||(session.playerId===m.playerId))&&m.status!=='done';
   const canDel=session.isAdmin||(m.createdBy===session.playerId);
-  var assignHtml=session.isAdmin?`<select class="sstat" style="font-size:12px;" onchange="assignMission('${m.id}',this.value);openMissionModal('${m.id}')"><option value="">Sense assignar</option>`+players.map(function(pl){return '<option value="'+pl.id+'"'+(m.playerId===pl.id?' selected':'')+'>'+pl.emblem+' '+pl.name+'</option>';}).join('')+`</select>`:'';
+  if(session.isAdmin){
+    var _asg=getAssignees(m).map(function(a){return a.id;});
+    var box=document.getElementById('mm-assign');
+    if(box){
+      box.style.display='block';
+      box.innerHTML='<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">👥 Assignar a (pots triar-ne diverses):</div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:6px;">'+players.map(function(pl){
+          var on=_asg.indexOf(pl.id)>=0;
+          return '<label class="filter-chip'+(on?' active':'')+'" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;">'
+            +'<input type="checkbox" '+(on?'checked':'')+' style="display:none;" onchange="toggleMissionAssignee(\''+m.id+'\',\''+pl.id+'\');openMissionModal(\''+m.id+'\')">'
+            +pl.emblem+' '+pl.name.split(' ')[0]+'</label>';
+        }).join('')+'</div>';
+    }
+  }else{var box2=document.getElementById('mm-assign');if(box2)box2.style.display='none';}
   document.getElementById('mm-actions').innerHTML=
-    assignHtml
-    +(canComplete?`<button class="btn btn-p" onclick="completeMission('${m.id}');closeMissionModal();">✓ Completar</button>`:'')
+    (canComplete?`<button class="btn btn-p" onclick="completeMission('${m.id}');closeMissionModal();">✓ Completar</button>`:'')
     +(canDel?`<button class="btn" style="background:var(--coral-bg);color:var(--coral);" onclick="deleteMission('${m.id}');closeMissionModal();">🗑️ Eliminar</button>`:'')
     +`<button class="btn" onclick="closeMissionModal()">Tancar</button>`;
   const modal=document.getElementById('mission-modal');
@@ -3685,14 +3725,15 @@ function populateArcSelect(){
   }).join('');
   var asel=document.getElementById('nm-attr');
   if(asel){var cur=asel.value;asel.innerHTML=attrKeys().map(function(k){return '<option value="'+k+'">'+attrIcon(k)+' '+attrName(k)+'</option>';}).join('');if(cur)asel.value=cur;}
-  // Selector d'assignació (només admin el veu; si no, s'assigna a un mateix)
-  var asg=document.getElementById('nm-assign');
+  // Assignació múltiple (només admin la veu; si no, s'assigna a un mateix)
   var asgWrap=document.getElementById('nm-assign-wrap');
   if(asgWrap)asgWrap.style.display=session.isAdmin?'':'none';
-  if(asg){
-    var curA=asg.value;
-    asg.innerHTML='<option value="">Sense assignar</option>'+players.map(function(p){return '<option value="'+p.id+'">'+p.emblem+' '+p.name+'</option>';}).join('');
-    if(curA)asg.value=curA;
+  var box=document.getElementById('nm-assign-box');
+  if(box&&session.isAdmin){
+    box.innerHTML=players.map(function(p){
+      return '<label class="filter-chip" style="cursor:pointer;"><input type="checkbox" class="nm-assign-cb" value="'+p.id+'" style="margin-right:5px;">'+p.emblem+' '+p.name.split(' ')[0]+'</label>';
+    }).join('');
+    box.querySelectorAll('.nm-assign-cb').forEach(function(cb){cb.onchange=function(){this.closest('label').classList.toggle('active',this.checked);};});
   }
 }
 
@@ -3711,8 +3752,13 @@ function createMission(){
   var priorityMap={'urgente':'A','importante':'B','media':'C','baja':'D'};
   var prio=(document.getElementById('nm-priority')?document.getElementById('nm-priority').value:'media');
   var prioDiff=priorityMap[prio]||'C';
-  // Assignació: admin tria; la resta s'assigna a un mateix
-  var assignTo=session.isAdmin?(document.getElementById('nm-assign')?document.getElementById('nm-assign').value:''):session.playerId;
+  // Assignació múltiple: admin tria (checkboxes); la resta s'assigna a un mateix
+  var assignIds=[];
+  if(session.isAdmin){
+    var _cbs=document.querySelectorAll('.nm-assign-cb:checked');
+    _cbs.forEach(function(cb){assignIds.push(cb.value);});
+  }else if(session.playerId){assignIds=[session.playerId];}
+  var assignTo=assignIds[0]||'';
   // Etiquetes
   var tags=(document.getElementById('nm-tags')?document.getElementById('nm-tags').value.trim():'');
   if(isWeekly){
@@ -3752,11 +3798,13 @@ function createMission(){
     if(myDailies.length>=4){toast('Máximo 4 misiones diarias globales.');return;}
   }
   missions.push(newM);
+  if(!isDaily&&assignIds.length>1)missionAssignees[newM.id]=assignIds.slice();
   if(isDaily)checkDailyMissions();
-  if(CFG.MODE==='supabase')saveToSupabase();
+  if(CFG.MODE==='supabase')saveToSupabase(assignIds);
   document.getElementById('nm-name').value='';
   document.getElementById('nm-deadline').value='';
   var _nt=document.getElementById('nm-tags');if(_nt)_nt.value='';
+  document.querySelectorAll('.nm-assign-cb:checked').forEach(function(cb){cb.checked=false;cb.closest('label').classList.remove('active');});
   document.getElementById('panel-new-mission').removeAttribute('open');
   renderAll();
 }

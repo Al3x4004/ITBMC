@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BMC Global — Cuartel General</title>
 <link rel="icon" type="image/png" href="https://i.imgur.com/Z1wFN0q.png">
-<link rel="stylesheet" href="css/styles.css?v=12">
+<link rel="stylesheet" href="css/styles.css?v=13">
 </head>
 <body>
 <div id="toast"></div>
@@ -232,7 +232,7 @@
               <option value="baja">Baja</option>
             </select>
           </div>
-          <div class="field" id="nm-assign-wrap"><label>Assignar a</label><select id="nm-assign"></select></div>
+          <div class="field full" id="nm-assign-wrap"><label>Assignar a (pots triar-ne diverses)</label><div id="nm-assign-box" style="display:flex;flex-wrap:wrap;gap:6px;"></div></div>
           <div class="field"><label>Atribut que puja</label><select id="nm-attr"></select></div>
           <div class="field"><label>Punts d'atribut</label><input type="number" id="nm-attrpts" value="2" min="0" max="20"/></div>
           <div class="field full"><label>Etiquetes (separa amb ;)</label><input type="text" id="nm-tags" placeholder="Ej: 🛠️ Material IT; 📧 Outlook"/></div>
@@ -839,7 +839,8 @@
         <div id="mm-badges" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem;"></div>
         <div id="mm-desc" style="font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:1rem;padding:.75rem;background:var(--bg3);border-radius:var(--radius);"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:1rem;" id="mm-stats"></div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;" id="mm-actions"></div>
+        <div id="mm-assign" style="display:none;margin-bottom:1rem;"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;" id="mm-actions"></div>
       </div>
     </div>
 
@@ -915,6 +916,6 @@
   window.dispatchEvent(new Event('dicebear-ready'));
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="js/app.js?v=17"></script>
+<script src="js/app.js?v=18"></script>
 </body>
 </html>
