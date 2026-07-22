@@ -2704,18 +2704,11 @@ function confirmPlannerImport(){
     var tags=(row[tagsCol]||'').trim();
     var creator=(row[creatorCol]||'').trim();
 
-    // Etiqueta → arco (agrupa les missions per tema). Si en té diverses (;), la primera.
-    var firstTag=tags?tags.split(';')[0].trim():'';
-    var arcName=firstTag||'General';
-    if(firstTag&&!arcs.find(function(a){return a.name===firstTag;})){
-      arcs.push({id:'arc_pl_'+Date.now()+'_'+imported,name:firstTag,lore:'Tasques de '+firstTag+'.',status:'active',total:0,done:0,createdBy:session.playerId});
-    }
-
     var newM={
       id:'planner_'+Date.now()+'_'+imported,
       name:title,
       desc:notes,
-      arc:arcName,
+      arc:'General',
       playerId:assignedPlayer?assignedPlayer.id:'',
       status:status,
       diff:taskDiff,
