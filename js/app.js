@@ -1045,9 +1045,9 @@ function mCard(m){
   const canEdit=session.isAdmin||session.playerId===m.playerId;
   const dailyBadge=_isWeekly(m)?`<span class="daily-rib" style="background:var(--teal-bg,var(--accent-bg));color:var(--teal);">🗓️ Setmanal</span>`:(m.daily&&m.isDaily_instance?`<span class="daily-rib">Diaria</span>`:(m.daily&&!m.isDaily_instance?`<span class="daily-rib" style="background:var(--accent-bg);color:var(--accent);">📌 Diaria personal</span>`:''));
   const completedBtn=canComplete&&m.status!=='done'
-    ?`<button class="btn-complete" onclick="completeMission('${m.id}')">✓ Completar</button>`:'';
+    ?`<button class="btn-complete" onclick="event.stopPropagation();completeMission('${m.id}')">✓ Completar</button>`:'';
   const statusBadge=m.status==='done'?`<span class="badge b-teal">Completada</span>`:m.status==='active'?`<span class="badge b-gold">En curso</span>`:`<span class="badge b-gray">Pendiente</span>`;
-  const assignSel=session.isAdmin?`<select class="sstat" onchange="assignMission('${m.id}',this.value)" style="font-size:11px;">
+  const assignSel=session.isAdmin?`<select class="sstat" onclick="event.stopPropagation()" onchange="event.stopPropagation();assignMission('${m.id}',this.value)" style="font-size:11px;">
     <option value="">Sense assignar</option>
     ${players.map(p=>`<option value="${p.id}" ${m.playerId===p.id?'selected':''}>${p.emblem} ${p.name.split(' ')[0]}</option>`).join('')}
     </select>`:'';
@@ -1064,7 +1064,7 @@ function mCard(m){
       ${statusBadge}
       ${assignSel}
       ${completedBtn}
-      ${(session.isAdmin||m.createdBy===session.playerId)?`<button class="btn-complete" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);" onclick="deleteMission('${m.id}')">✕</button>`:''}
+      ${(session.isAdmin||m.createdBy===session.playerId)?`<button class="btn-complete" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);" onclick="event.stopPropagation();deleteMission('${m.id}')">✕</button>`:''}
     </div>
   </div>`;
 }
