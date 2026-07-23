@@ -2870,6 +2870,7 @@ function renderClassesAdmin(){
           +'<input type="text" id="cls-name-'+idx+'" value="'+cls.name+'" style="width:100%;padding:6px 10px;font-size:14px;font-weight:500;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);margin-bottom:4px;"/>'
           +'<input type="text" id="cls-role-'+idx+'" value="'+(cls.role||'')+'" placeholder="Rol" style="width:100%;padding:5px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--muted);"/>'
         +'</div>'
+        +'<button class="btn btn-sm" style="flex-shrink:0;color:var(--coral);border-color:var(--coral-border);" title="Esborrar classe" onclick="deleteClass('+idx+')">🗑️</button>'
       +'</div>'
       +'<div class="stitle">Estadístiques base</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-bottom:1rem;">'
@@ -2895,7 +2896,29 @@ function renderClassesAdmin(){
         +'<button class="btn btn-p btn-sm" data-idx="'+idx+'" onclick="saveClassEdit(parseInt(this.dataset.idx))">Desar canvis</button>'
       +'</div>'
       +'</div>';
-  }).join('');
+  }).join('')
+  +'<div style="display:flex;justify-content:center;margin-top:.5rem;"><button class="btn" onclick="addClass()">＋ Crear nova classe</button></div>';
+}
+async function addClass(){
+  var attrs={};attrKeys().forEach(function(k){attrs[k]=5;});
+  var cls={id:'cls'+Date.now(),name:'Nova classe',role:'',icon:'⚔️',attrs:attrs,startItems:[],bonus:computeClassBonus(attrs)};
+  CLASSES.push(cls);
+  if(CFG.MODE==='supabase'){await saveClassToSupabase(cls,CLASSES.length-1);saveToSupabase();}
+  renderClassesAdmin();
+  toast('Classe afegida — edita-la i desa');
+}
+async function deleteClassFromSupabase(id){
+  try{await fetch(CFG.SUPABASE_URL+'/rest/v1/clases?id=eq.'+id,{method:'DELETE',headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}});}catch(e){console.error('Error deleting class',e);}
+}
+async function deleteClass(idx){
+  var cls=CLASSES[idx];if(!cls)return;
+  if(CLASSES.length<=1){alert('Ha d\'haver-hi almenys una classe.');return;}
+  if(!confirm('Esborrar la classe "'+cls.name+'"? Els personatges que la tinguin la conservaran com a text.'))return;
+  CLASSES.splice(idx,1);
+  if(classGrowthMap[cls.name])delete classGrowthMap[cls.name];
+  if(CFG.MODE==='supabase'){await deleteClassFromSupabase(cls.id);saveToSupabase();}
+  renderClassesAdmin();renderAll();
+  toast('Classe esborrada');
 }
 async function saveClassEdit(idx){
   var cls=CLASSES[idx];

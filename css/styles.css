@@ -502,13 +502,15 @@ body::after{
 
 /* ── Inventario 3 columnas ── */
 .inv-3col{display:grid;grid-template-columns:auto auto 1fr;gap:1rem;align-items:start;}
-.inv-2col{display:grid;grid-template-columns:auto 1fr;gap:1.5rem;align-items:start;}
+.inv-2col{display:flex;flex-direction:column;gap:1.75rem;}
+.inv-col{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;}
+#inv-slots-equip,#inv-slots-cosm{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;}
 .ava-editor-layout{display:grid;grid-template-columns:170px 1fr;gap:1.25rem;align-items:start;}
 .ava-editor-side{position:sticky;top:72px;}
 @media(max-width:720px){.ava-editor-layout{grid-template-columns:1fr;}.ava-editor-side{position:static;}}
 /* Pestaña Cosmètics compacta */
 #inv-tab-cosm .pixel-avatar-lg{width:120px;height:120px;}
-#inv-tab-cosm .inv-slot{width:96px;min-height:78px;padding:.5rem;}
+#inv-tab-cosm .inv-slot{width:auto;min-height:78px;padding:.5rem;}
 #inv-tab-cosm .inv-slot-icon{font-size:18px;}
 #inv-tab-cosm #inv-slots-cosm{display:flex;flex-wrap:wrap;gap:8px;}
 #inv-tab-cosm .frame-grid{grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:6px;margin-top:6px;}
@@ -547,12 +549,9 @@ body::after{
 .ach.earned{background:var(--gold-bg);border-color:var(--gold-border);color:var(--gold);}
 .ach.locked{opacity:.4;filter:grayscale(1);}
 .ach-ic{font-size:15px;}
-.inv-col{min-width:0;}
 .inv-col-catalog{min-width:0;}
-#inv-slots-equip,#inv-slots-cosm{display:flex;flex-direction:column;gap:8px;}
-#inv-slots-equip .inv-slot,#inv-slots-cosm .inv-slot{width:130px;}
-.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;}
-@media(max-width:900px){.inv-3col,.inv-2col{grid-template-columns:1fr;}#inv-slots-equip,#inv-slots-cosm{display:flex;flex-direction:row;flex-wrap:wrap;}}
+#inv-slots-equip .inv-slot,#inv-slots-cosm .inv-slot{width:auto;}
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
 
 /* ── Arrastrar cosméticos en el avatar ── */
 .pa-layer.pa-draggable{pointer-events:auto !important;cursor:grab;touch-action:none;}
