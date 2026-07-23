@@ -1112,13 +1112,17 @@ function deleteMission(id){
   });
 }
 
-function getAssignees(m){
+function getAssigneeIds(m){
   if(!m)return [];
   var ids=[];
   var extra=missionAssignees[m.id];
   if(Array.isArray(extra))ids=extra.slice();
   if(m.playerId&&ids.indexOf(m.playerId)<0)ids.unshift(m.playerId);
   return ids.filter(function(id){return players.find(function(p){return p.id===id;});});
+}
+function getAssignees(m){
+  // retorna objectes jugador (no ids)
+  return getAssigneeIds(m).map(function(id){return players.find(function(p){return p.id===id;});}).filter(Boolean);
 }
 function setMissionAssignees(missionId,ids){
   var m=missions.find(function(x){return x.id===missionId;});if(!m)return;
@@ -1131,7 +1135,7 @@ function setMissionAssignees(missionId,ids){
 }
 function toggleMissionAssignee(missionId,playerId){
   var m=missions.find(function(x){return x.id===missionId;});if(!m)return;
-  var cur=getAssignees(m);
+  var cur=getAssigneeIds(m);
   var i=cur.indexOf(playerId);
   if(i>=0)cur.splice(i,1);else cur.push(playerId);
   setMissionAssignees(missionId,cur);
