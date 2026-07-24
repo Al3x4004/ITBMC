@@ -1006,19 +1006,45 @@ function renderMStats(){
 }
 
 /* ── misiones ── */
-var missionFilter={q:'',arc:''};
+var missionFilter={q:'',arc:'',prio:'',assignee:'',tag:''};
 function setMissionSearch(v){missionFilter.q=(v||'').toLowerCase();renderMissions();}
 function setMissionArc(v){missionFilter.arc=v||'';renderMissions();}
+function setMissionPrio(v){missionFilter.prio=v||'';renderMissions();}
+function setMissionAssignee(v){missionFilter.assignee=v||'';renderMissions();}
+function setMissionTag(v){missionFilter.tag=v||'';renderMissions();}
+function _missionTags(m){
+  if(!m.plannerTags||m.plannerTags.indexOf('weekly:')===0)return [];
+  return m.plannerTags.split(';').map(function(t){return t.trim();}).filter(Boolean);
+}
 function _passMissionFilter(m){
   if(missionFilter.q&&(m.name||'').toLowerCase().indexOf(missionFilter.q)<0)return false;
   if(missionFilter.arc&&m.arc!==missionFilter.arc)return false;
+  if(missionFilter.prio&&(m.diff||'C')!==missionFilter.prio)return false;
+  if(missionFilter.assignee&&getAssigneeIds(m).indexOf(missionFilter.assignee)<0)return false;
+  if(missionFilter.tag&&_missionTags(m).indexOf(missionFilter.tag)<0)return false;
   return true;
 }
 function _fillMissionArcFilter(){
-  var sel=document.getElementById('m-arc-filter');if(!sel)return;
-  var uniq=[];missions.forEach(function(m){if(m.arc&&uniq.indexOf(m.arc)<0)uniq.push(m.arc);});
-  var cur=missionFilter.arc;
-  sel.innerHTML='<option value="">Tots els arcs</option>'+uniq.map(function(a){return '<option value="'+a+'"'+(a===cur?' selected':'')+'>'+a+'</option>';}).join('');
+  var sel=document.getElementById('m-arc-filter');
+  if(sel){
+    var uniq=[];missions.forEach(function(m){if(m.arc&&uniq.indexOf(m.arc)<0)uniq.push(m.arc);});
+    sel.innerHTML='<option value="">Tots els arcs</option>'+uniq.map(function(a){return '<option value="'+a+'"'+(a===missionFilter.arc?' selected':'')+'>'+a+'</option>';}).join('');
+  }
+  var ps=document.getElementById('m-prio-filter');
+  if(ps){
+    var PR=[['','Tota prioritat'],['A','Urgent'],['B','Important'],['C','Mitjana'],['D','Baixa']];
+    ps.innerHTML=PR.map(function(o){return '<option value="'+o[0]+'"'+(o[0]===missionFilter.prio?' selected':'')+'>'+o[1]+'</option>';}).join('');
+  }
+  var asg=document.getElementById('m-assignee-filter');
+  if(asg){
+    asg.innerHTML='<option value="">Tothom</option>'+players.map(function(p){return '<option value="'+p.id+'"'+(p.id===missionFilter.assignee?' selected':'')+'>'+p.emblem+' '+p.name.split(' ')[0]+'</option>';}).join('');
+  }
+  var tg=document.getElementById('m-tag-filter');
+  if(tg){
+    var tags=[];missions.forEach(function(m){_missionTags(m).forEach(function(t){if(tags.indexOf(t)<0)tags.push(t);});});
+    tg.innerHTML='<option value="">Totes les etiquetes</option>'+tags.map(function(t){return '<option value="'+t+'"'+(t===missionFilter.tag?' selected':'')+'>'+t+'</option>';}).join('');
+    tg.style.display=tags.length?'':'none';
+  }
 }
 function renderMissions(){
   _fillMissionArcFilter();
@@ -3655,7 +3681,7 @@ function openMissionModal(id){
     +`<span class="badge b-gray">${m.arc}</span>`
     +(p?`<span class="badge b-purple">${p.emblem} ${p.name}</span>`:'')
     +(_tags?_tags.split(';').map(t=>t.trim()).filter(Boolean).map(t=>`<span class="badge b-gray">${t}</span>`).join(''):'');
-  document.getElementById('mm-desc').textContent=m.desc||m.name+' — Completa aquesta missió per obtenir recompenses.';
+  document.getElementById('mm-desc').textContent=m.desc||m.name;
   document.getElementById('mm-stats').innerHTML=
     `<div class="smini"><div class="v">${m.xp}</div><div class="l">XP</div></div>`
     +`<div class="smini"><div class="v">🪙 ${m.gold}</div><div class="l">Or</div></div>`

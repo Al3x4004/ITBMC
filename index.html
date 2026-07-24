@@ -262,6 +262,9 @@
       <div class="filter-bar" id="m-filter">
         <input type="text" class="filter-search" id="m-search" placeholder="🔍 Cerca per nom…" oninput="setMissionSearch(this.value)">
         <select id="m-arc-filter" class="filter-chip" style="padding:6px 10px;" onchange="setMissionArc(this.value)"></select>
+        <select id="m-prio-filter" class="filter-chip" style="padding:6px 10px;" onchange="setMissionPrio(this.value)"></select>
+        <select id="m-assignee-filter" class="filter-chip" style="padding:6px 10px;" onchange="setMissionAssignee(this.value)"></select>
+        <select id="m-tag-filter" class="filter-chip" style="padding:6px 10px;" onchange="setMissionTag(this.value)"></select>
       </div>
       <div><div class="stitle">Diàries <span class="daily-rib">HOY</span></div><div id="m-daily"></div></div>
       <div style="margin-top:1.25rem;"><div class="stitle">Setmanals <span class="daily-rib" style="background:var(--accent-bg);color:var(--teal);">🗓️</span></div><div id="m-weekly"></div><div id="m-weekly-templates"></div></div>
@@ -916,6 +919,6 @@
   window.dispatchEvent(new Event('dicebear-ready'));
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="js/app.js?v=23"></script>
+<script src="js/app.js?v=24"></script>
 </body>
 </html>
