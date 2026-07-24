@@ -41,11 +41,11 @@ const CFG={
 
 /* ══ DATOS ESTÁTICOS ══ */
 let CLASSES=[
-  {name:'Mago',       icon:'🔮',role:'Dev / Técnico',       bonus:'+5 INT · +3 AGI',attrs:{fue:1,int:5,agi:3,car:1,sab:2}},
-  {name:'Paladín',    icon:'🛡️',role:'Gestión / Liderazgo', bonus:'+5 CAR · +4 SAB',attrs:{fue:2,int:1,agi:1,car:5,sab:4}},
-  {name:'Exploradora',icon:'🏹',role:'Data / Análisis',      bonus:'+5 AGI · +4 INT',attrs:{fue:1,int:4,agi:5,car:1,sab:2}},
-  {name:'Guerrero',   icon:'⚔️',role:'Ops / Ejecución',     bonus:'+6 FUE · +3 AGI',attrs:{fue:6,int:1,agi:3,car:1,sab:1}},
-  {name:'Pícaro',     icon:'🗡️',role:'Diseño / Creatividad',bonus:'+5 AGI · +3 CAR',attrs:{fue:1,int:3,agi:5,car:3,sab:1}},
+  {name:'Mago',       icon:'🔮',role:'Dev / Tècnic',        bonus:'+5 INT · +3 AGI',attrs:{fue:1,int:5,agi:3,car:1,sab:2}},
+  {name:'Paladín',    icon:'🛡️',role:'Gestió / Lideratge',  bonus:'+5 CAR · +4 SAB',attrs:{fue:2,int:1,agi:1,car:5,sab:4}},
+  {name:'Exploradora',icon:'🏹',role:'Data / Anàlisi',       bonus:'+5 AGI · +4 INT',attrs:{fue:1,int:4,agi:5,car:1,sab:2}},
+  {name:'Guerrero',   icon:'⚔️',role:'Ops / Execució',      bonus:'+6 FUE · +3 AGI',attrs:{fue:6,int:1,agi:3,car:1,sab:1}},
+  {name:'Pícaro',     icon:'🗡️',role:'Disseny / Creativitat',bonus:'+5 AGI · +3 CAR',attrs:{fue:1,int:3,agi:5,car:3,sab:1}},
   {name:'Bardo',      icon:'📯',role:'Marketing / Comms',   bonus:'+6 CAR · +3 SAB',attrs:{fue:1,int:2,agi:1,car:6,sab:3}},
 ];
 const COLORS=[
@@ -464,7 +464,7 @@ function checkDailyMissions(){
           name:tpl.name,arc:tpl.arc||'General',
           playerId:p.id,status:'pending',
           diff:'D',xp:25,gold:10,
-          attr:'Sabiduría',attrPts:1,
+          attr:'Saviesa',attrPts:1,
           deadline:today,daily:true,
           isDaily_instance:true,templateId:tpl.id,
           plannerId:'',createdBy:p.id
@@ -668,7 +668,7 @@ function enterApp(){
   if(p){const _idx=players.findIndex(function(pl){return pl.id===session.playerId;});if(_idx>=0)curHero=_idx;}
   document.getElementById('ulabel').textContent=session.isAdmin?'Dios 👑':(p?p.name.split(' ')[0]:'—');
   updateSidebarAvatar();
-  (function(){var _x=document.getElementById('umname');if(_x)_x.textContent=session.isAdmin?'👑 Dios':(p?p.name:'—');})();
+  (function(){var _x=document.getElementById('umname');if(_x)_x.textContent=session.isAdmin?'👑 Déu':(p?p.name:'—');})();
   renderAll();
   try{renderInicio();}catch(e){}
   try{populateSlotSelects();}catch(e){}
@@ -739,14 +739,14 @@ function cGoTo(step){
   stps.forEach(function(s,i){s.classList.toggle('active',i===step);s.classList.toggle('done',i<step);});
 }
 function cNext(step){
-  if(step===0){if(!document.getElementById('cp-rn').value.trim()){toast('Introduce tu nombre real.');return;}if(!document.getElementById('cp-pn').value.trim()){toast('Elige un nombre para tu personaje.');return;}if(!document.getElementById('cp-pin').value){toast('Elige una contraseña.');return;}}
-  if(step===1&&!cpState.cls){toast('Elige una clase primero.');return;}
+  if(step===0){if(!document.getElementById('cp-rn').value.trim()){toast('Introdueix el teu nom real.');return;}if(!document.getElementById('cp-pn').value.trim()){toast('Tria un nom per al teu personatge.');return;}if(!document.getElementById('cp-pin').value){toast('Tria una contrasenya.');return;}}
+  if(step===1&&!cpState.cls){toast('Tria primer una classe.');return;}
   cGoTo(step+1);
 }
 function saveNewChar(){
   const rn=document.getElementById('cp-rn').value.trim(),pn=document.getElementById('cp-pn').value.trim(),pin=document.getElementById('cp-pin').value;
   const lore=document.getElementById('cp-lore').value.trim(),quote=document.getElementById('cp-quote').value.trim();
-  if(!cpState.cls){toast('Vuelve al paso 2 y elige una clase.');return;}
+  if(!cpState.cls){toast('Torna al pas 2 i tria una classe.');return;}
   // Items iniciales fijos de la clase
   var startItems=(cpState.cls.startItems||[]).slice();
   var equipped=emptyEquipped();
@@ -754,7 +754,7 @@ function saveNewChar(){
     var item=shopItems.find(function(i){return i.id===iid;});
     if(item&&equipped.hasOwnProperty(item.slot)&&!equipped[item.slot])equipped[item.slot]=iid;
   });
-  const np={id:'pj'+Date.now(),realName:rn,name:pn,cls:cpState.cls.name,role:cpState.cls.role,emblem:cpState.emblem,color:cpState.color.hex,colorBg:cpState.color.bg,level:1,xp:0,xpNext:100,gold:0,missions:0,lore:lore||'Historia por escribir...',quote:quote||'...',pin,attrs:{...cpState.cls.attrs},gachaTokens:0,fragments:0,gallery:[],lastDaily:'',inventory:startItems,equipped:equipped,pendingAttrPts:0};
+  const np={id:'pj'+Date.now(),realName:rn,name:pn,cls:cpState.cls.name,role:cpState.cls.role,emblem:cpState.emblem,color:cpState.color.hex,colorBg:cpState.color.bg,level:1,xp:0,xpNext:100,gold:0,missions:0,lore:lore||'Història per escriure...',quote:quote||'...',pin,attrs:{...cpState.cls.attrs},gachaTokens:0,fragments:0,gallery:[],lastDaily:'',inventory:startItems,equipped:equipped,pendingAttrPts:0};
   players.push(np);
   createWelcomeArc(np);
   createTutorialForPlayer(np);
@@ -1001,8 +1001,8 @@ function renderMStats(){
   document.getElementById('mstats').innerHTML=`
     <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Pendents</div><div style="font-size:22px;font-weight:700;">${act}</div></div>
     <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Completades</div><div style="font-size:22px;font-weight:700;">${don}</div></div>
-    <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Nivell del equip</div><div style="font-size:22px;font-weight:700;">${tlvl.toLocaleString()}</div></div>
-    <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">🪙 Oro del equipo</div><div style="font-size:22px;font-weight:700;">${tg.toLocaleString()}</div></div>`;
+    <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Nivell de l'equip</div><div style="font-size:22px;font-weight:700;">${tlvl.toLocaleString()}</div></div>
+    <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">🪙 Or de l'equip</div><div style="font-size:22px;font-weight:700;">${tg.toLocaleString()}</div></div>`;
 }
 
 /* ── misiones ── */
@@ -1029,20 +1029,20 @@ function renderMissions(){
   const pending =missions.filter(m=>!m.daily&&!_isWeekly(m)&&m.status!=='done'&&_passMissionFilter(m));
   const done    =missions.filter(m=>m.status==='done'&&!m.isDaily_instance&&!_isWeekly(m)&&_passMissionFilter(m));
   var mwk=document.getElementById('m-weekly');
-  if(mwk)mwk.innerHTML=weekly.length?weekly.map(m=>mCard(m)).join(''):`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones semanales.</div>`;
+  if(mwk)mwk.innerHTML=weekly.length?weekly.map(m=>mCard(m)).join(''):`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sense missions setmanals.</div>`;
   var mwt=document.getElementById('m-weekly-templates');
   if(mwt){
     var myTpls=weeklyTemplates.filter(t=>session.isAdmin||t.playerId===session.playerId);
     mwt.innerHTML=myTpls.length?('<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">'+myTpls.map(t=>'<span class="filter-chip" style="cursor:default;">🗓️ '+t.name+' <span style="color:var(--coral);cursor:pointer;font-weight:700;" onclick="deleteWeeklyTemplate(\''+t.id+'\')">✕</span></span>').join('')+'</div>'):'';
   }
-  document.getElementById('m-daily').innerHTML  =daily.length  ?daily.map(m=>mCard(m)).join('')  :`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones diarias.</div>`;
-  document.getElementById('m-pending').innerHTML=pending.length?pending.map(m=>mCard(m)).join(''):`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones pendientes.</div>`;
+  document.getElementById('m-daily').innerHTML  =daily.length  ?daily.map(m=>mCard(m)).join('')  :`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sense missions diàries.</div>`;
+  document.getElementById('m-pending').innerHTML=pending.length?pending.map(m=>mCard(m)).join(''):`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sense missions pendents.</div>`;
   // Completades: mostra només les primeres N (5 + "ver más" de 10 en 10)
   var shown=done.slice(0,doneLimit);
-  document.getElementById('m-done').innerHTML   =done.length   ?shown.map(m=>mCard(m)).join('')   :`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin misiones completadas.</div>`;
+  document.getElementById('m-done').innerHTML   =done.length   ?shown.map(m=>mCard(m)).join('')   :`<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sense missions completades.</div>`;
   var moreBox=document.getElementById('m-done-more');
   if(moreBox){
-    if(done.length>doneLimit){moreBox.innerHTML='<button class="btn btn-sm" onclick="showMoreDone()">Ver más ('+(done.length-doneLimit)+' restants)</button>';}
+    if(done.length>doneLimit){moreBox.innerHTML='<button class="btn btn-sm" onclick="showMoreDone()">Veure més ('+(done.length-doneLimit)+' restants)</button>';}
     else if(doneLimit>5&&done.length>5){moreBox.innerHTML='<button class="btn btn-sm" onclick="resetDone()">Veure\'n menys</button>';}
     else{moreBox.innerHTML='';}
   }
@@ -1057,7 +1057,7 @@ function mCard(m){
   const assigneesLabel=assignees.length?assignees.map(function(a){return a.emblem+' '+a.name.split(' ')[0];}).join(', '):'Sense assignar';
   const canComplete=session.isAdmin||(isMine&&m.status!=='done');
   const canEdit=session.isAdmin||isMine;
-  const dailyBadge=_isWeekly(m)?`<span class="daily-rib" style="background:var(--teal-bg,var(--accent-bg));color:var(--teal);">🗓️ Setmanal</span>`:(m.daily&&m.isDaily_instance?`<span class="daily-rib">Diaria</span>`:(m.daily&&!m.isDaily_instance?`<span class="daily-rib" style="background:var(--accent-bg);color:var(--accent);">📌 Diaria personal</span>`:''));
+  const dailyBadge=_isWeekly(m)?`<span class="daily-rib" style="background:var(--teal-bg,var(--accent-bg));color:var(--teal);">🗓️ Setmanal</span>`:(m.daily&&m.isDaily_instance?`<span class="daily-rib">Diària</span>`:(m.daily&&!m.isDaily_instance?`<span class="daily-rib" style="background:var(--accent-bg);color:var(--accent);">📌 Diària personal</span>`:''));
   const completedBtn=canComplete&&m.status!=='done'
     ?`<button class="btn-complete" onclick="event.stopPropagation();completeMission('${m.id}')">✓ Completar</button>`:'';
   const statusBadge=m.status==='done'?`<span class="badge b-teal">Completada</span>`:`<span class="badge b-gray">Pendent</span>`;
@@ -1092,7 +1092,7 @@ function updateArcCounts(){
   });
 }
 function deleteArc(id){
-  if(!confirm('¿Eliminar este arco?'))return;
+  if(!confirm('Esborrar aquest arc?'))return;
   arcs=arcs.filter(function(a){return a.id!==id;});
   if(CFG.MODE==='supabase')saveToSupabase();
   renderAll();
@@ -1174,7 +1174,7 @@ function completeMission(id){
     if(myDailies.length>=1&&myDailies.length<=4&&myDailies.every(mx=>mx.status==='done')){
       const bx=myDailies.reduce((s,mx)=>s+mx.xp,0),bg=myDailies.reduce((s,mx)=>s+mx.gold,0);
       p.xp+=bx;p.gold+=bg;
-      setTimeout(()=>showRewardPopup({name:'¡Bonus diario!',xp:bx,gold:bg,attr:null},p),600);
+      setTimeout(()=>showRewardPopup({name:'Bonus diari!',xp:bx,gold:bg,attr:null},p),600);
     }
   }
   // Bonus arco
@@ -1188,7 +1188,7 @@ function completeMission(id){
         arc.status='done';
         const bx=arcMs.reduce((s,mx)=>s+mx.xp,0),bg=arcMs.reduce((s,mx)=>s+mx.gold,0);
         p.xp+=bx;p.gold+=bg;
-        setTimeout(()=>showRewardPopup({name:'¡Arco completado: '+m.arc+'!',xp:bx,gold:bg,attr:null},p),1200);
+        setTimeout(()=>showRewardPopup({name:'Arc completat: '+m.arc+'!',xp:bx,gold:bg,attr:null},p),1200);
       }
     }
   }
@@ -1243,7 +1243,7 @@ function confirmLevelUp(){
 /* ── reward popup ── */
 function showRewardPopup(m,p){
   document.getElementById('rp-emoji').textContent=p.emblem;
-  document.getElementById('rp-title').textContent='¡Misión completada!';
+  document.getElementById('rp-title').textContent='Missió completada!';
   document.getElementById('rp-mission').textContent=m.name;
   var mFrag=m.frag||({D:20,C:50,B:100,A:200,S:400}[m.diff]||0);
   document.getElementById('rp-chips').innerHTML=`
@@ -1290,12 +1290,12 @@ function goToMyProfile(){
 function getAdminProfile(){
   const allCards=gachaCards.map(c=>({cardId:c.id,obtainedAt:'2000-01-01'}));
   return {
-    id:'admin_special',realName:'',name:'Dios',cls:'—',role:'Omnisciente',
+    id:'admin_special',realName:'',name:'Déu',cls:'—',role:'Omniscient',
     emblem:'👑',color:'#e4a428',colorBg:'rgba(228,164,40,0.15)',
     level:99,xp:999999,xpNext:100,gold:Infinity,missions:999,
-    weapon:'La Palabra',armor:'Armadura Divina',accessory:'Corona Eterna',
-    lore:'Existía antes de que el primer personaje fuera creado. Su poder no tiene límites ni necesita demostración.',
-    quote:'Yo soy el principio y el fin de este repo.',
+    weapon:'La Paraula',armor:'Armadura Divina',accessory:'Corona Eterna',
+    lore:'Existia abans que es creés el primer personatge. El seu poder no té límits ni necessita demostració.',
+    quote:'Jo soc el principi i la fi d\'aquest repo.',
     pin:'',attrs:{fue:20,int:20,agi:20,car:20,sab:20},
     gachaTokens:Infinity,fragments:Infinity,gallery:allCards,lastDaily:''
   };
@@ -1392,7 +1392,7 @@ function renderHeroProfile(i){
         <div class="phead">
           <div class="phead-ava">${frameWrap(p,renderAvatar(p,"pixel-avatar-lg"))}</div>
           <div class="phead-info">
-            <span class="badge b-purple" style="margin-bottom:6px;display:inline-block;">Nivel ${p.level} · ${p.cls}</span>
+            <span class="badge b-purple" style="margin-bottom:6px;display:inline-block;">Nivell ${p.level} · ${p.cls}</span>
             <div class="pname">${p.name}${session.isAdmin?'<span class="adm-rib">DIOS</span>':`<span class="adm-rib" style="display:none"></span>`}</div>
             <div class="pclass">${p.role}</div>
             <div class="pquote">"${p.quote}"</div>
@@ -1400,7 +1400,7 @@ function renderHeroProfile(i){
         </div>
         ${canEdit?`<button class="btn btn-sm pedit-btn" onclick="openEditModal('${p.id}')">✏️ Editar</button>`:''}
         <div class="xpw">
-          <div class="xpl"><span>XP: ${p.xp.toLocaleString()}</span><span>Nivel ${p.level+1} en ${(p.xpNext-p.xp).toLocaleString()} XP</span></div>
+          <div class="xpl"><span>XP: ${p.xp.toLocaleString()}</span><span>Nivell ${p.level+1} en ${(p.xpNext-p.xp).toLocaleString()} XP</span></div>
           <div class="xpt"><div class="xpf" style="width:${xpPct}%;background:${p.color};"></div></div>
         </div>
         <div class="g4" style="margin-bottom:1.25rem;">
@@ -1435,8 +1435,8 @@ function renderHeroProfile(i){
             <div class="stitle">Història</div>
             <p class="plore" style="margin-bottom:1rem;">${p.lore}</p>
             <div class="stitle">Showcase</div>
-            <div class="hero-showcase">${(function(){if(!p.showcase)p.showcase=[null,null,null];return p.showcase.map(function(cid,si){var card=cid?gachaCards.find(function(x){return x.id===cid;}):null;var url=card?(card.imageUrl||CFG.GITHUB_RAW+card.image):'';var canEdit=session.playerId===p.id;if(card&&url)return '<img class="showcase-img" src="'+url+'" alt="'+card.name+'"'+(canEdit?' onclick="openShowcaseSelector('+si+')" title="Clic para cambiar"':'')+' onerror="this.style.opacity=0"/>';return canEdit?'<div class="showcase-empty" onclick="openShowcaseSelector('+si+')" title="Añadir carta del gacha">＋</div>':'<div class="showcase-empty" style="cursor:default;opacity:.4;">✦</div>';}).join('');})()}</div>
-            ${recent.length?`<div class="stitle">Últimas misiones</div>`+recent.map(m=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:12px;color:var(--text);">${m.name}</span><span class="badge b-teal">+${m.xp} XP</span></div>`).join(''):''}
+            <div class="hero-showcase">${(function(){if(!p.showcase)p.showcase=[null,null,null];return p.showcase.map(function(cid,si){var card=cid?gachaCards.find(function(x){return x.id===cid;}):null;var url=card?(card.imageUrl||CFG.GITHUB_RAW+card.image):'';var canEdit=session.playerId===p.id;if(card&&url)return '<img class="showcase-img" src="'+url+'" alt="'+card.name+'"'+(canEdit?' onclick="openShowcaseSelector('+si+')" title="Clic per canviar"':'')+' onerror="this.style.opacity=0"/>';return canEdit?'<div class="showcase-empty" onclick="openShowcaseSelector('+si+')" title="Afegir carta del gacha">＋</div>':'<div class="showcase-empty" style="cursor:default;opacity:.4;">✦</div>';}).join('');})()}</div>
+            ${recent.length?`<div class="stitle">Últimes missions</div>`+recent.map(m=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:12px;color:var(--text);">${m.name}</span><span class="badge b-teal">+${m.xp} XP</span></div>`).join(''):''}
           </div>
         </div>
       </div>
@@ -1468,7 +1468,7 @@ function switchPTab(btn,panelId){
 function renderArcs(){
   const myArcs=session.isAdmin?arcs:arcs.filter(a=>missions.some(m=>m.arc===a.name&&m.playerId===session.playerId));
   if(!myArcs.length){
-    document.getElementById('arcs-grid').innerHTML='<div style="font-size:13px;color:var(--muted);">Sin arcos aún. Crea uno desde Misiones → Nou arc.</div>';
+    document.getElementById('arcs-grid').innerHTML='<div style="font-size:13px;color:var(--muted);">Encara no hi ha arcs. Crea\'n un des de Missions → Nou arc.</div>';
     return;
   }
   document.getElementById('arcs-grid').innerHTML=myArcs.map(a=>{
@@ -1478,7 +1478,7 @@ function renderArcs(){
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
         <div class="arcn">${a.name}</div>
         <div style="display:flex;gap:6px;align-items:center;">
-          <span class="badge ${a.status==='done'?'b-purple':a.status==='active'?'b-teal':'b-gray'}">${a.status==='done'?'Completado':a.status==='active'?'Activo':'Bloqueado'}</span>
+          <span class="badge ${a.status==='done'?'b-purple':a.status==='active'?'b-teal':'b-gray'}">${a.status==='done'?'Completat':a.status==='active'?'Actiu':'Blocat'}</span>
           ${canDel?`<button class="btn btn-sm" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);padding:2px 8px;font-size:11px;" onclick="deleteArc('${a.id}')">✕</button>`:''}
         </div>
       </div>
@@ -1550,7 +1550,7 @@ function pullResult(){
 }
 function doPull(times){
   const p=players.find(pl=>pl.id===session.playerId);
-  if(!p){toast('Inicia sesión para invocar.');return;}
+  if(!p){toast('Inicia sessió per invocar.');return;}
   const cost=times===1?GACHA_COST_SINGLE:GACHA_COST_MULTI;
   const costPerPull=cost/times;
   if(!session.isAdmin){
@@ -1937,7 +1937,7 @@ function deletePlayer(){
   if(!session.isAdmin)return;
   const p=players.find(p=>p.id===editPid);
   if(!p)return;
-  if(!confirm('¿Seguro que quieres eliminar a '+p.name+'? Esta acción no se puede deshacer.'))return;
+  if(!confirm('Segur que vols esborrar '+p.name+'? Aquesta acció no es pot desfer.'))return;
   const _delId=editPid;
   players=players.filter(p=>p.id!==_delId);
   missions=missions.map(m=>m.playerId===_delId?{...m,playerId:''}:m);
@@ -2008,7 +2008,7 @@ function renderShop(){
   var eqWrap=document.getElementById('my-equipped');
   if(eqWrap){
     if(!p){
-      eqWrap.innerHTML='<div class="stitle">Equipamiento (admin no tiene personaje)</div>';
+      eqWrap.innerHTML='<div class="stitle">Equipament (l\'admin no té personatge)</div>';
     }else{
     eqWrap.innerHTML='<div class="stitle">Equipat actualment</div><div class="equipped-slots">'
       +SLOT_DEFS.filter(function(s){return !s.cosmetic;}).map(function(sl){
@@ -2055,7 +2055,7 @@ function renderShop(){
     else if(owned)btn='<button class="btn btn-sm btn-p" style="margin-top:auto;" onclick="equipItem(\''+item.id+'\')">Equipar</button>';
     else if(canBuy)btn='<button class="btn btn-sm btn-gold" style="margin-top:auto;" onclick="buyItem(\''+item.id+'\')">Comprar 🪙 '+item.cost+'</button>';
     else if(!meetsR)btn='<div style="font-size:11px;color:var(--coral);margin-top:auto;">🔒 Requisitos no cumplidos</div>';
-    else btn='<div style="font-size:11px;color:var(--coral);margin-top:auto;">🪙 Oro insuficiente</div>';
+    else btn='<div style="font-size:11px;color:var(--coral);margin-top:auto;">🪙 Or insuficient</div>';
     return '<div class="shop-item '+cls+'">'
       +(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'" style="width:100%;height:120px;object-fit:cover;border-radius:var(--radius);margin-bottom:4px;">':'<div class="item-icon">'+item.icon+'</div>')
       +'<div class="item-name">'+item.name+'</div>'
@@ -2063,7 +2063,7 @@ function renderShop(){
       +'<div class="item-desc">'+item.desc+'</div>'
       +(bonusStr?'<div class="item-bonus">⬆️ '+bonusStr+'</div>':'')
       +(reqStr?'<div class="item-reqs">📋 Req: '+reqStr+' · Nv.'+item.minLevel+'+'+'</div>':'')
-      +'<div class="item-cost">'+(owned?'✅ Comprado':'🪙 '+item.cost)+'</div>'
+      +'<div class="item-cost">'+(owned?'✅ Comprat':'🪙 '+item.cost)+'</div>'
       +btn+'</div>';
   }).join('')+'</div>';
 }
@@ -2071,7 +2071,7 @@ function buyItem(itemId){
   var p=players.find(function(pl){return pl.id===session.playerId;});
   var item=shopItems.find(function(i){return i.id===itemId;});
   if(!p||!item)return;
-  if(!canBuyItem(p,item)){toast('No puedes comprar este item.');return;}
+  if(!canBuyItem(p,item)){toast('No pots comprar aquest ítem.');return;}
   p.gold-=item.cost;
   if(!p.inventory)p.inventory=[];
   p.inventory.push(itemId);
@@ -2515,7 +2515,7 @@ function renderDayEvents(dateStr){
   const months=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   if(lbl)lbl.textContent=days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()];
   const evs=getFilteredEvents(calState.filter).filter(e=>e.date===dateStr);
-  if(!evs.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin eventos.</div>';return;}
+  if(!evs.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sense esdeveniments.</div>';return;}
   wrap.innerHTML=evs.map(e=>eventItemHTML(e)).join('');
 }
 
@@ -2524,7 +2524,7 @@ function renderUpcoming(){
   if(!wrap)return;
   const today=formatDate(new Date());
   const upcoming=getFilteredEvents(calState.filter).filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
-  if(!upcoming.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin eventos próximos.</div>';return;}
+  if(!upcoming.length){wrap.innerHTML='<div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sense esdeveniments propers.</div>';return;}
   wrap.innerHTML=upcoming.map(e=>eventItemHTML(e)).join('');
 }
 
@@ -2544,7 +2544,7 @@ function openEventModal(eventId){
   calState.editingEventId=eventId;
   const modal=document.getElementById('cal-event-modal');
   const e=eventId?calEvents.find(ev=>ev.id===eventId):null;
-  document.getElementById('cal-modal-title').textContent=e?'Editar evento':'Nou esdeveniment';
+  document.getElementById('cal-modal-title').textContent=e?'Editar esdeveniment':'Nou esdeveniment';
   document.getElementById('ev-title').value=e?e.title:'';
   document.getElementById('ev-date').value=e?e.date:(calState.selectedDate||formatDate(new Date()));
   document.getElementById('ev-time').value=e?e.time:'09:00';
@@ -2563,7 +2563,7 @@ function closeEventModal(){document.getElementById('cal-event-modal').classList.
 
 function saveEvent(){
   const title=document.getElementById('ev-title').value.trim();
-  if(!title){toast('El evento necesita un título.');return;}
+  if(!title){toast('L\'esdeveniment necessita un títol.');return;}
   const ev={
     id:calState.editingEventId||('ev'+Date.now()),
     title,
@@ -2584,7 +2584,7 @@ function saveEvent(){
 
 function deleteEvent(){
   if(!calState.editingEventId)return;
-  if(!confirm('¿Eliminar este evento?'))return;
+  if(!confirm('Esborrar aquest esdeveniment?'))return;
   calEvents=calEvents.filter(e=>e.id!==calState.editingEventId);
   if(CFG.MODE==='supabase')saveToSupabase();
   closeEventModal();renderCalendar();
@@ -2629,7 +2629,7 @@ function parsePlannerFile(file){
     reader.onload=function(e){parsePlannerExcel(e.target.result);};
     reader.readAsArrayBuffer(file);
   } else {
-    toast('Formato no soportado. Usa .csv o .xlsx');
+    toast('Format no admès. Usa .csv o .xlsx');
   }
 }
 
@@ -2768,7 +2768,7 @@ function confirmPlannerImport(){
       xp:rewards.xp,
       gold:rewards.gold,
       frag:rewards.frag||50,
-      attr:'Inteligencia',attrPts:2,
+      attr:'Intel·ligència',attrPts:2,
       deadline:row[deadlineCol]||'',
       daily:false,isDaily_instance:false,
       plannerId:existingId,
@@ -2795,7 +2795,7 @@ function clearPlannerImport(){
   document.getElementById('planner-preview').style.display='none';
   document.getElementById('planner-file').value='';
   var drop=document.getElementById('planner-drop');
-  if(drop)drop.innerHTML='<div style="font-size:32px;margin-bottom:8px;">📂</div><div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px;">Arrossega el teu fitxer aquí</div><div style="font-size:12px;color:var(--muted);">o haz clic para seleccionar — .xlsx, .csv</div><input type="file" id="planner-file" accept=".csv,.xlsx,.xls" style="display:none;" onchange="plannerFileSelected(this)"/>';
+  if(drop)drop.innerHTML='<div style="font-size:32px;margin-bottom:8px;">📂</div><div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px;">Arrossega el teu fitxer aquí</div><div style="font-size:12px;color:var(--muted);">o fes clic per seleccionar — .xlsx, .csv</div><input type="file" id="planner-file" accept=".csv,.xlsx,.xls" style="display:none;" onchange="plannerFileSelected(this)"/>';
 }
 
 function saveAttrNames(){
@@ -2992,19 +2992,19 @@ function renderPlannerImported(){
 
 /* ══ TUTORIAL ══ */
 function createWelcomeArc(p){
-  var arcName='Bienvenida al Cuartel General';
-  arcs.push({id:'arc_welcome_'+p.id,name:arcName,lore:'¡Bienvenido al equipo! Completa estas dos misiones para arrancar tu aventura con buen pie.',status:'active',total:2,done:0,createdBy:'system'});
-  missions.push({id:'wlc1_'+p.id,name:'Preséntate al equipo',arc:arcName,playerId:p.id,status:'pending',diff:'C',xp:100,gold:450,attr:'Carisma',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'});
-  missions.push({id:'wlc2_'+p.id,name:'Configura tu primer objetivo',arc:arcName,playerId:p.id,status:'pending',diff:'C',xp:0,gold:450,attr:'Sabiduría',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'});
+  var arcName='Benvinguda al Quarter General';
+  arcs.push({id:'arc_welcome_'+p.id,name:arcName,lore:'Benvingut a l\'equip! Completa aquestes dues missions per arrancar la teva aventura amb bon peu.',status:'active',total:2,done:0,createdBy:'system'});
+  missions.push({id:'wlc1_'+p.id,name:'Presenta\'t a l\'equip',arc:arcName,playerId:p.id,status:'pending',diff:'C',xp:100,gold:450,attr:'Carisma',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'});
+  missions.push({id:'wlc2_'+p.id,name:'Configura el teu primer objectiu',arc:arcName,playerId:p.id,status:'pending',diff:'C',xp:0,gold:450,attr:'Saviesa',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'});
   updateArcCounts();
 }
 function createTutorialForPlayer(p){
-  var arcName='Tutorial: Primeros Pasos';
-  arcs.push({id:'arc_tutorial_'+p.id,name:arcName,lore:'Aprende lo básico del Cuartel General completando estas 3 misiones.',status:'active',total:3,done:0,createdBy:'system'});
+  var arcName='Tutorial: Primers Passos';
+  arcs.push({id:'arc_tutorial_'+p.id,name:arcName,lore:'Aprèn el bàsic del Quarter General completant aquestes 3 missions.',status:'active',total:3,done:0,createdBy:'system'});
   var tuts=[
-    {id:'tut1_'+p.id,name:'Explora tu Héroe',desc:'Ve a la sección Héroes y revisa tu ficha: atributos, nivel, oro y el gráfico de pentágono. Cuando subas de nivel podrás repartir 3 puntos entre tus stats con los botones + y −.',arc:arcName,playerId:p.id,status:'pending',diff:'D',xp:25,gold:50,attr:'Sabiduría',attrPts:1,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
-    {id:'tut2_'+p.id,name:'Invoca en el Gacha',desc:'Ve a la sección Gacha y haz tu primera invocación con 100 de oro. Puedes obtener cartas ilustradas o items de equipamiento. Las cartas se guardan en tu galería y los items en tu Inventario.',arc:arcName,playerId:p.id,status:'pending',diff:'C',xp:75,gold:100,attr:'Agilidad',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
-    {id:'tut3_'+p.id,name:'Crea tu primera Misión',desc:'Ve a Misiones y despliega "Nova missió". Escribe el nombre, una descripción, elige el arco y guárdala. Las misiones normales dan 75 XP y 25 oro. Las diarias se repiten cada día automáticamente.',arc:arcName,playerId:p.id,status:'pending',diff:'C',xp:75,gold:100,attr:'Carisma',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
+    {id:'tut1_'+p.id,name:'Explora el teu Heroi',desc:'Ves a la secció Herois i revisa la teva fitxa: atributs, nivell, or i el gràfic de pentàgon. Quan pugis de nivell podràs repartir 3 punts entre les teves stats amb els botons + i −.',arc:arcName,playerId:p.id,status:'pending',diff:'D',xp:25,gold:50,attr:'Saviesa',attrPts:1,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
+    {id:'tut2_'+p.id,name:'Invoca al Gacha',desc:'Ves a la secció Gacha i fes la teva primera invocació amb 100 d\'or. Pots obtenir cartes il·lustrades o ítems d\'equipament. Les cartes es desen a la teva galeria i els ítems al teu Inventari.',arc:arcName,playerId:p.id,status:'pending',diff:'C',xp:75,gold:100,attr:'Agilitat',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
+    {id:'tut3_'+p.id,name:'Crea la teva primera Missió',desc:'Ves a Missions i desplega "Nova missió". Escriu el nom, una descripció, tria l\'arc i desa-la. Les missions normals donen 75 XP i 25 d\'or. Les diàries es repeteixen cada dia automàticament.',arc:arcName,playerId:p.id,status:'pending',diff:'C',xp:75,gold:100,attr:'Carisma',attrPts:2,deadline:'',daily:false,isDaily_instance:false,plannerId:'',createdBy:'system'},
   ];
   tuts.forEach(function(m){missions.push(m);});
   updateArcCounts();
@@ -3643,16 +3643,16 @@ function openMissionModal(id){
   document.getElementById('mm-badges').innerHTML=
     `<span class="badge ${statusCls}">${statusLabel}</span>`
     +`<span class="badge ${_prio[1]}">${_prio[0]}</span>`
-    +(m.daily?'<span class="badge b-gold">Diaria</span>':'')
+    +(m.daily?'<span class="badge b-gold">Diària</span>':'')
     +(_isWeekly(m)?'<span class="badge b-teal">🗓️ Setmanal</span>':'')
     +`<span class="badge b-gray">${m.arc}</span>`
     +(p?`<span class="badge b-purple">${p.emblem} ${p.name}</span>`:'')
     +(_tags?_tags.split(';').map(t=>t.trim()).filter(Boolean).map(t=>`<span class="badge b-gray">${t}</span>`).join(''):'');
-  document.getElementById('mm-desc').textContent=m.desc||m.name+' — Completa esta misión para obtener recompensas.';
+  document.getElementById('mm-desc').textContent=m.desc||m.name+' — Completa aquesta missió per obtenir recompenses.';
   document.getElementById('mm-stats').innerHTML=
     `<div class="smini"><div class="v">${m.xp}</div><div class="l">XP</div></div>`
-    +`<div class="smini"><div class="v">🪙 ${m.gold}</div><div class="l">Oro</div></div>`
-    +`<div class="smini"><div class="v">${m.diff||'C'}</div><div class="l">Dificultad</div></div>`;
+    +`<div class="smini"><div class="v">🪙 ${m.gold}</div><div class="l">Or</div></div>`
+    +`<div class="smini"><div class="v">${m.diff||'C'}</div><div class="l">Dificultat</div></div>`;
   const canComplete=(session.isAdmin||(session.playerId===m.playerId))&&m.status!=='done';
   const canDel=session.isAdmin||(m.createdBy===session.playerId);
   if(session.isAdmin){
@@ -3741,7 +3741,7 @@ function initTheme(){
 /* ══ ARRANQUE ══ */
 /* ══ CREAR MISIONES/ARCOS ══ */
 const DIFF_REWARDS={D:{xp:25,gold:10,frag:20},C:{xp:75,gold:25,frag:50},B:{xp:150,gold:50,frag:100},A:{xp:300,gold:100,frag:200},S:{xp:500,gold:200,frag:400}};
-const DIFF_ATTRS={D:'Sabiduría',C:'Inteligencia',B:'Agilidad',A:'Fuerza',S:'Carisma'};
+const DIFF_ATTRS={D:'Saviesa',C:'Intel·ligència',B:'Agilitat',A:'Força',S:'Carisma'};
 const DIFF_ATTR_PTS={D:1,C:2,B:3,A:5,S:10};
 let selectedDiff='D';
 
@@ -3761,7 +3761,7 @@ function toggleDailyFields(){
 
 function populateArcSelect(){
   var sel=document.getElementById('nm-arc');
-  if(sel)sel.innerHTML='<option value="">Sin arco</option>'+arcs.map(function(a){
+  if(sel)sel.innerHTML='<option value="">Sense arc</option>'+arcs.map(function(a){
     return '<option value="'+a.name+'">'+a.name+'</option>';
   }).join('');
   var asel=document.getElementById('nm-attr');
@@ -3780,7 +3780,7 @@ function populateArcSelect(){
 
 function createMission(){
   var name=document.getElementById('nm-name').value.trim();
-  if(!name){toast('La misión necesita un nombre.');return;}
+  if(!name){toast('La missió necessita un nom.');return;}
   var type=document.getElementById('nm-type').value;
   var isDaily=type==='daily';
   var isWeekly=type==='weekly';
@@ -3836,7 +3836,7 @@ function createMission(){
   // Check daily limit
   if(isDaily){
     var myDailies=missions.filter(function(m){return m.daily&&!m.id.includes('_');});
-    if(myDailies.length>=4){toast('Máximo 4 misiones diarias globales.');return;}
+    if(myDailies.length>=4){toast('Màxim 4 missions diàries globals.');return;}
   }
   missions.push(newM);
   if(!isDaily&&assignIds.length>1)missionAssignees[newM.id]=assignIds.slice();
@@ -3852,7 +3852,7 @@ function createMission(){
 
 function createArc(){
   var name=document.getElementById('na-name').value.trim();
-  if(!name){toast('El arco necesita un nombre.');return;}
+  if(!name){toast('L\'arc necessita un nom.');return;}
   var newArc={
     id:'arc'+Date.now(),
     name:name,

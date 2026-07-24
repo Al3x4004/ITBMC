@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="light">
+<html lang="ca" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>BMC Global — Cuartel General</title>
+<title>BMC Global — Quarter General</title>
 <link rel="icon" type="image/png" href="https://i.imgur.com/Z1wFN0q.png">
 <link rel="stylesheet" href="css/styles.css?v=16">
 </head>
@@ -43,7 +43,7 @@
 <div class="levelup-pop" id="levelup-pop">
   <div class="levelup-box">
     <div style="font-size:42px;margin-bottom:.5rem;">⬆️</div>
-    <div style="font-size:22px;font-weight:700;color:var(--gold);margin-bottom:.25rem;">¡Subiste de nivel!</div>
+    <div style="font-size:22px;font-weight:700;color:var(--gold);margin-bottom:.25rem;">Has pujat de nivell!</div>
     <div id="lu-level" style="font-size:14px;color:var(--muted);margin-bottom:1rem;"></div>
     <div style="font-size:13px;color:var(--text);margin-bottom:.5rem;">Punts automàtics de la classe <span class="pts-left" id="lu-pts">—</span></div>
     <div id="lu-attrs" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:1rem 0;"></div>
@@ -54,10 +54,10 @@
 <div class="reward-pop" id="reward-pop">
   <div class="reward-box">
     <div class="reward-emoji" id="rp-emoji">⚔️</div>
-    <div class="reward-title" id="rp-title">¡Misión completada!</div>
+    <div class="reward-title" id="rp-title">Missió completada!</div>
     <div style="font-size:13px;color:var(--muted);margin-bottom:.5rem;" id="rp-mission"></div>
     <div class="reward-chips" id="rp-chips"></div>
-    <button class="btn btn-p" onclick="closeReward()">¡Reclamar!</button>
+    <button class="btn btn-p" onclick="closeReward()">Reclamar!</button>
   </div>
 </div>
 
@@ -79,10 +79,10 @@
 <!-- LOGIN -->
 <div id="screen-login" style="display:none;" class="centered">
   <div class="lbox">
-    <h2>Bienvenido de nuevo</h2>
-    <p>Introduce tu nombre de personaje y contraseña.</p>
-    <div class="field"><label>Nom del personatge</label><input type="text" id="ln" placeholder="Ej: Aldric el Arcano"/></div>
-    <div class="field"><label>Contraseña</label><input type="password" id="lp" placeholder="Tu contraseña"/><div class="errmsg" id="lerr">Nombre o contraseña incorrectos.</div></div>
+    <h2>Benvingut de nou</h2>
+    <p>Introdueix el teu nom de personatge i la contrasenya.</p>
+    <div class="field"><label>Nom del personatge</label><input type="text" id="ln" placeholder="Ex: Aldric l'Arcà"/></div>
+    <div class="field"><label>Contrasenya</label><input type="password" id="lp" placeholder="La teva contrasenya"/><div class="errmsg" id="lerr">Nom o contrasenya incorrectes.</div></div>
     <div style="display:flex;gap:8px;"><button class="btn" onclick="showScreen('screen-welcome')">← Enrere</button><button class="btn btn-p" style="flex:1" onclick="doLogin()">Entrar</button></div>
   </div>
 </div>
@@ -90,9 +90,9 @@
 <!-- ADMIN LOGIN -->
 <div id="screen-admin" style="display:none;" class="centered">
   <div class="lbox">
-    <h2>Acceso admin 👑</h2>
-    <p>Introduce la contraseña de administrador.</p>
-    <div class="field"><label>Contraseña admin</label><input type="password" id="ap" placeholder="Contraseña"/><div class="errmsg" id="aerr">Contraseña incorrecta.</div></div>
+    <h2>Accés admin 👑</h2>
+    <p>Introdueix la contrasenya d'administrador.</p>
+    <div class="field"><label>Contrasenya admin</label><input type="password" id="ap" placeholder="Contrasenya"/><div class="errmsg" id="aerr">Contrasenya incorrecta.</div></div>
     <div style="display:flex;gap:8px;"><button class="btn" onclick="showScreen('screen-welcome')">← Enrere</button><button class="btn btn-p" style="flex:1" onclick="doAdminLogin()">Entrar</button></div>
   </div>
 </div>
@@ -101,33 +101,33 @@
 <div id="screen-new" style="display:none;padding:2rem 1rem;">
   <div style="max-width:560px;margin:0 auto;">
     <div style="font-size:28px;margin-bottom:.5rem;">⚔️</div>
-    <h2 style="font-size:20px;font-weight:700;margin-bottom:.25rem;">Crea tu personaje</h2>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:1.5rem;">Podrás editar el lore y aspecto después.</p>
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:.25rem;">Crea el teu personatge</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:1.5rem;">Podràs editar el lore i l'aspecte després.</p>
     <div class="steps" id="csteps">
-      <div class="stepi active" onclick="cGoTo(0)">1 · Identidad</div>
-      <div class="stepi" onclick="cGoTo(1)">2 · Clase</div>
-      <div class="stepi" onclick="cGoTo(2)">3 · Aspecto</div>
-      <div class="stepi" onclick="cGoTo(3)">4 · Historia</div>
+      <div class="stepi active" onclick="cGoTo(0)">1 · Identitat</div>
+      <div class="stepi" onclick="cGoTo(1)">2 · Classe</div>
+      <div class="stepi" onclick="cGoTo(2)">3 · Aspecte</div>
+      <div class="stepi" onclick="cGoTo(3)">4 · Història</div>
     </div>
     <div class="wp active" id="cp-0">
-      <div class="field"><label>Tu nombre real</label><input type="text" id="cp-rn" placeholder="Ej: Antonio Conde"/></div>
-      <div class="field"><label>Nom del personatge</label><input type="text" id="cp-pn" placeholder="Ej: Seraphine Ojoagudo"/></div>
-      <div class="field"><label>Contraseña</label><input type="password" id="cp-pin" placeholder="Para editar tu ficha"/></div>
+      <div class="field"><label>El teu nom real</label><input type="text" id="cp-rn" placeholder="Ex: Antonio Conde"/></div>
+      <div class="field"><label>Nom del personatge</label><input type="text" id="cp-pn" placeholder="Ex: Seraphine Ullaguda"/></div>
+      <div class="field"><label>Contrasenya</label><input type="password" id="cp-pin" placeholder="Per editar la teva fitxa"/></div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
         <button class="btn" onclick="showScreen('screen-welcome')">← Enrere</button>
-        <button class="btn btn-p" onclick="cNext(0)">Siguiente →</button>
+        <button class="btn btn-p" onclick="cNext(0)">Següent →</button>
       </div>
     </div>
     <div class="wp" id="cp-1">
       <div class="stitle">Tria la teva classe</div>
       <div class="cgrid" id="cp-cgrid"></div>
       <div id="cp-cstats" style="display:none;margin-bottom:1rem;">
-        <div class="stitle">Atributos de esta clase</div>
+        <div class="stitle">Atributs d'aquesta classe</div>
         <div id="cp-abars"></div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px;">
         <button class="btn" onclick="cGoTo(0)">← Enrere</button>
-        <button class="btn btn-p" onclick="cNext(1)">Siguiente →</button>
+        <button class="btn btn-p" onclick="cNext(1)">Següent →</button>
       </div>
     </div>
     <div class="wp" id="cp-2">
@@ -139,12 +139,12 @@
       <div class="g3" id="cp-equip" style="gap:8px;"></div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
         <button class="btn" onclick="cGoTo(1)">← Enrere</button>
-        <button class="btn btn-p" onclick="cNext(2)">Siguiente →</button>
+        <button class="btn btn-p" onclick="cNext(2)">Següent →</button>
       </div>
     </div>
     <div class="wp" id="cp-3">
-      <div class="field"><label>Història del personatge</label><textarea id="cp-lore" placeholder="¿De dónde viene? ¿Cuál es su motivación en el equipo?"></textarea></div>
-      <div class="field"><label>Frase de batalla</label><input type="text" id="cp-quote" placeholder="Ej: El código no falla, fallan los que no lo prueban."/></div>
+      <div class="field"><label>Història del personatge</label><textarea id="cp-lore" placeholder="D'on ve? Quina és la seva motivació a l'equip?"></textarea></div>
+      <div class="field"><label>Frase de batalla</label><input type="text" id="cp-quote" placeholder="Ex: El codi no falla, fallen els que no el proven."/></div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
         <button class="btn" onclick="cGoTo(2)">← Enrere</button>
         <button class="btn btn-p" onclick="saveNewChar()">Crear personatge ✓</button>
@@ -177,7 +177,7 @@
         <button class="nb admin-only" onclick="showPage('widgets-admin',this)" id="nav-widgets-admin" style="display:none;"><span class="nb-icon">🧩</span>Widgets</button>
       </nav>
       <div class="topbar-right">
-        <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar tema">☀️</button>
+        <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Canviar tema">☀️</button>
         <div class="uwrap">
           <div class="upill" onclick="toggleUMenu()" id="upill">
             <span id="sidebar-mini-avatar" style="display:none;"></span>
@@ -185,13 +185,13 @@
           </div>
           <div id="umenu-inline" class="umenu-dropdown" style="display:none;">
             <div style="padding:6px 8px;font-size:12px;color:var(--muted);border-bottom:0.5px solid var(--border);margin-bottom:4px;" id="umname">—</div>
-            <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="goToMyProfile()">👤 Mi perfil</button>
-            <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="openEditModal(session.playerId)">✏️ Editar personaje</button>
+            <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="goToMyProfile()">👤 El meu perfil</button>
+            <button class="btn btn-sm" style="width:100%;text-align:left;margin-bottom:2px;" onclick="openEditModal(session.playerId)">✏️ Editar personatge</button>
             <button class="btn btn-sm btn-g" style="width:100%;text-align:left;margin-bottom:2px;" onclick="backupData()">💾 Còpia de seguretat</button>
             <button class="btn btn-sm" id="menu-restore" style="width:100%;text-align:left;margin-bottom:2px;display:none;" onclick="document.getElementById('restore-file').click()">♻️ Restaurar còpia (fitxer)</button>
             <input type="file" id="restore-file" accept=".json" style="display:none;" onchange="restoreData(this)"/>
             <button class="btn btn-sm" id="menu-server-backups" style="width:100%;text-align:left;margin-bottom:2px;display:none;" onclick="openServerBackups()">☁️ Còpies del servidor</button>
-            <button class="btn btn-sm" style="width:100%;text-align:left;" onclick="doLogout()">← Cerrar sesión</button>
+            <button class="btn btn-sm" style="width:100%;text-align:left;" onclick="doLogout()">← Tancar sessió</button>
           </div>
         </div>
       </div>
@@ -214,11 +214,11 @@
       <details class="create-panel" id="panel-new-mission">
         <summary>Nova missió</summary>
         <div class="create-form">
-          <div class="field full"><label>Nom de la missió</label><input type="text" id="nm-name" placeholder="Ej: Revisar el backlog"/></div>
-          <div class="field"><label>Arco</label><select id="nm-arc"></select></div>
-          <div class="field"><label>Tipo</label>
+          <div class="field full"><label>Nom de la missió</label><input type="text" id="nm-name" placeholder="Ex: Revisar el backlog"/></div>
+          <div class="field"><label>Arc</label><select id="nm-arc"></select></div>
+          <div class="field"><label>Tipus</label>
             <select id="nm-type" onchange="toggleDailyFields()">
-              <option value="normal">Misión normal</option>
+              <option value="normal">Missió normal</option>
               <option value="daily">Missió diària (es repeteix cada dia automàticament)</option>
               <option value="weekly">Missió setmanal (es repeteix cada setmana automàticament)</option>
             </select>
@@ -226,20 +226,20 @@
           <div class="field full" id="nm-diff-wrap" style="display:none;"></div>
           <div class="field"><label>Prioritat</label>
             <select id="nm-priority">
-              <option value="media">Media</option>
-              <option value="importante">Importante</option>
-              <option value="urgente">Urgente</option>
-              <option value="baja">Baja</option>
+              <option value="media">Mitjana</option>
+              <option value="importante">Important</option>
+              <option value="urgente">Urgent</option>
+              <option value="baja">Baixa</option>
             </select>
           </div>
           <div class="field full" id="nm-assign-wrap"><label>Assignar a (pots triar-ne diverses)</label><div id="nm-assign-box" style="display:flex;flex-wrap:wrap;gap:6px;"></div></div>
           <div class="field"><label>Atribut que puja</label><select id="nm-attr"></select></div>
           <div class="field"><label>Punts d'atribut</label><input type="number" id="nm-attrpts" value="2" min="0" max="20"/></div>
           <div class="field full"><label>Etiquetes (separa amb ;)</label><input type="text" id="nm-tags" placeholder="Ej: 🛠️ Material IT; 📧 Outlook"/></div>
-          <div class="field full"><label>Descripció (opcional)</label><textarea id="nm-desc" placeholder="Describe en qué consiste esta misión..." style="min-height:56px;"></textarea></div>
+          <div class="field full"><label>Descripció (opcional)</label><textarea id="nm-desc" placeholder="Descriu en què consisteix aquesta missió..." style="min-height:56px;"></textarea></div>
           <div class="field"><label>Data límit (opcional)</label><input type="date" id="nm-deadline"/></div>
           <div class="field full" style="display:flex;justify-content:flex-end;">
-            <button class="btn btn-p" onclick="createMission()">Crear misión</button>
+            <button class="btn btn-p" onclick="createMission()">Crear missió</button>
           </div>
         </div>
       </details>
@@ -248,13 +248,13 @@
       <details class="create-panel" id="panel-new-arc">
         <summary>Nou arc</summary>
         <div class="create-form">
-          <div class="field"><label>Nom de l'arc</label><input type="text" id="na-name" placeholder="Ej: La Conquista del Q3"/></div>
-          <div class="field"><label>Estado</label>
+          <div class="field"><label>Nom de l'arc</label><input type="text" id="na-name" placeholder="Ex: La Conquesta del Q3"/></div>
+          <div class="field"><label>Estat</label>
             <select id="na-status"><option value="active">Actiu</option><option value="blocked">Blocat</option></select>
           </div>
-          <div class="field full"><label>Descripció</label><textarea id="na-desc" placeholder="El equipo se embarca en..." style="min-height:56px;"></textarea></div>
+          <div class="field full"><label>Descripció</label><textarea id="na-desc" placeholder="L'equip s'embarca en..." style="min-height:56px;"></textarea></div>
           <div class="field full" style="display:flex;justify-content:flex-end;">
-            <button class="btn btn-p" onclick="createArc()">Crear arco</button>
+            <button class="btn btn-p" onclick="createArc()">Crear arc</button>
           </div>
         </div>
       </details>
@@ -343,14 +343,14 @@
     <!-- ARCOS -->
     <div id="page-arcos" class="page">
       <div class="card" style="margin-bottom:1.25rem;background:var(--accent-bg);border-color:var(--accent-border);">
-        <div style="font-size:15px;font-weight:500;margin-bottom:.5rem;">📖 ¿Cómo funcionan los Arcos?</div>
+        <div style="font-size:15px;font-weight:500;margin-bottom:.5rem;">📖 Com funcionen els Arcs?</div>
         <div style="font-size:13px;color:var(--muted);line-height:1.8;">
-          Los <strong>Arcs</strong> son agrupaciones de misiones con un objetivo común — como un sprint o un proyecto.<br>
-          • Crea un arco desde <strong>Misiones → Nou arc</strong><br>
-          • Asigna misiones a ese arco al crearlas<br>
-          • Al completar <strong>todas las misiones</strong> del arco recibes un bonus de XP y oro igual a la suma de todas<br>
-          • El progreso del arco se actualiza automáticamente<br>
-          • Cuando creas tu personaje se genera el arco <strong>"Tutorial: Primeros Pasos"</strong> con 5 misiones para empezar
+          Els <strong>Arcs</strong> són agrupacions de missions amb un objectiu comú — com un sprint o un projecte.<br>
+          • Crea un arc des de <strong>Missions → Nou arc</strong><br>
+          • Assigna missions a aquest arc en crear-les<br>
+          • En completar <strong>totes les missions</strong> de l'arc reps un bonus d'XP i or igual a la suma de totes<br>
+          • El progrés de l'arc s'actualitza automàticament<br>
+          • Quan crees el teu personatge es genera l'arc <strong>"Tutorial: Primers Passos"</strong> amb 5 missions per començar
         </div>
       </div>
       <div id="arcs-list"></div>
@@ -359,16 +359,16 @@
 
     <!-- RANKING -->
     <div id="page-ranking" class="page">
-      <div class="card"><div class="stitle">Tabla de héroes</div><div id="rank-list"></div></div>
+      <div class="card"><div class="stitle">Taula d'herois</div><div id="rank-list"></div></div>
     </div>
 
     <!-- GACHA -->
     <div id="page-gacha" class="page">
       <div class="card" style="margin-bottom:1rem;">
-        <div class="stitle">Invocación</div>
+        <div class="stitle">Invocació</div>
         <div class="gacha-wrap">
           <div class="gacha-cost">Cost: <span>100 ✨</span> per tirada · <span>900 ✨</span> per 10 tirades</div>
-          <div id="gacha-gold-display" style="font-size:22px;font-weight:700;color:var(--gold);margin-bottom:1rem;">0 oro</div>
+          <div id="gacha-gold-display" style="font-size:22px;font-weight:700;color:var(--gold);margin-bottom:1rem;">0 or</div>
           <div class="gacha-btn-wrap">
             <button class="btn btn-gold" onclick="doPull(1)">✨ Invocar x1 (100 ✨)</button>
             <button class="btn btn-gold" onclick="doPull(10)">✨ Invocar x10 (900 ✨)</button>
@@ -376,11 +376,11 @@
           <div class="card-reveal" id="card-reveal"></div>
         </div>
         <div style="font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:.75rem;">
-          Probabilidades: Común 70% · Rara 25% · Épica 4% · Legendaria 1%
+          Probabilitats: Comú 70% · Rara 25% · Èpica 4% · Llegendària 1%
         </div>
       </div>
       <div class="card">
-        <div class="stitle">Mi galería</div>
+        <div class="stitle">La meva galeria</div>
         <div id="my-gallery"></div>
       </div>
       <div class="card" style="margin-top:1rem;">
@@ -460,20 +460,20 @@
     <!-- CALENDARIO -->
     <div id="page-calendario" class="page">
       <div class="cal-header">
-        <div class="cal-month" id="cal-month-label">Junio 2026</div>
+        <div class="cal-month" id="cal-month-label">Juny 2026</div>
         <div style="display:flex;align-items:center;gap:8px;">
           <div style="display:flex;gap:4px;">
-            <button class="btn btn-sm" id="cal-filter-all" onclick="setCalFilter('all',this)" style="font-size:11px;">Todos</button>
+            <button class="btn btn-sm" id="cal-filter-all" onclick="setCalFilter('all',this)" style="font-size:11px;">Tots</button>
             <button class="btn btn-sm" id="cal-filter-personal" onclick="setCalFilter('personal',this)" style="font-size:11px;">Personal</button>
             <button class="btn btn-sm" id="cal-filter-team" onclick="setCalFilter('team',this)" style="font-size:11px;">Equip</button>
             <button class="btn btn-sm" id="cal-filter-mission" onclick="setCalFilter('mission',this)" style="font-size:11px;">Missions</button>
           </div>
           <div class="cal-nav">
             <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
-            <button class="cal-nav-btn" onclick="calNav(0)" style="font-size:11px;width:auto;padding:0 8px;">Hoy</button>
+            <button class="cal-nav-btn" onclick="calNav(0)" style="font-size:11px;width:auto;padding:0 8px;">Avui</button>
             <button class="cal-nav-btn" onclick="calNav(1)">›</button>
           </div>
-          <button class="btn btn-sm btn-p" onclick="openEventModal(null)" id="cal-add-btn">+ Evento</button>
+          <button class="btn btn-sm btn-p" onclick="openEventModal(null)" id="cal-add-btn">+ Esdeveniment</button>
         </div>
       </div>
       <div class="cal-shell">
@@ -482,9 +482,9 @@
         </div>
         <div class="cal-sidebar">
           <div class="card">
-            <div class="stitle" id="cal-selected-label">Hoy</div>
+            <div class="stitle" id="cal-selected-label">Avui</div>
             <div class="event-list" id="cal-day-events">
-              <div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sin eventos.</div>
+              <div style="font-size:13px;color:var(--muted);padding:.5rem 0;">Sense esdeveniments.</div>
             </div>
           </div>
           <div class="card">
@@ -723,7 +723,7 @@
     <div id="page-planner" class="page">
       <div style="margin-bottom:1.25rem;">
         <div style="font-size:18px;font-weight:500;margin-bottom:4px;">Importar des de Planner</div>
-        <div style="font-size:13px;color:var(--muted);">Sube un archivo CSV exportado desde Microsoft Planner y las tareas se convertirán en misiones automáticamente.</div>
+        <div style="font-size:13px;color:var(--muted);">Puja un fitxer CSV exportat des de Microsoft Planner i les tasques es convertiran en missions automàticament.</div>
       </div>
 
       <!-- Instrucciones -->
@@ -733,24 +733,24 @@
           <div style="background:var(--bg3);border-radius:var(--radius);padding:1rem;text-align:center;">
             <div style="font-size:24px;margin-bottom:6px;">1️⃣</div>
             <div style="font-size:12px;font-weight:500;margin-bottom:4px;">Obre el teu Pla</div>
-            <div style="font-size:11px;color:var(--muted);">Ve a Microsoft Planner y abre el plan que quieres importar</div>
+            <div style="font-size:11px;color:var(--muted);">Ves a Microsoft Planner i obre el pla que vols importar</div>
           </div>
           <div style="background:var(--bg3);border-radius:var(--radius);padding:1rem;text-align:center;">
             <div style="font-size:24px;margin-bottom:6px;">2️⃣</div>
             <div style="font-size:12px;font-weight:500;margin-bottom:4px;">Exportar a Excel</div>
-            <div style="font-size:11px;color:var(--muted);">Haz clic en ··· → "Exportar plan a Excel" y ábrelo, luego guárdalo como CSV</div>
+            <div style="font-size:11px;color:var(--muted);">Fes clic a ··· → "Exportar pla a Excel" i obre'l, després desa'l com a CSV</div>
           </div>
           <div style="background:var(--bg3);border-radius:var(--radius);padding:1rem;text-align:center;">
             <div style="font-size:24px;margin-bottom:6px;">3️⃣</div>
             <div style="font-size:12px;font-weight:500;margin-bottom:4px;">Puja el CSV</div>
-            <div style="font-size:11px;color:var(--muted);">Arrastra o selecciona el archivo .csv aquí abajo</div>
+            <div style="font-size:11px;color:var(--muted);">Arrossega o selecciona el fitxer .csv aquí sota</div>
           </div>
         </div>
       </div>
 
       <!-- Upload area -->
       <div class="card" style="margin-bottom:1rem;">
-        <div class="stitle">Subir archivo</div>
+        <div class="stitle">Pujar fitxer</div>
         <div id="planner-drop" style="border:2px dashed var(--border2);border-radius:var(--radius);padding:2.5rem;text-align:center;cursor:pointer;transition:all .15s;" onclick="document.getElementById('planner-file').click()" ondragover="plannerDragOver(event)" ondrop="plannerDrop(event)">
           <div style="font-size:32px;margin-bottom:8px;">📂</div>
           <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px;">Arrossega el teu fitxer aquí</div>
@@ -765,7 +765,7 @@
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
             <div class="stitle" style="margin:0;" id="planner-preview-title">Previsualització</div>
             <div style="display:flex;gap:8px;">
-              <button class="btn btn-sm" onclick="clearPlannerImport()">✕ Cancelar</button>
+              <button class="btn btn-sm" onclick="clearPlannerImport()">✕ Cancel·lar</button>
               <button class="btn btn-sm btn-p" onclick="confirmPlannerImport()">✓ Importar missions</button>
             </div>
           </div>
@@ -781,7 +781,7 @@
       <!-- Imported missions -->
       <div id="planner-imported" style="display:none;">
         <div class="card">
-          <div class="stitle">Misiones importadas desde Planner</div>
+          <div class="stitle">Missions importades des del Planner</div>
           <div id="planner-missions-list"></div>
         </div>
       </div>
@@ -794,7 +794,7 @@
 <div id="modal-edit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;overflow-y:auto;padding:2rem 1rem;">
   <div style="max-width:480px;margin:0 auto;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:1.5rem;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
-      <h3 style="font-size:16px;font-weight:600;">Editar personaje</h3>
+      <h3 style="font-size:16px;font-weight:600;">Editar personatge</h3>
       <button class="btn btn-sm" onclick="closeEdit()">✕</button>
     </div>
     <div class="field"><label>Nom del personatge</label><input type="text" id="e-name"/></div>
@@ -804,26 +804,26 @@
     <div class="field"><label>Frase de batalla</label><input type="text" id="e-quote"/></div>
     <div id="adm-extras" style="display:none;">
       <div style="background:rgba(228,164,40,.08);border:1px solid rgba(228,164,40,.2);border-radius:var(--rsm);padding:.75rem;margin-bottom:1rem;">
-        <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:8px;">OPCIONES ADMIN</div>
+        <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:8px;">OPCIONS ADMIN</div>
         <div class="g2">
           <div class="field" style="margin:0;"><label>XP</label><input type="number" id="e-xp"/></div>
           <div class="field" style="margin:0;"><label>Nivell</label><input type="number" id="e-level" min="1"/></div>
-          <div class="field" style="margin:0;"><label>Oro</label><input type="number" id="e-gold"/></div>
+          <div class="field" style="margin:0;"><label>Or</label><input type="number" id="e-gold"/></div>
           <div class="field" style="margin:0;"><label>Fragments ✨</label><input type="number" id="e-frag"/></div>
         </div>
         <div class="stitle" style="margin-top:10px;">Estadístiques base</div>
         <div id="e-attrs-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:6px;"></div>
-        <div class="field" style="margin-top:8px;"><label>Clase</label>
+        <div class="field" style="margin-top:8px;"><label>Classe</label>
           <select id="e-cls"><option>Mago</option><option>Paladín</option><option>Exploradora</option><option>Guerrero</option><option>Pícaro</option><option>Bardo</option></select>
         </div>
       </div>
     </div>
     <div id="adm-delete-wrap" style="display:none;margin-bottom:1rem;">
-      <button class="btn btn-sm" style="background:rgba(216,90,48,.15);color:#f08060;border-color:rgba(216,90,48,.3);width:100%;" onclick="deletePlayer()">🗑️ Eliminar personaje</button>
+      <button class="btn btn-sm" style="background:rgba(216,90,48,.15);color:#f08060;border-color:rgba(216,90,48,.3);width:100%;" onclick="deletePlayer()">🗑️ Esborrar personatge</button>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;">
       <button class="btn" onclick="closeEdit()">Cancel·lar</button>
-      <button class="btn btn-p" onclick="saveEdit()">Guardar cambios</button>
+      <button class="btn btn-p" onclick="saveEdit()">Desar canvis</button>
     </div>
   </div>
 </div>
@@ -850,14 +850,14 @@
           <h3 style="font-size:15px;font-weight:500;" id="cal-modal-title">Nou esdeveniment</h3>
           <button class="btn btn-sm" onclick="closeEventModal()">✕</button>
         </div>
-        <div class="field"><label>Títol</label><input type="text" id="ev-title" placeholder="Reunión de equipo"/></div>
+        <div class="field"><label>Títol</label><input type="text" id="ev-title" placeholder="Reunió d'equip"/></div>
         <div class="g2">
           <div class="field"><label>Data</label><input type="date" id="ev-date"/></div>
           <div class="field"><label>Hora</label><input type="time" id="ev-time" value="09:00"/></div>
         </div>
-        <div class="field"><label>Descripció</label><textarea id="ev-desc" placeholder="Detalles del evento..." style="min-height:60px;"></textarea></div>
+        <div class="field"><label>Descripció</label><textarea id="ev-desc" placeholder="Detalls de l'esdeveniment..." style="min-height:60px;"></textarea></div>
         <div class="g2">
-          <div class="field"><label>Tipo</label>
+          <div class="field"><label>Tipus</label>
             <select id="ev-type">
               <option value="personal">Personal</option>
               <option value="team">Equip</option>
@@ -916,6 +916,6 @@
   window.dispatchEvent(new Event('dicebear-ready'));
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="js/app.js?v=21"></script>
+<script src="js/app.js?v=22"></script>
 </body>
 </html>
