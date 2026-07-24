@@ -1144,6 +1144,15 @@ function assignMission(missionId, playerId){
   // reassignació ràpida a UNA persona (substitueix)
   setMissionAssignees(missionId, playerId?[playerId]:[]);
 }
+function setMissionStatus(missionId,status){
+  // Canvi d'estat manual (admin): NO reparteix recompenses, només corregeix l'estat
+  if(!session.isAdmin)return;
+  var m=missions.find(function(x){return x.id===missionId;});if(!m)return;
+  m.status=(status==='done')?'done':'pending';
+  if(CFG.MODE==='supabase')saveToSupabase(getAssigneeIds(m));
+  renderAll();
+  try{openMissionModal(missionId);}catch(e){}
+}
 
 function completeMission(id){
   const m=missions.find(m=>m.id===id);if(!m||m.status==='done')return;
@@ -3651,7 +3660,12 @@ function openMissionModal(id){
     var box=document.getElementById('mm-assign');
     if(box){
       box.style.display='block';
-      box.innerHTML='<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">👥 Assignar a (pots triar-ne diverses):</div>'
+      box.innerHTML='<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">🔧 Estat (canvi manual, sense recompensa):</div>'
+        +'<div style="display:flex;gap:6px;margin-bottom:12px;">'
+        +'<span class="filter-chip'+(m.status!=='done'?' active':'')+'" style="cursor:pointer;" onclick="setMissionStatus(\''+m.id+'\',\'pending\')">Pendent</span>'
+        +'<span class="filter-chip'+(m.status==='done'?' active':'')+'" style="cursor:pointer;" onclick="setMissionStatus(\''+m.id+'\',\'done\')">Completada</span>'
+        +'</div>'
+        +'<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">👥 Assignar a (pots triar-ne diverses):</div>'
         +'<div style="display:flex;flex-wrap:wrap;gap:6px;">'+players.map(function(pl){
           var on=_asg.indexOf(pl.id)>=0;
           return '<label class="filter-chip'+(on?' active':'')+'" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;">'
