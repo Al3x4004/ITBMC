@@ -1536,17 +1536,24 @@ function pullItemByRarity(items){
   return pool.length?pool[Math.floor(Math.random()*pool.length)]:null;
 }
 function pullResult(){
-  const gachaItems=shopItems.filter(i=>i.via==='gacha'||i.via==='tienda');
-  if(gachaItems.length&&Math.random()<0.3){
-    var it=pullItemByRarity(gachaItems);
-    if(it)return {type:'item',data:it};
+  // Bossa unificada: cartes + objectes de gacha. Es sorteja la rareza (70/25/4/1) i,
+  // dins d'aquesta rareza, TOTS els elements (cartes i objectes) tenen la mateixa probabilitat.
+  var gachaItems=shopItems.filter(function(i){return i.via==='gacha'||i.via==='tienda';});
+  var rarity=getRarityByChance();
+  function buildPool(rar){
+    var pool=[];
+    gachaCards.forEach(function(c){if((c.rarity||'comun')===rar)pool.push({type:'card',data:c});});
+    gachaItems.forEach(function(it){if((it.rareza||'comun')===rar)pool.push({type:'item',data:it});});
+    return pool;
   }
-  const card=pullCard();
-  if(card)return {type:'card',data:card};
-  // No hay carta de la rareza sorteada (ni más común): dar un objeto (respetando rareza) si existe
-  var it2=pullItemByRarity(gachaItems);
-  if(it2)return {type:'item',data:it2};
-  return null;
+  var pool=buildPool(rarity);
+  // Si no hi ha res d'aquesta rareza, cau a qualsevol element existent (bossa completa)
+  if(!pool.length){
+    gachaCards.forEach(function(c){pool.push({type:'card',data:c});});
+    gachaItems.forEach(function(it){pool.push({type:'item',data:it});});
+  }
+  if(!pool.length)return null;
+  return pool[Math.floor(Math.random()*pool.length)];
 }
 function doPull(times){
   const p=players.find(pl=>pl.id===session.playerId);
