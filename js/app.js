@@ -3641,7 +3641,10 @@ function renderInventario(){
     html+='<div class="inv-slot-icon">'+(item?(item.imageUrl?'<img class="inv-slot-img" src="'+item.imageUrl+'" alt="">':item.icon):sl.icon)+'</div>';
     html+='<div class="inv-slot-name">'+(item?item.name:'Buit')+'</div>';
     html+='<div class="inv-slot-label">'+sl.label+'</div>';
-    if(item)html+='<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;margin-top:4px;" onclick="event.stopPropagation();unequipItem(\''+iid+'\');renderInventario();">✕ Treure</button>';
+    if(item){
+      html+='<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;margin-top:4px;" onclick="event.stopPropagation();unequipItem(\''+iid+'\');renderInventario();">✕ Treure</button>';
+      html+='<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;margin-top:4px;" onclick="event.stopPropagation();showItemDetails(\''+iid+'\')">ℹ️ Detalls</button>';
+    }
     html+='</div>';
     return html;
   }
@@ -3703,6 +3706,30 @@ function invFilterBySlot(slot,isCosm){
   if(sel){sel.value=isCosm?'__cosm__':slot;}
   renderInventario();
 }
+var RARITY_LABEL_SAFE={comun:'Comú',rara:'Rara',epica:'Èpica',legendaria:'Llegendària'};
+function showItemDetails(id){
+  var it=shopItems.find(function(i){return i.id===id;});if(!it)return;
+  var body=document.getElementById('item-detail-body');if(!body)return;
+  var slLbl=(SLOT_DEFS.find(function(s){return s.key===it.slot;})||{}).label||it.slot;
+  var rarLbl=(typeof RARITY_LABEL!=='undefined'&&RARITY_LABEL[it.rareza])?RARITY_LABEL[it.rareza]:(RARITY_LABEL_SAFE[it.rareza]||it.rareza||'Comú');
+  var bonus=Object.entries(it.bonus||{}).filter(function(e){return e[1]>0;}).map(function(e){return '<span class="badge b-teal" style="margin:2px 4px 2px 0;">+'+e[1]+' '+AN[e[0]]+'</span>';}).join('')||'<span style="color:var(--muted);font-size:13px;">Cap</span>';
+  var reqs=Object.entries(it.minAttrs||{}).filter(function(e){return e[1]>0;}).map(function(e){return '<span class="badge b-gray" style="margin:2px 4px 2px 0;">'+AN[e[0]]+' ≥ '+e[1]+'</span>';}).join('')||'<span style="color:var(--muted);font-size:13px;">Cap</span>';
+  var img=it.imageUrl?'<img src="'+it.imageUrl+'" alt="'+it.name+'" style="width:120px;height:120px;object-fit:contain;background:var(--bg3);border-radius:var(--radius);">':'<div style="font-size:64px;">'+(it.icon||'📦')+'</div>';
+  body.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;margin-bottom:1rem;">'
+    +img
+    +'<div style="font-size:18px;font-weight:600;margin-top:6px;">'+it.name+'</div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;"><span class="badge rarity-'+(it.rareza||'comun')+'" style="border:0.5px solid var(--border2);">'+rarLbl+'</span><span class="badge b-gray">'+slLbl+'</span>'+(it.isCosmetic?'<span class="badge b-purple">Cosmètic</span>':'')+'</div>'
+    +'</div>'
+    +(it.desc?'<div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:1rem;padding:.75rem;background:var(--bg3);border-radius:var(--radius);">'+it.desc+'</div>':'')
+    +'<div class="stitle">Bonus d\'atributs</div><div style="margin-bottom:1rem;">'+bonus+'</div>'
+    +'<div class="stitle">Requisits</div><div style="margin-bottom:1rem;">'+reqs+'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
+      +'<div class="csm" style="text-align:center;"><div style="font-size:16px;font-weight:600;">🪙 '+(it.cost||0)+'</div><div style="font-size:10px;color:var(--muted);">Cost</div></div>'
+      +'<div class="csm" style="text-align:center;"><div style="font-size:16px;font-weight:600;">Nvl '+(it.minLevel||1)+'</div><div style="font-size:10px;color:var(--muted);">Nivell mínim</div></div>'
+    +'</div>';
+  document.getElementById('item-detail-modal').style.display='flex';
+}
+function closeItemDetails(){var m=document.getElementById('item-detail-modal');if(m)m.style.display='none';}
 function invEquipSlot(slot){
   var p=players.find(function(pl){return pl.id===session.playerId;});if(!p)return;
   var compatible=(p.inventory||[]).filter(function(id){var item=shopItems.find(function(i){return i.id===id;});return item&&item.slot===slot;});
@@ -4027,7 +4054,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',function(){navig
 // Accessibilitat: tancar modals amb la tecla Escape
 document.addEventListener('keydown',function(e){
   if(e.key!=='Escape')return;
-  ['mission-modal','server-backups-modal','showcase-modal','widget-picker-modal','event-modal','modal-edit','avatar-editor-modal','admin-edit-modal'].forEach(function(id){
+  ['mission-modal','server-backups-modal','showcase-modal','widget-picker-modal','event-modal','modal-edit','avatar-editor-modal','admin-edit-modal','item-detail-modal'].forEach(function(id){
     var el=document.getElementById(id);
     if(el&&getComputedStyle(el).display!=='none'){el.style.display='none';}
   });
