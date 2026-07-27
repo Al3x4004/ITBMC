@@ -1,0 +1,16 @@
+{
+  "name": "BMC Global — Quarter General",
+  "short_name": "Quarter General",
+  "description": "Gestió gamificada de tasques de l'equip de BMC Global.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f9f9f8",
+  "theme_color": "#7f77dd",
+  "lang": "ca",
+  "icons": [
+    { "src": "https://i.imgur.com/Z1wFN0q.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "https://i.imgur.com/Z1wFN0q.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

@@ -1046,6 +1046,58 @@ function _passMissionFilter(m){
   if(missionFilter.tag&&_missionTags(m).indexOf(missionFilter.tag)<0)return false;
   return true;
 }
+function clearMissionFilters(){
+  missionFilter={q:'',arc:'',prio:'',assignee:'',tag:''};
+  var s=document.getElementById('m-search');if(s)s.value='';
+  renderMissions();
+}
+/* ── accions massives (admin) ── */
+var selMissions={};
+function toggleMissionSel(id,on){if(on)selMissions[id]=true;else delete selMissions[id];renderBulkBar();}
+function clearMissionSel(){selMissions={};renderMissions();}
+function _selIds(){return Object.keys(selMissions).filter(function(id){return missions.find(function(m){return m.id===id;});});}
+function renderBulkBar(){
+  var bar=document.getElementById('m-bulkbar');if(!bar)return;
+  var ids=_selIds();
+  if(!session.isAdmin||!ids.length){bar.style.display='none';bar.innerHTML='';return;}
+  bar.style.display='flex';
+  bar.innerHTML='<span style="font-weight:600;">'+ids.length+' seleccionades</span>'
+    +'<button class="btn btn-sm btn-p" onclick="bulkComplete()">✓ Completar</button>'
+    +'<select class="filter-chip" style="padding:6px 10px;" onchange="bulkAssign(this.value);this.value=\'\';"><option value="">Reassignar a…</option>'+players.map(function(p){return '<option value="'+p.id+'">'+p.emblem+' '+p.name.split(' ')[0]+'</option>';}).join('')+'<option value="__none__">Sense assignar</option></select>'
+    +'<button class="btn btn-sm" style="color:var(--coral);border-color:var(--coral-border);" onclick="bulkDelete()">🗑️ Esborrar</button>'
+    +'<button class="btn btn-sm" onclick="clearMissionSel()">Cancel·lar</button>';
+}
+function bulkComplete(){
+  var ids=_selIds();if(!ids.length)return;
+  ids.forEach(function(id){var m=missions.find(function(x){return x.id===id;});if(m&&m.status!=='done')completeMission(id);});
+  selMissions={};renderMissions();
+}
+function bulkDelete(){
+  var ids=_selIds();if(!ids.length)return;
+  if(!confirm('Esborrar '+ids.length+' missions seleccionades?'))return;
+  ids.forEach(function(id){missions=missions.filter(function(m){return m.id!==id;});delete missionAssignees[id];if(CFG.MODE==='supabase')deleteMissionFromSupabase(id);});
+  selMissions={};
+  if(CFG.MODE==='supabase')saveToSupabase();
+  renderMissions();renderAll();
+}
+function bulkAssign(pid){
+  var ids=_selIds();if(!ids.length||!pid)return;
+  var newIds=(pid==='__none__')?[]:[pid];
+  ids.forEach(function(id){var m=missions.find(function(x){return x.id===id;});if(m){m.playerId=newIds[0]||'';if(newIds.length>1)missionAssignees[id]=newIds.slice();else delete missionAssignees[id];}});
+  if(CFG.MODE==='supabase')saveToSupabase(newIds);
+  selMissions={};renderMissions();renderAll();
+}
+function clearCompletedMissions(){
+  if(!session.isAdmin)return;
+  var done=missions.filter(function(m){return m.status==='done'&&!m.isDaily_instance&&!_isWeekly(m);});
+  if(!done.length){alert('No hi ha missions completades per netejar.');return;}
+  if(!confirm('Esborrar '+done.length+' missions completades? Aquesta acció no es pot desfer.'))return;
+  var ids=done.map(function(m){return m.id;});
+  missions=missions.filter(function(m){return ids.indexOf(m.id)<0;});
+  ids.forEach(function(id){delete missionAssignees[id];if(CFG.MODE==='supabase')deleteMissionFromSupabase(id);});
+  if(CFG.MODE==='supabase')saveToSupabase();
+  renderMissions();renderAll();
+}
 function _fillMissionArcFilter(){
   var sel=document.getElementById('m-arc-filter');
   if(sel){
@@ -1094,6 +1146,9 @@ function renderMissions(){
     else if(doneLimit>5&&done.length>5){moreBox.innerHTML='<button class="btn btn-sm" onclick="resetDone()">Veure\'n menys</button>';}
     else{moreBox.innerHTML='';}
   }
+  var cd=document.getElementById('m-clear-done');
+  if(cd)cd.style.display=(session.isAdmin&&done.length)?'':'none';
+  renderBulkBar();
 }
 var doneLimit=5;
 function showMoreDone(){doneLimit+=10;renderMissions();}
@@ -1114,7 +1169,9 @@ function mCard(m){
   var _tags=(m.plannerTags&&m.plannerTags.indexOf('weekly:')!==0)?m.plannerTags:'';
   const tagsHtml=_tags?_tags.split(';').map(t=>t.trim()).filter(Boolean).map(t=>`<span class="mtag">${t}</span>`).join(''):'';
   const assignBtn=session.isAdmin?`<button class="btn-complete" onclick="event.stopPropagation();openMissionModal('${m.id}')" title="Assignar persones">👥</button>`:'';
+  const selChk=session.isAdmin?`<input type="checkbox" class="mcrd-sel" ${selMissions[m.id]?'checked':''} onclick="event.stopPropagation();toggleMissionSel('${m.id}',this.checked)" title="Seleccionar" style="margin-right:8px;flex-shrink:0;">`:'';
   return `<div class="mcrd ${m.daily?'daily-mission':''}" onclick="openMissionModal('${m.id}')" style="cursor:pointer;">
+    ${selChk}
     <div class="minfo">
       <div class="mname">${m.name}${dailyBadge}</div>
       <div class="mmeta">${m.arc} · ${assigneesLabel}</div>
@@ -1215,7 +1272,7 @@ function completeMission(id){
     ap.level=Math.floor(ap.xp/100)+1;
     checkLevelUp(ap);
   });
-  if(assignees.length){showRewardPopup(m,assignees[0]);}
+  if(assignees.length){showRewardPopup(m,assignees[0],assignees);}
   // Bonus diarias
   if(m.daily&&p){
     const myDailies=missions.filter(mx=>mx.daily&&mx.playerId===p.id);
@@ -1289,10 +1346,11 @@ function confirmLevelUp(){
 }
 
 /* ── reward popup ── */
-function showRewardPopup(m,p){
-  document.getElementById('rp-emoji').textContent=p.emblem;
+function showRewardPopup(m,p,assignees){
+  var multi=Array.isArray(assignees)&&assignees.length>1;
+  document.getElementById('rp-emoji').textContent=multi?assignees.map(function(a){return a.emblem;}).join(' '):p.emblem;
   document.getElementById('rp-title').textContent='Missió completada!';
-  document.getElementById('rp-mission').textContent=m.name;
+  document.getElementById('rp-mission').textContent=m.name+(multi?' · recompensa per a '+assignees.map(function(a){return a.name.split(' ')[0];}).join(', '):'');
   var mFrag=m.frag||({D:20,C:50,B:100,A:200,S:400}[m.diff]||0);
   document.getElementById('rp-chips').innerHTML=`
     <span class="badge b-purple">+${m.xp} XP</span>
@@ -3926,21 +3984,40 @@ function createArc(){
 }
 
 /* ══ ARRANQUE DE LA APP ══ */
+function hideBootLoader(){var b=document.getElementById('boot-loader');if(b){b.classList.add('hide');setTimeout(function(){if(b&&b.parentNode)b.parentNode.removeChild(b);},400);}}
+// PWA: registrar el service worker (instal·lable + càrrega ràpida)
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(e){console.warn('SW no registrat',e);});});}
 (async()=>{
   initTheme();
-  await loadData();
-  loadMenuNames();
-  const sid=localStorage.getItem('cg_pid');
-  if(sid){
-    const p=players.find(p=>p.id===sid);
-    if(p){
-      session={loggedIn:true,isAdmin:false,playerId:sid};
-      const idx=players.findIndex(pl=>pl.id===sid);if(idx>=0)curHero=idx;
-      enterApp();return;
+  try{
+    await loadData();
+    loadMenuNames();
+    const sid=localStorage.getItem('cg_pid');
+    if(sid){
+      const p=players.find(p=>p.id===sid);
+      if(p){
+        session={loggedIn:true,isAdmin:false,playerId:sid};
+        const idx=players.findIndex(pl=>pl.id===sid);if(idx>=0)curHero=idx;
+        enterApp();return;
+      }
     }
+    showScreen('screen-welcome');
+  }finally{
+    hideBootLoader();
   }
-  showScreen('screen-welcome');
 })();
+
+// Accessibilitat: tancar modals amb la tecla Escape
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape')return;
+  ['mission-modal','server-backups-modal','showcase-modal','widget-picker-modal','event-modal','modal-edit','avatar-editor-modal','admin-edit-modal'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el&&getComputedStyle(el).display!=='none'){el.style.display='none';}
+  });
+  var rp=document.getElementById('reward-pop');if(rp)rp.classList.remove('show');
+  var lp=document.getElementById('levelup-pop');if(lp)lp.classList.remove('show');
+  var um=document.getElementById('umenu-inline');if(um)um.style.display='none';
+});
 
 // Cuando la librería DiceBear termina de cargar (asíncrono), refrescar avatares
 window.addEventListener('dicebear-ready',function(){

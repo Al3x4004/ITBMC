@@ -5,9 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BMC Global — Quarter General</title>
 <link rel="icon" type="image/png" href="https://i.imgur.com/Z1wFN0q.png">
-<link rel="stylesheet" href="css/styles.css?v=16">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#7f77dd">
+<link rel="apple-touch-icon" href="https://i.imgur.com/Z1wFN0q.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Quarter General">
+<link rel="stylesheet" href="css/styles.css?v=17">
 </head>
 <body>
+<div id="boot-loader"><div class="boot-spinner"></div><div class="boot-text">Carregant el Quarter General…</div></div>
 <div id="toast"></div>
 <div id="widget-picker-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;padding:1rem;" onclick="if(event.target===this)closeWidgetPicker()">
   <div style="background:var(--bg2);border:3px solid var(--accent);border-radius:var(--radius-lg);max-width:560px;width:100%;max-height:80vh;overflow-y:auto;padding:1.25rem;box-shadow:0 10px 40px rgba(0,0,0,.4);">
@@ -265,7 +271,10 @@
         <select id="m-prio-filter" class="filter-chip" style="padding:6px 10px;" onchange="setMissionPrio(this.value)"></select>
         <select id="m-assignee-filter" class="filter-chip" style="padding:6px 10px;" onchange="setMissionAssignee(this.value)"></select>
         <select id="m-tag-filter" class="filter-chip" style="padding:6px 10px;" onchange="setMissionTag(this.value)"></select>
+        <button class="filter-chip" onclick="clearMissionFilters()" title="Netejar filtres">✕ Filtres</button>
+        <button class="filter-chip" id="m-clear-done" onclick="clearCompletedMissions()" title="Esborrar missions completades" style="display:none;">🧹 Netejar completades</button>
       </div>
+      <div id="m-bulkbar" style="display:none;"></div>
       <div><div class="stitle">Diàries <span class="daily-rib">HOY</span></div><div id="m-daily"></div></div>
       <div style="margin-top:1.25rem;"><div class="stitle">Setmanals <span class="daily-rib" style="background:var(--accent-bg);color:var(--teal);">🗓️</span></div><div id="m-weekly"></div><div id="m-weekly-templates"></div></div>
       <div style="margin-top:1.25rem;"><div class="stitle">Pendents</div><div id="m-pending"></div></div>
@@ -919,6 +928,6 @@
   window.dispatchEvent(new Event('dicebear-ready'));
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="js/app.js?v=25"></script>
+<script src="js/app.js?v=26"></script>
 </body>
 </html>
