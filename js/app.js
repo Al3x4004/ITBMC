@@ -3702,8 +3702,6 @@ function invFilterBySlot(slot,isCosm){
   var sel=document.getElementById('inv-filter-slot');
   if(sel){sel.value=isCosm?'__cosm__':slot;}
   renderInventario();
-  // desplaça cap a la motxilla
-  var cat=document.querySelector('.inv-col-catalog');if(cat&&cat.scrollIntoView)cat.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function invEquipSlot(slot){
   var p=players.find(function(pl){return pl.id===session.playerId;});if(!p)return;

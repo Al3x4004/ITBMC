@@ -969,12 +969,13 @@ button:focus-visible,.nb:focus-visible,.htab:focus-visible,.filter-chip:focus-vi
 }
 
 /* ═══════════ INVENTARI — slots equip/cosmètics més grans ═══════════ */
-#inv-slots-equip{grid-template-columns:repeat(auto-fill,minmax(150px,1fr)) !important;gap:14px !important;}
-#inv-slots-equip .inv-slot{min-height:158px;padding:1rem .75rem;gap:8px;}
-#inv-slots-equip .inv-slot-icon{font-size:40px;}
-#inv-slots-equip .inv-slot-name{font-size:13px;white-space:normal;line-height:1.25;}
-#inv-slots-equip .inv-slot-label{font-size:11px;}
+#inv-slots-equip{display:flex !important;flex-wrap:wrap;justify-content:center;gap:16px !important;}
+#inv-slots-equip .inv-slot{width:190px;min-height:220px;padding:1.25rem 1rem;gap:10px;}
+#inv-slots-equip .inv-slot-icon{font-size:64px;line-height:1;}
+#inv-slots-equip .inv-slot-name{font-size:15px;font-weight:600;white-space:normal;line-height:1.25;}
+#inv-slots-equip .inv-slot-label{font-size:12px;}
 .inv-slot-img{width:72px;height:72px;object-fit:contain;display:block;}
+#inv-slots-equip .inv-slot-img{width:118px;height:118px;}
 
 #inv-tab-cosm .ava-editor-layout{grid-template-columns:200px 1fr;gap:1.5rem;}
 #inv-tab-cosm .pixel-avatar-lg{width:180px !important;height:180px !important;}
@@ -985,8 +986,8 @@ button:focus-visible,.nb:focus-visible,.htab:focus-visible,.filter-chip:focus-vi
 #inv-tab-cosm .inv-slot-img{width:60px;height:60px;}
 @media(max-width:720px){#inv-tab-cosm .ava-editor-layout{grid-template-columns:1fr;}}
 @media(max-width:640px){
-  #inv-slots-equip{grid-template-columns:repeat(auto-fill,minmax(120px,1fr)) !important;}
-  #inv-slots-equip .inv-slot{min-height:130px;}
-  #inv-slots-equip .inv-slot-icon{font-size:32px;}
-  .inv-slot-img{width:56px;height:56px;}
+  #inv-slots-equip .inv-slot{width:132px;min-height:160px;padding:.9rem .6rem;}
+  #inv-slots-equip .inv-slot-icon{font-size:44px;}
+  #inv-slots-equip .inv-slot-img{width:80px;height:80px;}
+  #inv-slots-equip .inv-slot-name{font-size:13px;}
 }
