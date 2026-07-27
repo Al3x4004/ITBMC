@@ -3684,13 +3684,13 @@ function renderInventario(){
     var item=shopItems.find(function(i){return i.id===iid;});
     if(!item)return '';
     var eq=p.equipped&&Object.values(p.equipped).indexOf(iid)>=0;
-    var bonusStr=Object.entries(item.bonus||{}).filter(function(e){return e[1]>0;}).map(function(e){return '+'+e[1]+' '+AN[e[0]];}).join(' · ');
+    var bonusLines=Object.entries(item.bonus||{}).filter(function(e){return e[1]>0;}).map(function(e){return '<div class="inv-bonus-row">+'+e[1]+' '+AN[e[0]]+'</div>';}).join('');
     var html='<div class="inv-item bg-rarity-'+(item.rareza||'comun')+' '+(eq?'equipped':'')+'">';
     html+=(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'" style="width:100%;height:90px;object-fit:contain;border-radius:var(--radius);margin-bottom:4px;background:var(--bg3);">':'<div style="font-size:24px;text-align:center;">'+item.icon+'</div>');
     html+='<div style="font-size:12px;font-weight:500;">'+item.name+'</div>';
     var slLbl=(SLOT_DEFS.find(function(s){return s.key===item.slot;})||{}).label||item.slot;
     html+='<div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">'+slLbl+'</div>';
-    if(bonusStr)html+='<div style="font-size:10px;color:var(--accent);">⬆️ '+bonusStr+'</div>';
+    if(bonusLines)html+='<div class="inv-bonus">'+bonusLines+'</div>';
     html+='<div style="margin-top:auto;padding-top:6px;">';
     if(eq){
       html+='<button class="btn btn-sm" style="width:100%;" onclick="unequipItem(\''+iid+'\');renderInventario();">Treure</button>';
@@ -3712,7 +3712,7 @@ function showItemDetails(id){
   var body=document.getElementById('item-detail-body');if(!body)return;
   var slLbl=(SLOT_DEFS.find(function(s){return s.key===it.slot;})||{}).label||it.slot;
   var rarLbl=(typeof RARITY_LABEL!=='undefined'&&RARITY_LABEL[it.rareza])?RARITY_LABEL[it.rareza]:(RARITY_LABEL_SAFE[it.rareza]||it.rareza||'Comú');
-  var bonus=Object.entries(it.bonus||{}).filter(function(e){return e[1]>0;}).map(function(e){return '<span class="badge b-teal" style="margin:2px 4px 2px 0;">+'+e[1]+' '+AN[e[0]]+'</span>';}).join('')||'<span style="color:var(--muted);font-size:13px;">Cap</span>';
+  var bonus=Object.entries(it.bonus||{}).filter(function(e){return e[1]>0;}).map(function(e){return '<div class="inv-bonus-row" style="font-size:13px;">+'+e[1]+' '+AN[e[0]]+'</div>';}).join('')||'<span style="color:var(--muted);font-size:13px;">Cap</span>';
   var reqs=Object.entries(it.minAttrs||{}).filter(function(e){return e[1]>0;}).map(function(e){return '<span class="badge b-gray" style="margin:2px 4px 2px 0;">'+AN[e[0]]+' ≥ '+e[1]+'</span>';}).join('')||'<span style="color:var(--muted);font-size:13px;">Cap</span>';
   var img=it.imageUrl?'<img src="'+it.imageUrl+'" alt="'+it.name+'" style="width:120px;height:120px;object-fit:contain;background:var(--bg3);border-radius:var(--radius);">':'<div style="font-size:64px;">'+(it.icon||'📦')+'</div>';
   body.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;margin-bottom:1rem;">'

@@ -985,6 +985,13 @@ button:focus-visible,.nb:focus-visible,.htab:focus-visible,.filter-chip:focus-vi
 #inv-tab-cosm .inv-slot-name{font-size:12px !important;}
 #inv-tab-cosm .inv-slot-img{width:60px;height:60px;}
 @media(max-width:720px){#inv-tab-cosm .ava-editor-layout{grid-template-columns:1fr;}}
+
+/* Bonus dels items: una línia per atribut (columna) */
+.inv-bonus{display:flex;flex-direction:column;gap:2px;margin-top:4px;}
+.inv-bonus-row{font-size:11px;color:var(--accent);font-weight:600;line-height:1.3;}
+/* Tarjetes de la motxilla més amples (menys per fila, tot ben llegible) */
+.inv-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr)) !important;gap:14px !important;}
+@media(max-width:640px){.inv-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr)) !important;gap:10px !important;}}
 @media(max-width:640px){
   #inv-slots-equip .inv-slot{width:132px;min-height:160px;padding:.9rem .6rem;}
   #inv-slots-equip .inv-slot-icon{font-size:44px;}
