@@ -3285,9 +3285,10 @@ function renderAvatar(p,sizeClass){
     html+='<img class="pa-base" src="'+url+'" alt="" onerror="this.style.display=\'none\'" onload="var f=this.parentNode.querySelector(\'.pa-fallback\');if(f)f.style.display=\'none\'"/>';
   }
   if(svg){var _f='';}
-  // Capas de items equipados (todos los slots, ordenados por z)
+  // Capas de items equipados: NOMÉS cosmètics (l'equip normal no s'enganxa sobre l'avatar)
   if(p.equipped){
     SLOT_DEFS.slice().sort(function(a,b){return (a.pos.z||0)-(b.pos.z||0);}).forEach(function(sl){
+      if(!sl.cosmetic)return;
       var iid=p.equipped[sl.key];
       if(!iid)return;
       var item=shopItems.find(function(i){return i.id===iid;});
@@ -3636,8 +3637,8 @@ function renderInventario(){
   function slotCard(sl){
     var iid=p.equipped[sl.key];
     var item=shopItems.find(function(i){return i.id===iid;});
-    var html='<div class="inv-slot '+(item?'filled':'')+'" onclick="invEquipSlot(\''+sl.key+'\')">';
-    html+='<div class="inv-slot-icon">'+(item?(item.imageUrl?'<img src="'+item.imageUrl+'" style="width:32px;height:32px;object-fit:contain;">':item.icon):sl.icon)+'</div>';
+    var html='<div class="inv-slot '+(item?'filled':'')+'" onclick="invFilterBySlot(\''+sl.key+'\','+(sl.cosmetic?'true':'false')+')" title="Filtrar la motxilla per aquest tipus">';
+    html+='<div class="inv-slot-icon">'+(item?(item.imageUrl?'<img class="inv-slot-img" src="'+item.imageUrl+'" alt="">':item.icon):sl.icon)+'</div>';
     html+='<div class="inv-slot-name">'+(item?item.name:'Buit')+'</div>';
     html+='<div class="inv-slot-label">'+sl.label+'</div>';
     if(item)html+='<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;margin-top:4px;" onclick="event.stopPropagation();unequipItem(\''+iid+'\');renderInventario();">✕ Treure</button>';
@@ -3696,6 +3697,13 @@ function renderInventario(){
     html+='</div></div>';
     return html;
   }).join('');
+}
+function invFilterBySlot(slot,isCosm){
+  var sel=document.getElementById('inv-filter-slot');
+  if(sel){sel.value=isCosm?'__cosm__':slot;}
+  renderInventario();
+  // desplaça cap a la motxilla
+  var cat=document.querySelector('.inv-col-catalog');if(cat&&cat.scrollIntoView)cat.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function invEquipSlot(slot){
   var p=players.find(function(pl){return pl.id===session.playerId;});if(!p)return;
