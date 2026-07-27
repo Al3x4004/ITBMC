@@ -609,19 +609,41 @@ function showScreen(id){
   else t.style.display='flex';
 }
 
+var _loginBusy=false;
 async function doLogin(){
-  if(CFG.MODE==='supabase'){
-    const d=await loadFromSupabase();
-    if(d&&d.players)players=d.players;
+  if(_loginBusy)return;
+  _loginBusy=true;
+  var btn=document.querySelector('#screen-login .btn-p');
+  var oldTxt=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='Entrant…';}
+  var errEl=document.getElementById('lerr');
+  try{
+    const name=document.getElementById('ln').value.trim().toLowerCase();
+    const pin=document.getElementById('lp').value;
+    function findP(){return players.find(function(p){return p&&p.name&&p.name.toLowerCase()===name;});}
+    // Carrega dades; si no trobem el jugador, reintenta un parell de cops (pot ser una lectura freda/lenta)
+    var p=null;
+    for(var intent=0;intent<3;intent++){
+      if(CFG.MODE==='supabase'){
+        var d=await loadFromSupabase();
+        if(d&&Array.isArray(d.players)&&d.players.length)players=d.players;
+      }
+      p=findP();
+      if(p)break;
+      if(intent<2)await new Promise(function(r){setTimeout(r,500);});
+    }
+    if(!p||(p.pin&&p.pin!==pin)){if(errEl)errEl.style.display='block';return;}
+    if(errEl)errEl.style.display='none';
+    session={loggedIn:true,isAdmin:false,playerId:p.id};
+    localStorage.setItem('cg_pid',p.id);
+    enterApp();
+  }catch(e){
+    console.error('Login error',e);
+    if(errEl)errEl.style.display='block';
+  }finally{
+    _loginBusy=false;
+    if(btn){btn.disabled=false;btn.textContent=oldTxt||'Entrar';}
   }
-  const name=document.getElementById('ln').value.trim().toLowerCase();
-  const pin=document.getElementById('lp').value;
-  const p=players.find(p=>p.name.toLowerCase()===name);
-  if(!p||(p.pin&&p.pin!==pin)){document.getElementById('lerr').style.display='block';return;}
-  document.getElementById('lerr').style.display='none';
-  session={loggedIn:true,isAdmin:false,playerId:p.id};
-  localStorage.setItem('cg_pid',p.id);
-  enterApp();
 }
 async function verifyAdminServer(pin){
   // Retorna true/false si el RPC existeix; null si no està configurat (per fer fallback)
