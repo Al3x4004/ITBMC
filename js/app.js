@@ -1533,8 +1533,7 @@ function renderHeroProfile(i){
                 if(!items.length)return '<div class="peq-empty">'+empty+'</div>';
                 return '<div class="erow">'+items.map(function(i){return '<span class="epill '+cls+'">'+(i.icon||'')+' '+i.name+'</span>';}).join('')+'</div>';
               }
-              return '<div class="peq-group"><div class="stitle">⚔️ Equipament</div>'+pills(eqIds,'epill-eq','Sense equipament.')+'</div>'
-                +'<div class="peq-group"><div class="stitle">✨ Cosmètics</div>'+pills(cosmIds,'epill-cosm','Sense cosmètics.')+'</div>';
+              return '<div class="peq-group"><div class="stitle">⚔️ Equipament</div>'+pills(eqIds,'epill-eq','Sense equipament.')+'</div>';
             })()}
           </div>
           <div>
@@ -1542,6 +1541,14 @@ function renderHeroProfile(i){
             <p class="plore" style="margin-bottom:1rem;">${p.lore}</p>
             <div class="stitle">Showcase</div>
             <div class="hero-showcase">${(function(){if(!p.showcase)p.showcase=[null,null,null];return p.showcase.map(function(cid,si){var card=cid?gachaCards.find(function(x){return x.id===cid;}):null;var url=card?(card.imageUrl||CFG.GITHUB_RAW+card.image):'';var canEdit=session.playerId===p.id;if(card&&url)return '<img class="showcase-img" src="'+url+'" alt="'+card.name+'"'+(canEdit?' onclick="openShowcaseSelector('+si+')" title="Clic per canviar"':'')+' onerror="this.style.opacity=0"/>';return canEdit?'<div class="showcase-empty" onclick="openShowcaseSelector('+si+')" title="Afegir carta del gacha">＋</div>':'<div class="showcase-empty" style="cursor:default;opacity:.4;">✦</div>';}).join('');})()}</div>
+            ${(function(){
+              var cosmSlots=SLOT_DEFS.filter(function(s){return s.cosmetic;}).map(function(s){return s.key;});
+              var cosmIds=[];
+              Object.keys(p.equipped||{}).forEach(function(k){var id=p.equipped[k];if(id&&cosmSlots.indexOf(k)>=0)cosmIds.push(id);});
+              var items=cosmIds.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);
+              var inner=items.length?('<div class="erow">'+items.map(function(i){return '<span class="epill epill-cosm">'+(i.icon||'')+' '+i.name+'</span>';}).join('')+'</div>'):'<div class="peq-empty">Sense cosmètics.</div>';
+              return '<div class="peq-group"><div class="stitle">✨ Cosmètics</div>'+inner+'</div>';
+            })()}
             ${recent.length?`<div class="stitle">Últimes missions</div>`+recent.map(m=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:12px;color:var(--text);">${m.name}</span><span class="badge b-teal">+${m.xp} XP</span></div>`).join(''):''}
           </div>
         </div>
@@ -3646,17 +3653,21 @@ function renderInventario(){
   // Filtro de slot del catálogo (dinámico con todos los slots)
   var slotFilterEl=document.getElementById('inv-filter-slot');
   if(slotFilterEl&&slotFilterEl.options.length<=1){
-    slotFilterEl.innerHTML='<option value="">Tots els slots</option>'+SLOT_DEFS.map(function(s){return '<option value="'+s.key+'">'+s.icon+' '+s.label+'</option>';}).join('');
+    // Slots d'equip individuals + una sola opció "Cosmètics" (agrupa cosm1..cosm5)
+    var equipOpts=SLOT_DEFS.filter(function(s){return !s.cosmetic;}).map(function(s){return '<option value="'+s.key+'">'+s.icon+' '+s.label+'</option>';}).join('');
+    slotFilterEl.innerHTML='<option value="">Tots els slots</option>'+equipOpts+'<option value="__cosm__">✨ Cosmètics</option>';
   }
   var invSearch=(document.getElementById('inv-search')?document.getElementById('inv-search').value.toLowerCase().trim():'');
   var invSlot=(document.getElementById('inv-filter-slot')?document.getElementById('inv-filter-slot').value:'');
   var invRarity=(document.getElementById('inv-filter-rarity')?document.getElementById('inv-filter-rarity').value:'');
   var invSortBy=(document.getElementById('inv-sort')?document.getElementById('inv-sort').value:'rarity');
+  var COSM_KEYS=SLOT_DEFS.filter(function(s){return s.cosmetic;}).map(function(s){return s.key;});
   var inv=(p.inventory||[]).filter(function(iid){
     var item=shopItems.find(function(i){return i.id===iid;});
     if(!item)return false;
     if(invSearch&&item.name.toLowerCase().indexOf(invSearch)<0)return false;
-    if(invSlot&&item.slot!==invSlot)return false;
+    if(invSlot==='__cosm__'){if(COSM_KEYS.indexOf(item.slot)<0)return false;}
+    else if(invSlot&&item.slot!==invSlot)return false;
     if(invRarity&&item.rareza!==invRarity)return false;
     return true;
   }).sort(function(a,b){
