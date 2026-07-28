@@ -3679,7 +3679,7 @@ function renderInventario(){
     if(invSortBy==='name')return(ia?ia.name:'').localeCompare(ib?ib.name:'');
     return RARITY_ORDER.indexOf(ia?ia.rareza:'comun')-RARITY_ORDER.indexOf(ib?ib.rareza:'comun');
   });
-  if(!inv.length){gw.innerHTML='<div style="font-size:13px;color:var(--muted);padding:1rem;grid-column:1/-1;">La motxilla està buida.</div>';return;}
+  if(!inv.length){gw.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="es-ico">🎒</div><div class="es-txt">La motxilla està buida.</div></div>';return;}
   gw.innerHTML=inv.map(function(iid){
     var item=shopItems.find(function(i){return i.id===iid;});
     if(!item)return '';

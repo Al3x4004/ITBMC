@@ -4,19 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BMC Global — Quarter General</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="icon" type="image/png" href="https://i.imgur.com/Z1wFN0q.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#7f77dd">
 <link rel="apple-touch-icon" href="https://i.imgur.com/Z1wFN0q.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Quarter General">
-<link rel="stylesheet" href="css/styles.css?v=20">
+<link rel="stylesheet" href="css/styles.css?v=21">
 </head>
 <body>
 <div id="boot-loader"><div class="boot-spinner"></div><div class="boot-text">Carregant el Quarter General…</div></div>
 <div id="toast"></div>
 <div id="widget-picker-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;padding:1rem;" onclick="if(event.target===this)closeWidgetPicker()">
-  <div style="background:var(--bg2);border:3px solid var(--accent);border-radius:var(--radius-lg);max-width:560px;width:100%;max-height:80vh;overflow-y:auto;padding:1.25rem;box-shadow:0 10px 40px rgba(0,0,0,.4);">
+  <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);max-width:560px;width:100%;max-height:80vh;overflow-y:auto;padding:1.25rem;box-shadow:0 10px 40px rgba(0,0,0,.4);">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <div class="stitle" style="margin:0;">Els meus widgets</div>
       <button class="btn btn-sm" onclick="closeWidgetPicker()">✕</button>
@@ -26,7 +29,7 @@
   </div>
 </div>
 <div id="showcase-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;padding:1rem;" onclick="if(event.target===this)closeShowcaseModal()">
-  <div style="background:var(--bg2);border:3px solid var(--accent);border-radius:var(--radius-lg);max-width:520px;width:100%;max-height:80vh;overflow-y:auto;padding:1.25rem;box-shadow:0 10px 40px rgba(0,0,0,.4);">
+  <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);max-width:520px;width:100%;max-height:80vh;overflow-y:auto;padding:1.25rem;box-shadow:0 10px 40px rgba(0,0,0,.4);">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <div class="stitle" style="margin:0;">Tria una carta</div>
       <button class="btn btn-sm" onclick="closeShowcaseModal()">✕</button>
@@ -935,6 +938,6 @@
   window.dispatchEvent(new Event('dicebear-ready'));
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="js/app.js?v=31"></script>
+<script src="js/app.js?v=32"></script>
 </body>
 </html>

@@ -420,8 +420,8 @@ body.admin-mode .nb-edit-btn{display:inline-flex;}
 
 /* Fuentes: Press Start 2P (títulos/UI) · VT323 (texto largo legible) */
 :root{
-  --font-pixel:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
-  --font-read:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --font-pixel:'Inter','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --font-read:'Inter','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
   --radius:0px;--radius-lg:0px;
 }
 
@@ -998,3 +998,62 @@ button:focus-visible,.nb:focus-visible,.htab:focus-visible,.filter-chip:focus-vi
   #inv-slots-equip .inv-slot-img{width:80px;height:80px;}
   #inv-slots-equip .inv-slot-name{font-size:13px;}
 }
+
+/* ═══════════════════════════════════════════════════════
+   QUALITAT VISUAL v2 — tipografia Inter, jerarquia, profunditat
+   ═══════════════════════════════════════════════════════ */
+body{font-family:var(--font-read);letter-spacing:-.006em;}
+/* Números alineats (stats, rànquing, XP) */
+.snum,.lbstat-v,.smini .v,.rchip,.gallery-count,#lu-attrs,.pstats-bars .snum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+
+/* Jerarquia de títols */
+h1{font-size:24px !important;font-weight:800 !important;letter-spacing:-.02em !important;}
+h2{font-size:19px !important;font-weight:700 !important;letter-spacing:-.015em !important;}
+h3{font-size:15px !important;font-weight:700 !important;letter-spacing:-.01em !important;}
+.pname{font-weight:700;letter-spacing:-.02em;}
+.stitle{font-weight:700;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);}
+
+/* Fons general amb un toc de profunditat (radials molt subtils) */
+body{background-color:var(--bg);background-image:radial-gradient(1200px 600px at 15% -10%, color-mix(in srgb,var(--accent) 7%, transparent), transparent 60%),radial-gradient(1000px 500px at 100% 0%, color-mix(in srgb,var(--teal) 6%, transparent), transparent 55%) !important;background-attachment:fixed;}
+
+/* Barra superior: degradat fi i separador net */
+.topbar{border-bottom:0.5px solid var(--border);}
+.topbar-inner{position:relative;}
+
+/* Cabecera del perfil amb un vel de degradat darrere l'avatar */
+.phead{position:relative;}
+.phead::before{content:"";position:absolute;top:-1.25rem;left:50%;transform:translateX(-50%);width:min(560px,90%);height:190px;background:radial-gradient(circle at 50% 40%, color-mix(in srgb,var(--accent) 16%, transparent), transparent 70%);filter:blur(10px);z-index:0;pointer-events:none;}
+.phead>*{position:relative;z-index:1;}
+
+/* Targetes: transició d'elevació coherent */
+.card{transition:box-shadow .25s ease, transform .25s ease;}
+.smini,.csm{transition:transform .15s ease, box-shadow .2s ease;}
+.smini:hover,.csm:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm);}
+
+/* Chips de rareza amb color de text segons rareza (galeria/mercat/detalls) */
+.grarity.rarity-comun,.badge.rarity-comun{color:var(--r-comun) !important;}
+.grarity.rarity-rara,.badge.rarity-rara{color:var(--r-rara) !important;}
+.grarity.rarity-epica,.badge.rarity-epica{color:var(--r-epica) !important;}
+.grarity.rarity-legendaria,.badge.rarity-legendaria{color:var(--r-legendaria) !important;font-weight:700;}
+
+/* Objectes de la motxilla amb lleu glow segons rareza */
+.inv-item.bg-rarity-rara{box-shadow:0 0 0 1px var(--r-rara-glow), var(--shadow-sm);}
+.inv-item.bg-rarity-epica{box-shadow:0 0 0 1px var(--r-epica-glow), 0 0 14px var(--r-epica-glow);}
+.inv-item.bg-rarity-legendaria{box-shadow:0 0 0 1px var(--r-legendaria-glow), 0 0 16px var(--r-legendaria-glow);}
+
+/* Estats buits més cuidats */
+.gallery-empty,.peq-empty{color:var(--muted);}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:2.5rem 1rem;text-align:center;color:var(--muted);}
+.empty-state .es-ico{font-size:40px;opacity:.5;}
+.empty-state .es-txt{font-size:13px;}
+
+/* Popups (recompensa / nivell) amb entrada més polida */
+.reward-box,.levelup-box{box-shadow:var(--shadow-lg) !important;border-radius:var(--radius-lg) !important;}
+.reward-pop.show .reward-box,.levelup-pop.show .levelup-box{animation:popRise .32s cubic-bezier(.2,.8,.2,1);}
+@keyframes popRise{from{opacity:0;transform:translateY(14px) scale(.96);}to{opacity:1;transform:translateY(0) scale(1);}}
+
+/* Modals: entrada suau uniforme */
+#mission-modal>div,#item-detail-modal>div,#server-backups-modal>div,#showcase-modal>div,#widget-picker-modal>div{animation:popRise .28s cubic-bezier(.2,.8,.2,1);}
+
+/* Separadors de secció més fins i elegants */
+.page-head{border-bottom:0.5px solid var(--border);padding-bottom:.75rem;}
