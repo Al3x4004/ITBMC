@@ -2247,12 +2247,10 @@ function renderShop(){
     else if(owned)eqBtn='<button class="btn btn-sm btn-p" onclick="equipItem(\''+item.id+'\')">Equipar</button>';
     return '<div class="shop-item '+cls+'">'
       +'<button class="info-btn" title="Veure info" onclick="event.stopPropagation();showItemDetails(\''+item.id+'\')">i</button>'
-      +(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'" style="width:100%;height:120px;object-fit:cover;border-radius:var(--radius);margin-bottom:4px;">':'<div class="item-icon">'+item.icon+'</div>')
+      +'<div class="item-media">'+(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'">':'<span class="item-emoji">'+item.icon+'</span>')+'</div>'
       +'<div class="item-name">'+item.name+'</div>'
       +'<div class="item-slot">'+item.slot+'</div>'
       +'<div class="item-desc">'+item.desc+'</div>'
-      +(bonusStr?'<div class="item-bonus">⬆️ '+bonusStr+'</div>':'')
-      +(reqStr?'<div class="item-reqs">📋 Req: '+reqStr+' · Nv.'+item.minLevel+'+'+'</div>':'')
       +stockInfo
       +'<div class="item-cost">🪙 '+item.cost+'</div>'
       +btn+eqBtn+'</div>';
