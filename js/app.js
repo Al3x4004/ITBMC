@@ -2249,7 +2249,6 @@ function renderShop(){
       +'<button class="info-btn" title="Veure info" onclick="event.stopPropagation();showItemDetails(\''+item.id+'\')">i</button>'
       +'<div class="item-media">'+(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'">':'<span class="item-emoji">'+item.icon+'</span>')+'</div>'
       +'<div class="item-name">'+item.name+'</div>'
-      +'<div class="item-slot">'+item.slot+'</div>'
       +'<div class="item-desc">'+item.desc+'</div>'
       +stockInfo
       +'<div class="item-cost">🪙 '+item.cost+'</div>'
@@ -2285,12 +2284,13 @@ function equipItem(itemId){
 }
 function unequipItem(itemId){
   var p=players.find(function(pl){return pl.id===session.playerId;});
-  var item=shopItems.find(function(i){return i.id===itemId;});
-  if(!p||!item||!p.equipped)return;
-  p.equipped[item.slot]=null;
+  if(!p||!p.equipped)return;
+  // Buidar la casella ON estigui realment l'item (no depenem de item.slot, que pot no coincidir)
+  var found=false;
+  Object.keys(p.equipped).forEach(function(k){if(p.equipped[k]===itemId){p.equipped[k]=null;found=true;}});
+  if(!found){var item=shopItems.find(function(i){return i.id===itemId;});if(item&&p.equipped.hasOwnProperty(item.slot))p.equipped[item.slot]=null;}
   if(CFG.MODE==='supabase')saveToSupabase();
-  renderShop();renderHeroProfile(curHero);
-  
+  renderShop();renderInventario();try{renderHeroProfile(curHero);}catch(e){}
 }
 async function adminCreateItemFull(){
   var name=document.getElementById('ai-name').value.trim();
