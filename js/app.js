@@ -355,9 +355,15 @@ async function mirrorPlayersToTable(list,removedIds){
     if(!list||!list.length)return;
     var now=new Date().toISOString();
     var rows=list.map(function(p){return {
-      id:p.id,name:p.name||'',classe:p.cls||'',level:p.level||1,
-      xp:p.xp||0,gold:p.gold||0,fragments:p.fragments||0,missions:p.missions||0,
-      updated_at:now,data:p
+      id:p.id,name:p.name||'',classe:p.cls||'',role:p.role||'',
+      level:p.level||1,xp:p.xp||0,xp_next:p.xpNext||100,gold:p.gold||0,
+      fragments:p.fragments||0,gacha_tokens:p.gachaTokens||0,missions:p.missions||0,
+      pending_attr_pts:p.pendingAttrPts||0,
+      real_name:p.realName||'',emblem:p.emblem||'',color:p.color||'',color_bg:p.colorBg||'',
+      quote:p.quote||'',lore:p.lore||'',last_daily:p.lastDaily||'',avatar_frame:p.avatarFrame||'',
+      updated_at:now,
+      // A "data" només hi queden les estructures (llistes/objectes) que no caben en columnes
+      data:{attrs:p.attrs,avatar:p.avatar,equipped:p.equipped,equipPos:p.equipPos,showcase:p.showcase,widgets:p.widgets,widgetSizes:p.widgetSizes,gallery:p.gallery,inventory:p.inventory,pin:p.pin}
     };});
     await fetch(CFG.SUPABASE_URL+'/rest/v1/players',{
       method:'POST',
