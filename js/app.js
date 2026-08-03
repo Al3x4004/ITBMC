@@ -119,6 +119,14 @@ var marketHistory=[];/* historial: [{ts,type:'buy'|'trade',cardId,wantCardId,mod
 var weeklyTemplates=[];/* plantilles setmanals: [{id,name,desc,arc,playerId,diff,xp,gold,frag,attr,attrPts}] (a game_data) */
 var missionAssignees={};/* {missionId:[playerId,...]} assignació múltiple (a game_data) */
 var rewardsPending={};/* {missionId:true} missions completades importades amb recompensa sense reclamar (a game_data) */
+var itemLimits={};/* {itemId:{per:Number|null, total:Number|null}} límits de compra (a game_data) */
+var itemPurchases={};/* {itemId:{total:Number, by:{playerId:Number}}} compres fetes (a game_data) */
+function itemLim(id){return itemLimits[id]||{};}
+function itemBoughtTotal(id){return (itemPurchases[id]&&itemPurchases[id].total)||0;}
+function itemBoughtBy(id,pid){return (itemPurchases[id]&&itemPurchases[id].by&&itemPurchases[id].by[pid])||0;}
+function itemStockLeft(id){var l=itemLim(id);if(l.total==null||l.total==='')return Infinity;return Math.max(0,(+l.total)-itemBoughtTotal(id));}
+function itemPerLeft(id,pid){var l=itemLim(id);if(l.per==null||l.per==='')return Infinity;return Math.max(0,(+l.per)-itemBoughtBy(id,pid));}
+function resetItemPurchases(id){if(!confirm('Reiniciar el comptador de compres d\'aquest ítem? Tornarà a estar disponible per a tothom.'))return;delete itemPurchases[id];if(CFG.MODE==='supabase')saveToSupabase();try{openAdminEditItem(id);}catch(e){}renderShop();}
 
 /* ══ CARGA ══ */
 
@@ -293,7 +301,7 @@ async function saveClassToSupabase(cls,idx){
 }
 
 /* Config compartida (no és dada de compte). */
-function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market,market_history:marketHistory,weekly_templates:weeklyTemplates,mission_assignees:missionAssignees,rewards_pending:rewardsPending};}
+function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market,market_history:marketHistory,weekly_templates:weeklyTemplates,mission_assignees:missionAssignees,rewards_pending:rewardsPending,item_limits:itemLimits,item_purchases:itemPurchases};}
 /*
  Desa fent FUSIÓ de jugadors: només sobreescriu els personatges que aquest client ha canviat
  (el de la sessió + els passats a extraPlayerIds). Per a la resta manté la versió de la BD.
@@ -416,6 +424,8 @@ async function loadData(){
       if(Array.isArray(d.weekly_templates))weeklyTemplates=d.weekly_templates;
       if(d.mission_assignees&&typeof d.mission_assignees==='object')missionAssignees=d.mission_assignees;
       if(d.rewards_pending&&typeof d.rewards_pending==='object')rewardsPending=d.rewards_pending;
+      if(d.item_limits&&typeof d.item_limits==='object')itemLimits=d.item_limits;
+      if(d.item_purchases&&typeof d.item_purchases==='object')itemPurchases=d.item_purchases;
       if(Array.isArray(d.attr_defs)&&d.attr_defs.length){
         ATTRS=d.attr_defs.map(function(a){return {key:a.key,name:a.name,color:a.color||'#888',icon:a.icon||''};});
       }else if(d.attr_names&&typeof d.attr_names==='object'){
@@ -559,6 +569,8 @@ function restoreData(input){
       if(Array.isArray(d.weekly_templates))weeklyTemplates=d.weekly_templates;
       if(d.mission_assignees&&typeof d.mission_assignees==='object')missionAssignees=d.mission_assignees;
       if(d.rewards_pending&&typeof d.rewards_pending==='object')rewardsPending=d.rewards_pending;
+      if(d.item_limits&&typeof d.item_limits==='object')itemLimits=d.item_limits;
+      if(d.item_purchases&&typeof d.item_purchases==='object')itemPurchases=d.item_purchases;
       if(Array.isArray(d.cal_events))calEvents=d.cal_events;
       if(Array.isArray(d.custom_traits))customTraits=d.custom_traits;
       if(Array.isArray(d.widget_catalog))widgetCatalog=d.widget_catalog;
@@ -2193,7 +2205,6 @@ function renderShop(){
   var shopSortBy=(document.getElementById('shop-sort')?document.getElementById('shop-sort').value:'rarity');
   var filteredShop=shopItems.filter(function(item){
     if(item.via==='gacha')return false;
-    if(p&&(p.inventory||[]).indexOf(item.id)>=0)return false; // ja el tens
     if(shopSearch&&item.name.toLowerCase().indexOf(shopSearch)<0)return false;
     if(shopSlot&&item.slot!==shopSlot)return false;
     if(shopRarity&&item.rareza!==shopRarity)return false;
@@ -2207,17 +2218,33 @@ function renderShop(){
   wrap.innerHTML='<div class="shop-grid">'+filteredShop.map(function(item){
     var owned=p&&(p.inventory||[]).indexOf(item.id)>=0;
     var equipped=p&&p.equipped&&Object.values(p.equipped).indexOf(item.id)>=0;
-    var canBuy=p&&canBuyItem(p,item)&&!owned;
     var meetsR=p&&meetsReqs(p,item);
-    var cls=equipped?'equipped':owned?'owned':canBuy?'can-buy':!meetsR?'locked':'';
+    var lim=itemLim(item.id);
+    var hasTotal=(lim.total!=null&&lim.total!=='');
+    var hasPer=(lim.per!=null&&lim.per!=='');
+    var stockLeft=itemStockLeft(item.id);
+    var perLeft=p?itemPerLeft(item.id,p.id):Infinity;
+    var soldOut=stockLeft<=0;
+    var perReached=perLeft<=0;
+    var buyable=p&&canBuyItem(p,item)&&!soldOut&&!perReached;
+    var cls=soldOut?'locked':equipped?'equipped':buyable?'can-buy':!meetsR?'locked':'';
     var bonusStr=Object.entries(item.bonus||{}).filter(function(e){return e[1]>0;}).map(function(e){return '+'+e[1]+' '+AN[e[0]];}).join(' · ');
     var reqStr=Object.entries(item.minAttrs||{}).filter(function(e){return e[1]>0;}).map(function(e){return AN[e[0]]+' '+e[1]+'+';}).join(' · ');
+    // Info d'estoc / límit per persona
+    var stockInfo='';
+    if(hasTotal)stockInfo+='<div class="item-stock'+(soldOut?' out':'')+'">'+(soldOut?'Esgotat':('📦 Estoc: '+stockLeft+' / '+lim.total))+'</div>';
+    if(hasPer&&p)stockInfo+='<div class="item-stock">👤 '+itemBoughtBy(item.id,p.id)+' / '+lim.per+' per persona</div>';
+    // Botó de compra
     var btn='';
-    if(equipped)btn='<button class="btn btn-sm" style="margin-top:auto;" onclick="unequipItem(\''+item.id+'\')">Desequipar</button>';
-    else if(owned)btn='<button class="btn btn-sm btn-p" style="margin-top:auto;" onclick="equipItem(\''+item.id+'\')">Equipar</button>';
-    else if(canBuy)btn='<button class="btn btn-sm btn-gold" style="margin-top:auto;" onclick="buyItem(\''+item.id+'\')">Comprar 🪙 '+item.cost+'</button>';
-    else if(!meetsR)btn='<div style="font-size:11px;color:var(--coral);margin-top:auto;">🔒 Requisitos no cumplidos</div>';
-    else btn='<div style="font-size:11px;color:var(--coral);margin-top:auto;">🪙 Or insuficient</div>';
+    if(soldOut)btn='<div class="soldout-lbl">Esgotat</div>';
+    else if(buyable)btn='<button class="btn btn-sm btn-gold" onclick="buyItem(\''+item.id+'\')">Comprar 🪙 '+item.cost+'</button>';
+    else if(perReached)btn='<div style="font-size:11px;color:var(--muted);">Límit assolit</div>';
+    else if(!meetsR)btn='<div style="font-size:11px;color:var(--coral);">🔒 Requisits no complerts</div>';
+    else btn='<div style="font-size:11px;color:var(--coral);">🪙 Or insuficient</div>';
+    // Equipar/Desequipar si ja el té (només items amb slot d'equip real)
+    var eqBtn='';
+    if(equipped)eqBtn='<button class="btn btn-sm" onclick="unequipItem(\''+item.id+'\')">Desequipar</button>';
+    else if(owned)eqBtn='<button class="btn btn-sm btn-p" onclick="equipItem(\''+item.id+'\')">Equipar</button>';
     return '<div class="shop-item '+cls+'">'
       +'<button class="info-btn" title="Veure info" onclick="event.stopPropagation();showItemDetails(\''+item.id+'\')">i</button>'
       +(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'" style="width:100%;height:120px;object-fit:cover;border-radius:var(--radius);margin-bottom:4px;">':'<div class="item-icon">'+item.icon+'</div>')
@@ -2226,21 +2253,27 @@ function renderShop(){
       +'<div class="item-desc">'+item.desc+'</div>'
       +(bonusStr?'<div class="item-bonus">⬆️ '+bonusStr+'</div>':'')
       +(reqStr?'<div class="item-reqs">📋 Req: '+reqStr+' · Nv.'+item.minLevel+'+'+'</div>':'')
-      +'<div class="item-cost">'+(owned?'✅ Comprat':'🪙 '+item.cost)+'</div>'
-      +btn+'</div>';
+      +stockInfo
+      +'<div class="item-cost">🪙 '+item.cost+'</div>'
+      +btn+eqBtn+'</div>';
   }).join('')+'</div>';
 }
 function buyItem(itemId){
   var p=players.find(function(pl){return pl.id===session.playerId;});
   var item=shopItems.find(function(i){return i.id===itemId;});
   if(!p||!item)return;
+  if(itemStockLeft(itemId)<=0){toast('Esgotat: no queden existències.');return;}
+  if(itemPerLeft(itemId,p.id)<=0){toast('Ja has arribat al teu límit de compres d\'aquest ítem.');return;}
   if(!canBuyItem(p,item)){toast('No pots comprar aquest ítem.');return;}
   p.gold-=item.cost;
   if(!p.inventory)p.inventory=[];
   p.inventory.push(itemId);
+  // Registrar compra (per persona i total)
+  if(!itemPurchases[itemId])itemPurchases[itemId]={total:0,by:{}};
+  itemPurchases[itemId].total=(itemPurchases[itemId].total||0)+1;
+  itemPurchases[itemId].by[p.id]=(itemPurchases[itemId].by[p.id]||0)+1;
   if(CFG.MODE==='supabase')saveToSupabase();
   renderShop();renderAll();
-  
 }
 function equipItem(itemId){
   var p=players.find(function(pl){return pl.id===session.playerId;});
@@ -2279,8 +2312,13 @@ async function adminCreateItemFull(){
     bonus:{fue:parseInt(document.getElementById('ai-bfue').value)||0,int:parseInt(document.getElementById('ai-bint').value)||0,agi:parseInt(document.getElementById('ai-bagi').value)||0,car:parseInt(document.getElementById('ai-bcar').value)||0,sab:parseInt(document.getElementById('ai-bsab').value)||0}
   };
   shopItems.push(newItem);
-  if(CFG.MODE==='supabase')await saveItemToSupabase(newItem);
-  ['ai-name','ai-icon','ai-imageurl','ai-desc','ai-cost','ai-lvl'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  // Límits de compra (opcionals): buit = sense límit
+  var _mp=document.getElementById('ai-maxper'),_mt=document.getElementById('ai-maxtotal');
+  var perV=(_mp&&_mp.value.trim()!=='')?parseInt(_mp.value)||0:null;
+  var totV=(_mt&&_mt.value.trim()!=='')?parseInt(_mt.value)||0:null;
+  if(perV!=null||totV!=null)itemLimits[newItem.id]={per:perV,total:totV};
+  if(CFG.MODE==='supabase'){await saveItemToSupabase(newItem);saveToSupabase();}
+  ['ai-name','ai-icon','ai-imageurl','ai-desc','ai-cost','ai-lvl','ai-maxper','ai-maxtotal'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   ['ai-rfue','ai-rint','ai-ragi','ai-rcar','ai-rsab','ai-bfue','ai-bint','ai-bagi','ai-bcar','ai-bsab'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='0';});
   renderAdminItemsPage();
   renderShop();
@@ -2426,6 +2464,12 @@ function openAdminEditItem(itemId){
     +'<div class="field"><label>Nivell mínim</label><input type="number" id="aem-lvl" value="'+(item.minLevel||1)+'"/></div>'
     +'</div>'
     +'<div class="field"><label>Disponible a</label><select id="aem-via"><option value="tienda"'+(item.via==='tienda'?' selected':'')+'>Botiga+Gacha</option><option value="gacha"'+(item.via==='gacha'?' selected':'')+'>Només Gacha</option><option value="solo_tienda"'+(item.via==='solo_tienda'?' selected':'')+'>Només Botiga</option></select></div>'
+    +'<div class="stitle" style="margin-top:10px;">Límits de compra (buit = sense límit)</div>'
+    +'<div class="g2">'
+    +'<div class="field"><label>Màx per persona</label><input type="number" id="aem-maxper" min="1" value="'+((itemLim(item.id).per!=null&&itemLim(item.id).per!=='')?itemLim(item.id).per:'')+'"/></div>'
+    +'<div class="field"><label>Stock total</label><input type="number" id="aem-maxtotal" min="1" value="'+((itemLim(item.id).total!=null&&itemLim(item.id).total!=='')?itemLim(item.id).total:'')+'"/></div>'
+    +'</div>'
+    +'<div style="font-size:11px;color:var(--muted);">Comprat fins ara: total '+itemBoughtTotal(item.id)+(itemLim(item.id).total?(' / '+itemLim(item.id).total):'')+'. <span style="color:var(--accent);cursor:pointer;" onclick="resetItemPurchases(\''+item.id+'\')">↺ Reiniciar comptador</span></div>'
     +'<div class="stitle" style="margin-top:10px;">Requisits mínims per comprar (0 = sense requisit)</div>'
     +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">'
     +attrKeys().map(function(k){return '<div class="field" style="margin:0;"><label>'+k.toUpperCase()+'</label><input type="number" id="aem-r'+k+'" value="'+((item.minAttrs&&item.minAttrs[k])||0)+'" min="0"/></div>';}).join('')
@@ -2469,7 +2513,13 @@ async function saveAdminEdit(){
     item.avatarPos={x:parseFloat(_px.value)||0,y:parseFloat(_py.value)||0,w:parseFloat(_pw.value)||60};
     item.minAttrs={};attrKeys().forEach(function(k){var el=document.getElementById('aem-r'+k);item.minAttrs[k]=el?(parseInt(el.value)||0):0;});
     item.bonus={};attrKeys().forEach(function(k){var el=document.getElementById('aem-b'+k);item.bonus[k]=el?(parseInt(el.value)||0):0;});
-    if(CFG.MODE==='supabase')saveItemToSupabase(item);
+    // Límits de compra
+    var _mp=document.getElementById('aem-maxper'),_mt=document.getElementById('aem-maxtotal');
+    var perV=(_mp&&_mp.value.trim()!=='')?parseInt(_mp.value)||0:null;
+    var totV=(_mt&&_mt.value.trim()!=='')?parseInt(_mt.value)||0:null;
+    if(perV==null&&totV==null)delete itemLimits[item.id];
+    else itemLimits[item.id]={per:perV,total:totV};
+    if(CFG.MODE==='supabase'){saveItemToSupabase(item);saveToSupabase();}
     renderAdminItemsPage();renderShop();
   }else if(_adminEditType==='carta'){
     var carta=gachaCards.find(function(c){return c.id===_adminEditId;});
