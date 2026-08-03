@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="https://i.imgur.com/Z1wFN0q.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Quarter General">
-<link rel="stylesheet" href="css/styles.css?v=25">
+<link rel="stylesheet" href="css/styles.css?v=26">
 </head>
 <body>
 <div id="boot-loader"><div class="boot-spinner"></div><div class="boot-text">Carregant el Quarter General…</div></div>
@@ -331,8 +331,8 @@
                 <option value="legendaria">Llegendària</option>
               </select>
               <select id="inv-sort" onchange="renderInventario()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+                <option value="name">Nom (A-Z)</option>
                 <option value="rarity">Raresa</option>
-                <option value="name">Nom</option>
               </select>
             </div>
             <div class="inv-grid" id="inv-grid"></div>
@@ -470,8 +470,8 @@
           <option value="legendaria">Llegendària</option>
         </select>
         <select id="shop-sort" onchange="renderShop()" style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="name">Ordenar: Nom (A-Z)</option>
           <option value="rarity">Ordenar: Raresa</option>
-          <option value="name">Ordenar: Nom</option>
           <option value="cost-asc">Ordenar: Preu ↑</option>
           <option value="cost-desc">Ordenar: Preu ↓</option>
         </select>
@@ -940,6 +940,6 @@
   window.dispatchEvent(new Event('dicebear-ready'));
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="js/app.js?v=39"></script>
+<script src="js/app.js?v=40"></script>
 </body>
 </html>

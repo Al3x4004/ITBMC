@@ -1778,7 +1778,7 @@ function doPull(times){
 function renderGalleryCards(ownedEntries,mode){
   if(!gachaCards.length)return`<div class="gallery-empty">Encara no hi ha cartes al joc.</div>`;
   var counts={};(ownedEntries||[]).map(function(e){return typeof e==='string'?e:(e&&e.cardId)||e;}).forEach(function(id){counts[id]=(counts[id]||0)+1;});
-  var all=gachaCards.slice().sort(function(a,b){return RARITY_ORDER.indexOf(a.rarity||'comun')-RARITY_ORDER.indexOf(b.rarity||'comun');});
+  var all=gachaCards.slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
   var haveCount=all.filter(function(c){return counts[c.id];}).length;
   var dupCount=all.filter(function(c){return counts[c.id]>1;}).length;
   var list=all;
@@ -2202,7 +2202,7 @@ function renderShop(){
   var shopSearch=(document.getElementById('shop-search')?document.getElementById('shop-search').value.toLowerCase().trim():'');
   var shopSlot=(document.getElementById('shop-filter-slot')?document.getElementById('shop-filter-slot').value:'');
   var shopRarity=(document.getElementById('shop-filter-rarity')?document.getElementById('shop-filter-rarity').value:'');
-  var shopSortBy=(document.getElementById('shop-sort')?document.getElementById('shop-sort').value:'rarity');
+  var shopSortBy=(document.getElementById('shop-sort')?document.getElementById('shop-sort').value:'name');
   var filteredShop=shopItems.filter(function(item){
     if(item.via==='gacha')return false;
     if(shopSearch&&item.name.toLowerCase().indexOf(shopSearch)<0)return false;
@@ -2412,7 +2412,7 @@ function renderAdminItemsPage(){
     if(filterRarity&&i.rareza!==filterRarity)return false;
     if(aiSearch&&i.name.toLowerCase().indexOf(aiSearch)<0)return false;
     return true;
-  });
+  }).sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
   var countEl=document.getElementById('ai-count');
   if(countEl)countEl.textContent=items.length;
   var wrap=document.getElementById('ai-list');
@@ -2625,7 +2625,7 @@ function renderAdminCartasPage(){
     if(filterRarity&&c.rarity!==filterRarity)return false;
     if(acSearch&&c.name.toLowerCase().indexOf(acSearch)<0)return false;
     return true;
-  });
+  }).sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
   var countEl=document.getElementById('ac-count');
   if(countEl)countEl.textContent=cartas.length;
   var wrap=document.getElementById('ac-list');
@@ -3758,7 +3758,7 @@ function renderInventario(){
   var invSearch=(document.getElementById('inv-search')?document.getElementById('inv-search').value.toLowerCase().trim():'');
   var invSlot=(document.getElementById('inv-filter-slot')?document.getElementById('inv-filter-slot').value:'');
   var invRarity=(document.getElementById('inv-filter-rarity')?document.getElementById('inv-filter-rarity').value:'');
-  var invSortBy=(document.getElementById('inv-sort')?document.getElementById('inv-sort').value:'rarity');
+  var invSortBy=(document.getElementById('inv-sort')?document.getElementById('inv-sort').value:'name');
   var COSM_KEYS=SLOT_DEFS.filter(function(s){return s.cosmetic;}).map(function(s){return s.key;});
   var inv=(p.inventory||[]).filter(function(iid){
     var item=shopItems.find(function(i){return i.id===iid;});
