@@ -1579,7 +1579,7 @@ function renderHeroProfile(i){
               function pills(ids,cls,empty){
                 var items=ids.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);
                 if(!items.length)return '<div class="peq-empty">'+empty+'</div>';
-                return '<div class="erow">'+items.map(function(i){return '<span class="epill '+cls+'">'+(i.icon||'')+' '+i.name+'</span>';}).join('')+'</div>';
+                return '<div class="erow">'+items.map(function(i){return '<span class="epill '+cls+'">'+(i.icon||'')+' '+i.name+'<button class="info-btn info-btn-pill" title="Veure info" onclick="event.stopPropagation();showItemDetails(\''+i.id+'\')">i</button></span>';}).join('')+'</div>';
               }
               return '<div class="peq-group"><div class="stitle">⚔️ Equipament</div>'+pills(eqIds,'epill-eq','Sense equipament.')+'</div>';
             })()}
@@ -1594,7 +1594,7 @@ function renderHeroProfile(i){
               var cosmIds=[];
               Object.keys(p.equipped||{}).forEach(function(k){var id=p.equipped[k];if(id&&cosmSlots.indexOf(k)>=0)cosmIds.push(id);});
               var items=cosmIds.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);
-              var inner=items.length?('<div class="erow">'+items.map(function(i){return '<span class="epill epill-cosm">'+(i.icon||'')+' '+i.name+'</span>';}).join('')+'</div>'):'<div class="peq-empty">Sense cosmètics.</div>';
+              var inner=items.length?('<div class="erow">'+items.map(function(i){return '<span class="epill epill-cosm">'+(i.icon||'')+' '+i.name+'<button class="info-btn info-btn-pill" title="Veure info" onclick="event.stopPropagation();showItemDetails(\''+i.id+'\')">i</button></span>';}).join('')+'</div>'):'<div class="peq-empty">Sense cosmètics.</div>';
               return '<div class="peq-group"><div class="stitle">✨ Cosmètics</div>'+inner+'</div>';
             })()}
             ${recent.length?`<div class="stitle">Últimes missions</div>`+recent.map(m=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:12px;color:var(--text);">${m.name}</span><span class="badge b-teal">+${m.xp} XP</span></div>`).join(''):''}
@@ -2225,6 +2225,7 @@ function renderShop(){
     else if(!meetsR)btn='<div style="font-size:11px;color:var(--coral);margin-top:auto;">🔒 Requisitos no cumplidos</div>';
     else btn='<div style="font-size:11px;color:var(--coral);margin-top:auto;">🪙 Or insuficient</div>';
     return '<div class="shop-item '+cls+'">'
+      +'<button class="info-btn" title="Veure info" onclick="event.stopPropagation();showItemDetails(\''+item.id+'\')">i</button>'
       +(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'" style="width:100%;height:120px;object-fit:cover;border-radius:var(--radius);margin-bottom:4px;">':'<div class="item-icon">'+item.icon+'</div>')
       +'<div class="item-name">'+item.name+'</div>'
       +'<div class="item-slot">'+item.slot+'</div>'
