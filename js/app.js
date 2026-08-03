@@ -3730,6 +3730,7 @@ function renderInventario(){
     var eq=p.equipped&&Object.values(p.equipped).indexOf(iid)>=0;
     var bonusLines=Object.entries(item.bonus||{}).filter(function(e){return e[1]>0;}).map(function(e){return '<div class="inv-bonus-row">+'+e[1]+' '+AN[e[0]]+'</div>';}).join('');
     var html='<div class="inv-item bg-rarity-'+(item.rareza||'comun')+' '+(eq?'equipped':'')+'">';
+    html+='<button class="info-btn" title="Veure info" onclick="event.stopPropagation();showItemDetails(\''+iid+'\')">i</button>';
     html+=(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'" style="width:100%;height:90px;object-fit:contain;border-radius:var(--radius);margin-bottom:4px;background:var(--bg3);">':'<div style="font-size:24px;text-align:center;">'+item.icon+'</div>');
     html+='<div style="font-size:12px;font-weight:500;">'+item.name+'</div>';
     var slLbl=(SLOT_DEFS.find(function(s){return s.key===item.slot;})||{}).label||item.slot;
