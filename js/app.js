@@ -424,11 +424,7 @@ async function loadData(){
       // Asegurar que todos los players tienen todas las claves de atributo
       players.forEach(function(p){if(p.attrs){attrKeys().forEach(function(k){if(p.attrs[k]===undefined)p.attrs[k]=10;});}});
 
-      // Ensure tutorial missions exist for each player
-      players.forEach(function(p){
-        var hasTutorial=missions&&missions.find(function(m){return m.arc==='Tutorial: Primeros Pasos'&&m.playerId===p.id;});
-        if(!hasTutorial)createTutorialForPlayer(p);
-      });
+      // (ja no es generen missions de tutorial automàticament)
       // Load missions from dedicated table
       var _sbMissions=await loadMissionsFromSupabase();
       if(_sbMissions&&_sbMissions.length){
@@ -809,8 +805,6 @@ function saveNewChar(){
   });
   const np={id:'pj'+Date.now(),realName:rn,name:pn,cls:cpState.cls.name,role:cpState.cls.role,emblem:cpState.emblem,color:cpState.color.hex,colorBg:cpState.color.bg,level:1,xp:0,xpNext:100,gold:0,missions:0,lore:lore||'Història per escriure...',quote:quote||'...',pin,attrs:{...cpState.cls.attrs},gachaTokens:0,fragments:0,gallery:[],lastDaily:'',inventory:startItems,equipped:equipped,pendingAttrPts:0};
   players.push(np);
-  createWelcomeArc(np);
-  createTutorialForPlayer(np);
   checkDailyMissions();
   if(CFG.MODE==='supabase')saveToSupabase();
   session={loggedIn:true,isAdmin:false,playerId:np.id};localStorage.setItem('cg_pid',np.id);
