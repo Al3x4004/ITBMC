@@ -341,8 +341,30 @@ async function saveToSupabase(extraPlayerIds,removedIds){
       body:JSON.stringify({id:'main',data:data})
     });
     await saveAllMissionsToSupabase();
+    // Mirall llegible a la taula "players" (game_data segueix sent la font real; això mai trenca res)
+    mirrorPlayersToTable(merged,Object.keys(removed));
     saveStatus('saved');
   }catch(e){console.error('Supabase save error',e);saveStatus('error');}
+}
+async function mirrorPlayersToTable(list,removedIds){
+  try{
+    (removedIds||[]).forEach(function(id){
+      if(!id)return;
+      fetch(CFG.SUPABASE_URL+'/rest/v1/players?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}}).catch(function(){});
+    });
+    if(!list||!list.length)return;
+    var now=new Date().toISOString();
+    var rows=list.map(function(p){return {
+      id:p.id,name:p.name||'',classe:p.cls||'',level:p.level||1,
+      xp:p.xp||0,gold:p.gold||0,fragments:p.fragments||0,missions:p.missions||0,
+      updated_at:now,data:p
+    };});
+    await fetch(CFG.SUPABASE_URL+'/rest/v1/players',{
+      method:'POST',
+      headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify(rows)
+    });
+  }catch(e){console.warn('mirror players (no crític)',e);}
 }
 
 async function loadData(){
