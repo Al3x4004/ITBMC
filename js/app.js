@@ -118,6 +118,7 @@ var market=[];/* mercat negre: [{id,sellerId,cardId,mode:'gold'|'frag'|'trade',p
 var marketHistory=[];/* historial: [{ts,type:'buy'|'trade',cardId,wantCardId,mode,price,fromId,toId}] (últimes 60) */
 var weeklyTemplates=[];/* plantilles setmanals: [{id,name,desc,arc,playerId,diff,xp,gold,frag,attr,attrPts}] (a game_data) */
 var missionAssignees={};/* {missionId:[playerId,...]} assignació múltiple (a game_data) */
+var rewardsPending={};/* {missionId:true} missions completades importades amb recompensa sense reclamar (a game_data) */
 
 /* ══ CARGA ══ */
 
@@ -292,7 +293,7 @@ async function saveClassToSupabase(cls,idx){
 }
 
 /* Config compartida (no és dada de compte). */
-function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market,market_history:marketHistory,weekly_templates:weeklyTemplates,mission_assignees:missionAssignees};}
+function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market,market_history:marketHistory,weekly_templates:weeklyTemplates,mission_assignees:missionAssignees,rewards_pending:rewardsPending};}
 /*
  Desa fent FUSIÓ de jugadors: només sobreescriu els personatges que aquest client ha canviat
  (el de la sessió + els passats a extraPlayerIds). Per a la resta manté la versió de la BD.
@@ -414,6 +415,7 @@ async function loadData(){
       if(Array.isArray(d.market_history))marketHistory=d.market_history;
       if(Array.isArray(d.weekly_templates))weeklyTemplates=d.weekly_templates;
       if(d.mission_assignees&&typeof d.mission_assignees==='object')missionAssignees=d.mission_assignees;
+      if(d.rewards_pending&&typeof d.rewards_pending==='object')rewardsPending=d.rewards_pending;
       if(Array.isArray(d.attr_defs)&&d.attr_defs.length){
         ATTRS=d.attr_defs.map(function(a){return {key:a.key,name:a.name,color:a.color||'#888',icon:a.icon||''};});
       }else if(d.attr_names&&typeof d.attr_names==='object'){
@@ -560,6 +562,7 @@ function restoreData(input){
       if(Array.isArray(d.market_history))marketHistory=d.market_history;
       if(Array.isArray(d.weekly_templates))weeklyTemplates=d.weekly_templates;
       if(d.mission_assignees&&typeof d.mission_assignees==='object')missionAssignees=d.mission_assignees;
+      if(d.rewards_pending&&typeof d.rewards_pending==='object')rewardsPending=d.rewards_pending;
       if(Array.isArray(d.cal_events))calEvents=d.cal_events;
       if(Array.isArray(d.custom_traits))customTraits=d.custom_traits;
       if(Array.isArray(d.widget_catalog))widgetCatalog=d.widget_catalog;
@@ -1192,6 +1195,7 @@ function mCard(m){
   const completedBtn=canComplete&&m.status!=='done'
     ?`<button class="btn-complete" onclick="event.stopPropagation();completeMission('${m.id}')">✓ Completar</button>`:'';
   const statusBadge=m.status==='done'?`<span class="badge b-teal">Completada</span>`:`<span class="badge b-gray">Pendent</span>`;
+  const claimBtn=(m.status==='done'&&rewardsPending[m.id]&&(session.isAdmin||isMine))?`<button class="btn-complete" style="background:var(--gold-bg);color:var(--gold);border-color:var(--gold-border);font-weight:700;" onclick="event.stopPropagation();claimMissionReward('${m.id}')">🎁 Reclamar</button>`:'';
   var _prio={A:['Urgente','b-coral'],B:['Importante','b-gold'],C:['Media','b-gray'],D:['Baja','b-teal']}[m.diff]||['Media','b-gray'];
   const prioBadge=`<span class="badge ${_prio[1]}">${_prio[0]}</span>`;
   var _tags=(m.plannerTags&&m.plannerTags.indexOf('weekly:')!==0)?m.plannerTags:'';
@@ -1211,6 +1215,7 @@ function mCard(m){
       ${prioBadge}
       ${statusBadge}
       ${assignBtn}
+      ${claimBtn}
       ${completedBtn}
       ${(session.isAdmin||m.createdBy===session.playerId)?`<button class="btn-complete" style="background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);" onclick="event.stopPropagation();deleteMission('${m.id}')">✕</button>`:''}
     </div>
@@ -1327,6 +1332,21 @@ function completeMission(id){
   }
   updateArcCounts();
   cleanOldCompleted();
+  if(CFG.MODE==='supabase')saveToSupabase(assignees.map(function(a){return a.id;}));
+  renderAll();
+}
+function claimMissionReward(id){
+  var m=missions.find(function(x){return x.id===id;});if(!m||!rewardsPending[id])return;
+  var assignees=getAssignees(m);
+  if(!assignees.length){alert('Aquesta missió no té ningú assignat. Assigna-la abans de reclamar la recompensa.');return;}
+  var mFrag=m.frag||({D:20,C:50,B:100,A:200,S:400}[m.diff]||50);
+  assignees.forEach(function(ap){
+    ap.xp+=m.xp;ap.gold+=m.gold;ap.fragments=(ap.fragments||0)+mFrag;ap.missions++;
+    if(m.attrPts&&m.attr){var k=attrKeyFromName(m.attr);if(k)ap.attrs[k]=(ap.attrs[k]||0)+m.attrPts;}
+    ap.level=Math.floor(ap.xp/100)+1;checkLevelUp(ap);
+  });
+  delete rewardsPending[id];
+  showRewardPopup(m,assignees[0],assignees);
   if(CFG.MODE==='supabase')saveToSupabase(assignees.map(function(a){return a.id;}));
   renderAll();
 }
@@ -2885,14 +2905,13 @@ function confirmPlannerImport(){
     var plannerStatus=(row[statusCol]||'').toLowerCase();
     var status=(plannerStatus.includes('complet')||plannerStatus.includes('done')||plannerStatus.includes('acabad')||plannerStatus.includes('finalitz'))?'done':'pending';
 
-    // Find assignee by real name
-    var assigneeName=(row[assignCol]||'').trim();
-    var assignedPlayer=players.find(function(p){
-      return p.realName&&assigneeName&&(
-        p.realName.toLowerCase().includes(assigneeName.toLowerCase().split(';')[0].split(' ')[0])||
-        assigneeName.toLowerCase().includes(p.realName.toLowerCase().split(' ')[0])
-      );
-    });
+    // Assignar per "Creado por" = nom real del personatge (ex: "Pol Figuerola" → personatge amb realName "Pol Figuerola")
+    var creatorName=(row[creatorCol]||'').trim();
+    var assigneeName=(row[assignCol]||'').trim(); // es guarda per referència
+    function norm(s){return (s||'').toLowerCase().replace(/\s+/g,' ').trim();}
+    var cn=norm(creatorName);
+    var assignedPlayer=players.find(function(p){return p.realName&&cn&&norm(p.realName)===cn;})
+      ||players.find(function(p){return p.realName&&cn&&(norm(p.realName).indexOf(cn)>=0||cn.indexOf(norm(p.realName))>=0);});
 
     // Difficulty by priority (fallback to default)
     var priorityMap={'urgente':'A','importante':'B','media':'C','baja':'D'};
@@ -2927,6 +2946,8 @@ function confirmPlannerImport(){
       plannerTags:tags
     };
     missions.push(newM);
+    // Si ja està feta, entra com a completada però amb la recompensa SENSE reclamar
+    if(status==='done')rewardsPending[newM.id]=true;
     imported++;
   });
 
@@ -3164,7 +3185,7 @@ function cleanOldCompleted(){
   // Mantener solo las últimas 20 misiones completadas por jugador (no diarias)
   players.forEach(function(p){
     var done=missions.filter(function(m){
-      return m.status==='done'&&m.playerId===p.id&&!m.isDaily_instance;
+      return m.status==='done'&&m.playerId===p.id&&!m.isDaily_instance&&!rewardsPending[m.id];
     });
     if(done.length>20){
       // Sort by id (timestamp-based) descending, keep newest 20
@@ -3859,8 +3880,10 @@ function openMissionModal(id){
         }).join('')+'</div>';
     }
   }else{var box2=document.getElementById('mm-assign');if(box2)box2.style.display='none';}
+  var canClaim=(m.status==='done'&&rewardsPending[m.id]&&(session.isAdmin||(p&&session.playerId===p.id)));
   document.getElementById('mm-actions').innerHTML=
-    (canComplete?`<button class="btn btn-p" onclick="completeMission('${m.id}');closeMissionModal();">✓ Completar</button>`:'')
+    (canClaim?`<button class="btn btn-p" style="background:linear-gradient(135deg,var(--gold),#c98a12);border-color:transparent;" onclick="claimMissionReward('${m.id}');closeMissionModal();">🎁 Reclamar recompensa</button>`:'')
+    +(canComplete?`<button class="btn btn-p" onclick="completeMission('${m.id}');closeMissionModal();">✓ Completar</button>`:'')
     +(canDel?`<button class="btn" style="background:var(--coral-bg);color:var(--coral);" onclick="deleteMission('${m.id}');closeMissionModal();">🗑️ Eliminar</button>`:'')
     +`<button class="btn" onclick="closeMissionModal()">Tancar</button>`;
   const modal=document.getElementById('mission-modal');
