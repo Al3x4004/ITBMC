@@ -678,9 +678,34 @@ body::after{
 /* ── Rareza aplicada al inventario también ── */
 .inv-item{transition:transform .15s ease, box-shadow .15s ease;position:relative;}
 .inv-item:hover{transform:translateY(-2px);}
-.bg-rarity-rara{border-color:var(--r-rara) !important;}
-.bg-rarity-epica{border-color:var(--r-epica) !important;}
-.bg-rarity-legendaria{border-color:var(--r-legendaria) !important;box-shadow:0 0 12px var(--r-legendaria-glow);}
+
+/* ── Fons segons raresa (items de botiga i inventari): fàcil veure quins són millors ── */
+.bg-rarity-comun{
+  background:linear-gradient(160deg,rgba(138,138,138,.12),var(--bg2)) !important;
+  border-color:color-mix(in srgb,var(--r-comun) 40%,var(--border)) !important;
+  border-top:3px solid var(--r-comun) !important;
+}
+.bg-rarity-rara{
+  background:linear-gradient(160deg,rgba(59,130,246,.16),var(--bg2)) !important;
+  border-color:color-mix(in srgb,var(--r-rara) 55%,var(--border)) !important;
+  border-top:3px solid var(--r-rara) !important;
+}
+.bg-rarity-epica{
+  background:linear-gradient(160deg,rgba(168,85,247,.19),var(--bg2)) !important;
+  border-color:color-mix(in srgb,var(--r-epica) 60%,var(--border)) !important;
+  border-top:3px solid var(--r-epica) !important;
+  box-shadow:0 0 10px var(--r-epica-glow);
+}
+.bg-rarity-legendaria{
+  background:linear-gradient(160deg,rgba(245,158,11,.24),var(--bg2)) !important;
+  border-color:color-mix(in srgb,var(--r-legendaria) 65%,var(--border)) !important;
+  border-top:3px solid var(--r-legendaria) !important;
+  box-shadow:0 0 14px var(--r-legendaria-glow);
+}
+[data-theme="dark"] .bg-rarity-comun{background:linear-gradient(160deg,rgba(138,138,138,.16),var(--bg2)) !important;}
+[data-theme="dark"] .bg-rarity-rara{background:linear-gradient(160deg,rgba(59,130,246,.22),var(--bg2)) !important;}
+[data-theme="dark"] .bg-rarity-epica{background:linear-gradient(160deg,rgba(168,85,247,.26),var(--bg2)) !important;}
+[data-theme="dark"] .bg-rarity-legendaria{background:linear-gradient(160deg,rgba(245,158,11,.30),var(--bg2)) !important;}
 
 /* ── Badges y pills más definidos ── */
 .badge{

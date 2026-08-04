@@ -2268,7 +2268,7 @@ function renderShop(){
     var eqBtn='';
     if(equipped)eqBtn='<button class="btn btn-sm" onclick="unequipItem(\''+item.id+'\')">Desequipar</button>';
     else if(owned)eqBtn='<button class="btn btn-sm btn-p" onclick="equipItem(\''+item.id+'\')">Equipar</button>';
-    return '<div class="shop-item '+cls+'">'
+    return '<div class="shop-item bg-rarity-'+(item.rareza||'comun')+' '+cls+'">'
       +'<button class="info-btn" title="Veure info" onclick="event.stopPropagation();showItemDetails(\''+item.id+'\')">i</button>'
       +'<div class="item-media">'+(item.imageUrl?'<img src="'+item.imageUrl+'" alt="'+item.name+'">':'<span class="item-emoji">'+item.icon+'</span>')+'</div>'
       +'<div class="item-name">'+item.name+'</div>'
@@ -3734,7 +3734,7 @@ function renderInventario(){
   function slotCard(sl){
     var iid=p.equipped[sl.key];
     var item=shopItems.find(function(i){return i.id===iid;});
-    var html='<div class="inv-slot '+(item?'filled':'')+'" onclick="invFilterBySlot(\''+sl.key+'\','+(sl.cosmetic?'true':'false')+')" title="Filtrar la motxilla per aquest tipus">';
+    var html='<div class="inv-slot '+(item?'filled bg-rarity-'+(item.rareza||'comun'):'')+'" onclick="invFilterBySlot(\''+sl.key+'\','+(sl.cosmetic?'true':'false')+')" title="Filtrar la motxilla per aquest tipus">';
     html+='<div class="inv-slot-icon">'+(item?(item.imageUrl?'<img class="inv-slot-img" src="'+item.imageUrl+'" alt="">':item.icon):sl.icon)+'</div>';
     html+='<div class="inv-slot-name">'+(item?item.name:'Buit')+'</div>';
     html+='<div class="inv-slot-label">'+sl.label+'</div>';
