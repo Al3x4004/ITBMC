@@ -83,11 +83,30 @@ var ATTRS=[
 ];
 function attrKeys(){return ATTRS.map(function(a){return a.key;});}
 try{var _sa=localStorage.getItem('cg_attrs');if(_sa){var _pa=JSON.parse(_sa);if(Array.isArray(_pa)&&_pa.length)ATTRS=_pa;}}catch(e){}
+try{normalizeAttrs();}catch(e){}
 try{var _sc=localStorage.getItem('cg_custom_traits');if(_sc){var _pc=JSON.parse(_sc);if(Array.isArray(_pc))customTraits=_pc;}}catch(e){}
 try{var _sw=localStorage.getItem('cg_widgets');if(_sw){var _pw=JSON.parse(_sw);if(Array.isArray(_pw))widgetCatalog=_pw;}}catch(e){}
 function attrName(k){var a=ATTRS.find(function(x){return x.key===k;});return a?a.name:k;}
 function attrColor(k){var a=ATTRS.find(function(x){return x.key===k;});return a?a.color:'#888';}
-function attrIcon(k){var a=ATTRS.find(function(x){return x.key===k;});return a&&a.icon?a.icon:'⭐';}
+// Separa un emoji inicial del text (per si l'emoji està incrustat al nom de l'atribut)
+function _attrLead(s){
+  s=(''+(s||''));
+  var m=s.match(/^\s*((?:\p{Extended_Pictographic})(?:️|‍\p{Extended_Pictographic}|[\u{1F3FB}-\u{1F3FF}])*)\s*/u);
+  if(m)return {emoji:m[1],rest:s.slice(m[0].length).trim()};
+  return {emoji:'',rest:s.trim()};
+}
+// Mou l'emoji del nom cap al camp icona (una sola vegada) i deixa el nom net
+function normalizeAttrs(){
+  ATTRS.forEach(function(a){
+    var lead=_attrLead(a.name);
+    if(lead.emoji){
+      if(!a.icon||a.icon==='⭐')a.icon=lead.emoji;
+      a.name=lead.rest;
+    }
+    if(!a.icon)a.icon='⭐';
+  });
+}
+function attrIcon(k){var a=ATTRS.find(function(x){return x.key===k;});if(!a)return '⭐';if(a.icon&&a.icon!=='⭐')return a.icon;var lead=_attrLead(a.name);return lead.emoji||'⭐';}
 // Proxies de compatibilidad: AN[k] y AC[k] siguen funcionando como antes
 var AN=new Proxy({},{get:function(t,k){return attrName(k);},set:function(t,k,v){var a=ATTRS.find(function(x){return x.key===k;});if(a)a.name=v;return true;},ownKeys:function(){return attrKeys();},getOwnPropertyDescriptor:function(){return {enumerable:true,configurable:true};}});
 var AC=new Proxy({},{get:function(t,k){return attrColor(k);}});
@@ -97,6 +116,9 @@ function attrKeyFromName(name){
   if(!name)return null;
   var k=ATTRS.find(function(a){return a.name===name;});
   if(k)return k.key;
+  // Comparació ignorant un emoji inicial (compat. amb noms antics que el duien incrustat)
+  var target=_attrLead(name).rest;
+  if(target){var k2=ATTRS.find(function(a){return _attrLead(a.name).rest===target;});if(k2)return k2.key;}
   if(ATTRS.find(function(a){return a.key===name;}))return name;
   var low=(''+name).toLowerCase();
   return Object.keys(AN_LEGACY).find(function(k){
@@ -431,6 +453,7 @@ async function loadData(){
       }else if(d.attr_names&&typeof d.attr_names==='object'){
         ATTRS.forEach(function(a){if(d.attr_names[a.key])a.name=d.attr_names[a.key];});
       }
+      try{normalizeAttrs();}catch(e){}
       // Asegurar que todos los players tienen todas las claves de atributo
       players.forEach(function(p){if(p.attrs){attrKeys().forEach(function(k){if(p.attrs[k]===undefined)p.attrs[k]=10;});}});
 
@@ -3020,6 +3043,7 @@ function saveAttrNames(){
     var co=document.getElementById('ac-'+a.key);
     if(co&&co.value)a.color=co.value;
   });
+  normalizeAttrs();
   persistAttrs();
   if(CFG.MODE==='supabase')saveToSupabase();
   try{renderClassesAdmin();renderAll();}catch(e){console.error(e);}
