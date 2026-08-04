@@ -791,7 +791,7 @@ function buildAttrBars(cid,attrs){
   el.innerHTML=keys.map(function(k){
     var v=parseInt(attrs[k])||0;
     var maxv=Math.max(6,v);
-    return '<div class="srow"><span class="slbl">'+(AN[k]||k)+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(v/maxv*100)+'%;background:'+(AC[k]||'#888')+';"></div></div><span class="snum">'+v+'</span></div>';
+    return '<div class="srow"><span class="slbl">'+attrIcon(k)+' '+(AN[k]||k)+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(v/maxv*100)+'%;background:'+(AC[k]||'#888')+';"></div></div><span class="snum">'+v+'</span></div>';
   }).join('');
 }
 function buildCreatorColors(cid){
