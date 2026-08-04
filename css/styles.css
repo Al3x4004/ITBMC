@@ -965,7 +965,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent) !important;bo
 button:focus-visible,.nb:focus-visible,.htab:focus-visible,.filter-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 .btn,.nb,.htab,.filter-chip,.ptab{-webkit-tap-highlight-color:transparent;}
 @media(prefers-reduced-motion:reduce){
-  *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important;}
+  *:not(.boot-spinner){animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important;}
+  .boot-spinner{animation:bootspin .7s linear infinite !important;}
 }
 
 /* ═══════════ INVENTARI — slots equip/cosmètics més grans ═══════════ */
