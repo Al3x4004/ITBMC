@@ -2456,7 +2456,7 @@ function openAdminEditItem(itemId){
     +'</div>'
     +'<div style="font-size:11px;color:var(--muted);margin-top:2px;">X/Y=posició des de dalt-esquerra, Amplada=mida. Deixa buit per usar la posició del slot.</div>'
     +'<div class="g2">'
-    +'<div class="field"><label>Slot</label><select id="aem-slot">'+SLOT_DEFS.map(function(s){return '<option value="'+s.key+'"'+(item.slot===s.key?' selected':'')+'>'+s.icon+' '+s.label+'</option>';}).join('')+'</select></div>'
+    +'<div class="field"><label>Slot</label><select id="aem-slot">'+SLOT_DEFS.filter(function(s){return !s.cosmetic;}).map(function(s){return '<option value="'+s.key+'"'+(item.slot===s.key?' selected':'')+'>'+s.icon+' '+s.label+'</option>';}).join('')+'<option value="cosmetic"'+((item.isCosmetic||item.slot==='cosmetic'||/^cosm/.test(item.slot||''))?' selected':'')+'>✨ Cosmètic</option></select></div>'
     +'<div class="field"><label>Raresa</label><select id="aem-rarity"><option value="comun"'+(item.rareza==='comun'?' selected':'')+'>Comú</option><option value="rara"'+(item.rareza==='rara'?' selected':'')+'>Rara</option><option value="epica"'+(item.rareza==='epica'?' selected':'')+'>Èpica</option><option value="legendaria"'+(item.rareza==='legendaria'?' selected':'')+'>Llegendària</option></select></div>'
     +'<div class="field"><label>Cost (or)</label><input type="number" id="aem-cost" value="'+(item.cost||0)+'"/></div>'
     +'<div class="field"><label>Nivell mínim</label><input type="number" id="aem-lvl" value="'+(item.minLevel||1)+'"/></div>'
@@ -2503,6 +2503,7 @@ async function saveAdminEdit(){
     item.imageUrl=document.getElementById('aem-imageurl').value.trim()||null;
     item.desc=document.getElementById('aem-desc').value.trim();
     item.slot=document.getElementById('aem-slot').value;
+    item.isCosmetic=(item.slot==='cosmetic');
     item.rareza=document.getElementById('aem-rarity').value;
     item.cost=parseInt(document.getElementById('aem-cost').value)||0;
     item.minLevel=parseInt(document.getElementById('aem-lvl').value)||1;
