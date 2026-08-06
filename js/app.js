@@ -3174,8 +3174,23 @@ async function saveClassEdit(idx){
   cls.name=newName;
   cls.role=document.getElementById('cls-role-'+idx).value.trim();
   cls.icon=document.getElementById('cls-icon-'+idx).value.trim()||'⚔️';
+  // Guardar els stats base anteriors per calcular la diferència
+  var oldAttrs={};attrKeys().forEach(function(k){oldAttrs[k]=cls.attrs[k]||0;});
   attrKeys().forEach(function(k){
     cls.attrs[k]=parseInt(document.getElementById('cls-'+k+'-'+idx).value)||0;
+  });
+  // Propagar el canvi de stats base als personatges d'aquesta classe,
+  // aplicant la diferència per no esborrar els punts repartits per nivell/missions.
+  var affectedIds=[];
+  players.forEach(function(p){
+    if(p.cls!==oldName)return;
+    if(!p.attrs)p.attrs={};
+    var changed=false;
+    attrKeys().forEach(function(k){
+      var diff=(cls.attrs[k]||0)-(oldAttrs[k]||0);
+      if(diff!==0){p.attrs[k]=Math.max(0,(p.attrs[k]||0)+diff);changed=true;}
+    });
+    if(changed)affectedIds.push(p.id);
   });
   // Punts per nivell (creixement per classe)
   var gm={};attrKeys().forEach(function(k){var el=document.getElementById('clsg-'+k+'-'+idx);gm[k]=el?(parseInt(el.value)||0):0;});
@@ -3188,10 +3203,10 @@ async function saveClassEdit(idx){
   cls.bonus=computeClassBonus(cls.attrs);
   // If name changed, update players
   if(oldName!==newName){players.forEach(function(p){if(p.cls===oldName)p.cls=newName;});}
-  // Save to dedicated table
-  if(CFG.MODE==='supabase'){await saveClassToSupabase(cls,idx);saveToSupabase();}
-  renderClassesAdmin();
-  toast('Classe "'+newName+'" actualitzada');
+  // Save to dedicated table (passant els personatges afectats perquè no es pisin amb la BD)
+  if(CFG.MODE==='supabase'){await saveClassToSupabase(cls,idx);saveToSupabase(affectedIds);}
+  renderClassesAdmin();renderAll();
+  toast('Classe "'+newName+'" actualitzada'+(affectedIds.length?(' · '+affectedIds.length+' personatge'+(affectedIds.length>1?'s':'')+' ajustats'):''));
 }
 
 function renderPlannerImported(){
