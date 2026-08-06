@@ -456,6 +456,8 @@ async function loadData(){
       try{normalizeAttrs();}catch(e){}
       // Asegurar que todos los players tienen todas las claves de atributo
       players.forEach(function(p){if(p.attrs){attrKeys().forEach(function(k){if(p.attrs[k]===undefined)p.attrs[k]=10;});}});
+      // Nivell sempre automàtic segons l'XP (100 XP/nivell, màxim 100)
+      players.forEach(function(p){p.level=levelFromXp(p.xp);p.xpNext=Math.min(MAX_LEVEL,p.level+1)*XP_PER_LEVEL;});
 
       // (ja no es generen missions de tutorial automàticament)
       // Load missions from dedicated table
@@ -1394,9 +1396,14 @@ function classGrowthFor(p){
   var cls=CLASSES.find(function(c){return c.name===p.cls;});
   return defaultGrowth(cls);
 }
+var MAX_LEVEL=100, XP_PER_LEVEL=100;
+// Nivell derivat automàticament de l'XP (100 XP per nivell, màxim 100)
+function levelFromXp(xp){return Math.min(MAX_LEVEL, Math.floor((xp||0)/XP_PER_LEVEL)+1);}
+// XP que falta per pujar de nivell (0 si ja ets nivell màxim)
+function xpToNext(xp){var lv=levelFromXp(xp);return lv>=MAX_LEVEL?0:(lv*XP_PER_LEVEL-(xp||0));}
 function checkLevelUp(p){
   if(!p)return;
-  const newLv=Math.floor(p.xp/100)+1;
+  const newLv=levelFromXp(p.xp);
   if(newLv>p.level){
     var levels=newLv-p.level;
     var g=classGrowthFor(p);
@@ -1404,7 +1411,7 @@ function checkLevelUp(p){
     for(var i=0;i<levels;i++){
       attrKeys().forEach(function(k){var add=g[k]||0;if(add){p.attrs[k]=(p.attrs[k]||0)+add;applied[k]=(applied[k]||0)+add;}});
     }
-    p.xpNext=(newLv+1)*100;
+    p.xpNext=Math.min(MAX_LEVEL,newLv+1)*XP_PER_LEVEL;
     p.level=newLv;
     showLevelUpPopup(p,applied,levels);
   }
@@ -1568,7 +1575,12 @@ function renderFramePicker(){
 }
 function renderHeroProfile(i){
   const p=(session.isAdmin&&i==='admin')?getAdminProfile():players[i];if(!p)return;
-  const xpPct=Math.round(p.xp/p.xpNext*100);
+  // Nivell i XP automàtics: 100 XP/nivell, màxim 100
+  const lvl=levelFromXp(p.xp);
+  const atMax=lvl>=MAX_LEVEL;
+  const inLvl=Math.max(0,Math.min(XP_PER_LEVEL,(p.xp||0)-(lvl-1)*XP_PER_LEVEL));
+  const toNext=atMax?0:(XP_PER_LEVEL-inLvl);
+  const xpPct=atMax?100:Math.round(inLvl/XP_PER_LEVEL*100);
   const canEdit=session.isAdmin||session.playerId===p.id;
   const recent=missions.filter(m=>m.playerId===p.id&&m.status==='done').slice(-3);
   document.getElementById('hprofile').innerHTML=`
@@ -1584,7 +1596,7 @@ function renderHeroProfile(i){
         <div class="phead">
           <div class="phead-ava">${frameWrap(p,renderAvatar(p,"pixel-avatar-lg"))}</div>
           <div class="phead-info">
-            <span class="badge b-purple" style="margin-bottom:6px;display:inline-block;">Nivell ${p.level} · ${p.cls}</span>
+            <span class="badge b-purple" style="margin-bottom:6px;display:inline-block;">Nivell ${lvl} · ${p.cls}</span>
             <div class="pname">${p.name}${session.isAdmin?'<span class="adm-rib">DIOS</span>':`<span class="adm-rib" style="display:none"></span>`}</div>
             <div class="pclass">${p.role}</div>
             <div class="pquote">"${p.quote}"</div>
@@ -1592,7 +1604,7 @@ function renderHeroProfile(i){
         </div>
         ${canEdit?`<button class="btn btn-sm pedit-btn" onclick="openEditModal('${p.id}')">✏️ Editar</button>`:''}
         <div class="xpw">
-          <div class="xpl"><span>XP: ${p.xp.toLocaleString()}</span><span>Nivell ${p.level+1} en ${(p.xpNext-p.xp).toLocaleString()} XP</span></div>
+          <div class="xpl"><span>${inLvl} / ${XP_PER_LEVEL} XP</span><span>${atMax?'Nivell màxim (100)':('Falten '+toNext+' XP per al nivell '+(lvl+1))}</span></div>
           <div class="xpt"><div class="xpf" style="width:${xpPct}%;background:${p.color};"></div></div>
         </div>
         <div class="g4" style="margin-bottom:1.25rem;">
@@ -3806,7 +3818,7 @@ function buildPentagon(attrs,color){
       +'<feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="'+color+'" flood-opacity="0.55"/>'
     +'</filter>'
   +'</defs>';
-  var dataPts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;var v=Math.min(100,attrs[k]||0)/100;return {x:cx+r*v*Math.cos(a),y:cy+r*v*Math.sin(a),lx:cx+(r+30)*Math.cos(a),ly:cy+(r+30)*Math.sin(a),label:labels[i],val:attrs[k]||0};});
+  var dataPts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;var v=Math.min(100,attrs[k]||0)/100;return {x:cx+r*v*Math.cos(a),y:cy+r*v*Math.sin(a),lx:cx+(r+44)*Math.cos(a),ly:cy+(r+44)*Math.sin(a),label:labels[i],val:attrs[k]||0};});
   var fillPts=dataPts.map(function(p){return p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');
   var dots=dataPts.map(function(p){return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="4.5" fill="'+color+'" stroke="var(--bg2)" stroke-width="2"/>';}).join('');
   // Etiquetes amb HTML real (foreignObject): els emojis es renderitzen sempre
@@ -3821,7 +3833,7 @@ function buildPentagon(attrs,color){
       +'</div>'
     +'</foreignObject>';
   }).join('');
-  return '<svg viewBox="-60 -50 520 520" preserveAspectRatio="xMidYMid meet" style="overflow:visible;width:100%;height:auto;max-width:520px;display:block;margin:0 auto;">'
+  return '<svg viewBox="-74 -64 548 548" preserveAspectRatio="xMidYMid meet" style="overflow:visible;width:100%;height:auto;max-width:540px;display:block;margin:0 auto;">'
     +defs+plate+bgSvg+axes
     +'<polygon points="'+fillPts+'" fill="url(#pgGrad)" stroke="'+color+'" stroke-width="2.5" stroke-linejoin="round" filter="url(#pgGlow)"/>'
     +dots+lblSvg+'</svg>';
