@@ -1,4 +1,4 @@
-/* Service Worker — BMC Global Quarter General */
+/* Service Worker — BMC Global ITBMC */
 const CACHE='itbmc-v1';
 const SHELL=['./','./index.html','./css/styles.css','./js/app.js'];
 

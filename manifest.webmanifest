@@ -1,6 +1,6 @@
 {
-  "name": "BMC Global — Quarter General",
-  "short_name": "Quarter General",
+  "name": "BMC Global — ITBMC",
+  "short_name": "ITBMC",
   "description": "Gestió gamificada de tasques de l'equip de BMC Global.",
   "start_url": "./",
   "scope": "./",

@@ -855,7 +855,7 @@ function renderInicio(){
     var p=players.find(function(pl){return pl.id===session.playerId;});
     var name=session.isAdmin?'Dios 👑':(p?p.name.split(' ')[0]:'—');
     var sub=session.isAdmin
-      ?'Tens el control absolut del Quarter General.'
+      ?'Tens el control absolut d\'ITBMC.'
       :(p?('Nivell '+p.level+' · '+p.cls+' · 🪙 '+p.gold.toLocaleString()):'');
     hero.innerHTML='<div class="card" style="padding:1.25rem 1.5rem;">'
       +'<div style="font-size:22px;font-weight:700;margin-bottom:4px;">Hola, '+name+' 👋</div>'

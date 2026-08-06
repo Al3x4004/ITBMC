@@ -1,4 +1,4 @@
-# BMC Global — Cuartel General
+# BMC Global — ITBMC
 
 Aplicación web que **gamifica la gestión de tareas del equipo** de BMC Global al estilo
 RPG retro: cada empleado tiene un personaje, las tareas se convierten en misiones, y hay
