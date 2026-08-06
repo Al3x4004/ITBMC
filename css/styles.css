@@ -987,6 +987,32 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent) !important;bo
   .topbar-inner{gap:.5rem;}
 }
 
+/* ═══════════ MÒBIL: rendiment + mida compacta ═══════════ */
+@media(max-width:768px){
+  /* Rendiment: el desenfocat de la barra és car al fer scroll en mòbil */
+  .topbar{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;background:var(--bg2) !important;}
+  /* Menú en una sola fila amb scroll horitzontal (en lloc d'apilar-se) */
+  .nav{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;}
+  .nav::-webkit-scrollbar{display:none;}
+  .nb{flex-shrink:0;}
+  /* Menys "lift" i ombres per alleugerir el pintat */
+  .btn:hover,.btn-complete:hover,.mcrd:hover,.htab:hover{transform:none;}
+}
+@media(max-width:560px){
+  body{font-size:13px;}
+  .app{padding:.8rem .7rem 2rem;}
+  .card{padding:.85rem !important;}
+  .btn{padding:6px 12px;font-size:12.5px;}
+  .btn-sm{padding:5px 9px;font-size:12px;}
+  .stitle{font-size:10px;margin-bottom:.5rem;}
+  .nb{font-size:12px;padding:5px 8px;gap:5px;}
+  .nb .nb-icon{font-size:13px;width:15px;}
+  .topbar-inner{padding:.35rem .6rem;gap:.5rem;}
+  .topbar-logo img{height:24px !important;}
+  .field input,.field textarea,.field select{font-size:13px;padding:7px 9px;}
+  .pstats-radar svg{max-width:320px;}
+}
+
 /* ═══════════ ACCESSIBILITAT ═══════════ */
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px;}
 button:focus-visible,.nb:focus-visible,.htab:focus-visible,.filter-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
