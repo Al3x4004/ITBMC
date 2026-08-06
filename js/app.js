@@ -2274,7 +2274,6 @@ function renderShop(){
       +'<div class="item-name">'+item.name+'</div>'
       +'<div class="item-desc">'+item.desc+'</div>'
       +stockInfo
-      +'<div class="item-cost"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+item.cost+'</div>'
       +btn+eqBtn+'</div>';
   }).join('')+'</div>';
 }
