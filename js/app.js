@@ -3137,7 +3137,8 @@ function renderClassesAdmin(){
       +'<div style="max-height:180px;overflow-y:auto;border:0.5px solid var(--border);border-radius:var(--radius);padding:6px;margin-bottom:1rem;display:grid;grid-template-columns:1fr 1fr;gap:2px;">'
         +(shopItems.length?itemsHtml:'<div style="font-size:12px;color:var(--muted);padding:6px;">No hi ha ítems creats encara.</div>')
       +'</div>'
-      +'<div style="display:flex;justify-content:flex-end;">'
+      +'<div style="display:flex;justify-content:space-between;gap:8px;">'
+        +'<button class="btn btn-sm" data-idx="'+idx+'" onclick="recalcClassStats(parseInt(this.dataset.idx))" title="Posa els stats base dels PJ d\'aquesta classe segons la classe + creixement pel seu nivell">↻ Recalcular stats dels PJ</button>'
         +'<button class="btn btn-p btn-sm" data-idx="'+idx+'" onclick="saveClassEdit(parseInt(this.dataset.idx))">Desar canvis</button>'
       +'</div>'
       +'</div>';
@@ -3207,6 +3208,25 @@ async function saveClassEdit(idx){
   if(CFG.MODE==='supabase'){await saveClassToSupabase(cls,idx);saveToSupabase(affectedIds);}
   renderClassesAdmin();renderAll();
   toast('Classe "'+newName+'" actualitzada'+(affectedIds.length?(' · '+affectedIds.length+' personatge'+(affectedIds.length>1?'s':'')+' ajustats'):''));
+}
+async function recalcClassStats(idx){
+  var cls=CLASSES[idx];
+  if(!cls)return;
+  var targets=players.filter(function(p){return p.cls===cls.name;});
+  if(!targets.length){toast('Cap personatge amb la classe "'+cls.name+'".');return;}
+  if(!confirm('Recalcular els stats de '+targets.length+' personatge'+(targets.length>1?'s':'')+' de la classe "'+cls.name+'"?\n\nEls stats base es posaran segons la classe + el creixement pel seu nivell. ATENCIÓ: es perdran els punts guanyats per missions o editats a mà.'))return;
+  var g=classGrowthMap[cls.name]||defaultGrowth(cls);
+  targets.forEach(function(p){
+    if(!p.attrs)p.attrs={};
+    var lv=Math.max(1,p.level||1);
+    attrKeys().forEach(function(k){
+      p.attrs[k]=Math.max(0,(cls.attrs[k]||0)+(g[k]||0)*(lv-1));
+    });
+  });
+  var ids=targets.map(function(p){return p.id;});
+  if(CFG.MODE==='supabase'){saveToSupabase(ids);}
+  renderClassesAdmin();renderAll();
+  toast(targets.length+' personatge'+(targets.length>1?'s':'')+' recalculats segons "'+cls.name+'"');
 }
 
 function renderPlannerImported(){
