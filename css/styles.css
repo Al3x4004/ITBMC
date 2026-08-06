@@ -1034,13 +1034,13 @@ button:focus-visible,.nb:focus-visible,.htab:focus-visible,.filter-chip:focus-vi
 }
 
 /* ═══════════ INVENTARI — slots equip/cosmètics més grans ═══════════ */
-#inv-slots-equip{display:flex !important;flex-wrap:wrap;justify-content:center;gap:16px !important;}
-#inv-slots-equip .inv-slot{width:190px;min-height:220px;padding:1.25rem 1rem;gap:10px;}
-#inv-slots-equip .inv-slot-icon{font-size:64px;line-height:1;}
-#inv-slots-equip .inv-slot-name{font-size:15px;font-weight:600;white-space:normal;line-height:1.25;}
-#inv-slots-equip .inv-slot-label{font-size:12px;}
-.inv-slot-img{width:72px;height:72px;object-fit:contain;display:block;}
-#inv-slots-equip .inv-slot-img{width:118px;height:118px;}
+#inv-slots-equip{display:flex !important;flex-wrap:wrap;justify-content:center;gap:12px !important;}
+#inv-slots-equip .inv-slot{width:140px;min-height:158px;padding:.9rem .7rem;gap:7px;}
+#inv-slots-equip .inv-slot-icon{font-size:44px;line-height:1;}
+#inv-slots-equip .inv-slot-name{font-size:13px;font-weight:600;white-space:normal;line-height:1.25;}
+#inv-slots-equip .inv-slot-label{font-size:11px;}
+.inv-slot-img{width:64px;height:64px;object-fit:contain;display:block;}
+#inv-slots-equip .inv-slot-img{width:82px;height:82px;}
 
 #inv-tab-cosm .ava-editor-layout{grid-template-columns:200px 1fr;gap:1.5rem;}
 #inv-tab-cosm .pixel-avatar-lg{width:180px !important;height:180px !important;}

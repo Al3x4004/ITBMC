@@ -1514,9 +1514,11 @@ function playerRankBanner(p){
   return (idx>=0&&idx<3)?idx+1:0;
 }
 function frameWrap(p,inner){
-  // Banner exclusivo del top 3 (tiene prioridad sobre el marc de nivell)
+  // Banner exclusiu del top 3. Per defecte s'activa sol (avatarFrame buit),
+  // però el jugador el pot treure triant un altre marc (avatarFrame='none' o un tier).
   var rank=playerRankBanner(p);
-  if(rank){
+  var choice=(p&&p.avatarFrame)?p.avatarFrame:'rank';
+  if(rank&&choice==='rank'){
     var tag=rank===1?'1r':rank===2?'2n':'3r';
     var crown=rank===1?'👑':rank===2?'🥈':'🥉';
     return '<div class="ava-rank ava-rank-'+rank+'">'
@@ -1544,14 +1546,19 @@ function renderFramePicker(){
   var p=players.find(function(pl){return pl.id===session.playerId;});
   var html='';
   if(p){
-    var cur=playerFrame(p).key;
     var rank=playerRankBanner(p);
-    var rankNote=rank?'<div style="font-size:12px;color:var(--gold);background:var(--gold-bg);border:0.5px solid var(--gold-border);border-radius:var(--radius);padding:6px 10px;margin-top:12px;">🏆 Tens el banner exclusiu del <strong>Top '+rank+'</strong> actiu! Es mantindrà mentre no baixis de posició al rànquing.</div>':'';
+    var choice=(p.avatarFrame)?p.avatarFrame:'rank';
+    var activeKey=(choice==='rank'&&rank)?'rank':playerFrame(p).key;
+    var rankNote=rank?'<div style="font-size:12px;color:var(--gold);background:var(--gold-bg);border:0.5px solid var(--gold-border);border-radius:var(--radius);padding:6px 10px;margin-top:12px;">🏆 Estàs al <strong>Top '+rank+'</strong>! Pots activar el banner exclusiu o triar un altre marc quan vulguis.</div>':'';
+    // Opció del banner exclusiu (només si estàs al top del rànquing)
+    var rankOpt=rank?('<button class="frame-opt'+(activeKey==='rank'?' active':'')+'" onclick="setPlayerFrame(\'rank\')" title="Banner exclusiu del Top '+rank+'">'
+      +'<span class="frame-swatch" style="border-color:var(--gold);box-shadow:0 0 6px var(--gold);">🏆</span>'
+      +'<span style="font-size:11px;margin-top:4px;">Top '+rank+'</span></button>'):'';
     html='<div class="stitle" style="margin-top:16px;">🖼️ Banner del perfil</div>'+rankNote
-      +'<div class="frame-grid">'+FRAME_TIERS.map(function(f){
+      +'<div class="frame-grid">'+rankOpt+FRAME_TIERS.map(function(f){
         var unlocked=(p.level||1)>=f.min;
         var sw='<span class="frame-swatch"'+(f.color?' style="border-color:'+f.color+';box-shadow:0 0 6px '+f.color+';"':'')+'>'+(f.color?'':'∅')+'</span>';
-        return '<button class="frame-opt'+(cur===f.key?' active':'')+'"'+(unlocked?' onclick="setPlayerFrame(\''+f.key+'\')"':' disabled')+'>'
+        return '<button class="frame-opt'+(activeKey===f.key?' active':'')+'"'+(unlocked?' onclick="setPlayerFrame(\''+f.key+'\')"':' disabled')+'>'
           +sw+'<span style="font-size:11px;margin-top:4px;">'+f.label+'</span>'
           +(unlocked?'':'<span style="font-size:10px;color:var(--muted);">🔒 Nv.'+f.min+'</span>')
           +'</button>';
@@ -1603,17 +1610,6 @@ function renderHeroProfile(i){
                 </div>
               </div>
             </div>
-            ${(function(){
-              var cosmSlots=SLOT_DEFS.filter(function(s){return s.cosmetic;}).map(function(s){return s.key;});
-              var eqIds=[],cosmIds=[];
-              Object.keys(p.equipped||{}).forEach(function(k){var id=p.equipped[k];if(!id)return;(cosmSlots.indexOf(k)>=0?cosmIds:eqIds).push(id);});
-              function pills(ids,cls,empty){
-                var items=ids.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);
-                if(!items.length)return '<div class="peq-empty">'+empty+'</div>';
-                return '<div class="erow">'+items.map(function(i){return '<span class="epill '+cls+'">'+(i.icon||'')+' '+i.name+'<button class="info-btn info-btn-pill" title="Veure info" onclick="event.stopPropagation();showItemDetails(\''+i.id+'\')">i</button></span>';}).join('')+'</div>';
-              }
-              return '<div class="peq-group"><div class="stitle">⚔️ Equipament</div>'+pills(eqIds,'epill-eq','Sense equipament.')+'</div>';
-            })()}
           </div>
           <div>
             <div class="stitle">Història</div>
@@ -1627,6 +1623,14 @@ function renderHeroProfile(i){
               var items=cosmIds.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);
               var inner=items.length?('<div class="erow">'+items.map(function(i){return '<span class="epill epill-cosm">'+(i.icon||'')+' '+i.name+'<button class="info-btn info-btn-pill" title="Veure info" onclick="event.stopPropagation();showItemDetails(\''+i.id+'\')">i</button></span>';}).join('')+'</div>'):'<div class="peq-empty">Sense cosmètics.</div>';
               return '<div class="peq-group"><div class="stitle">✨ Cosmètics</div>'+inner+'</div>';
+            })()}
+            ${(function(){
+              var cosmSlots=SLOT_DEFS.filter(function(s){return s.cosmetic;}).map(function(s){return s.key;});
+              var eqIds=[];
+              Object.keys(p.equipped||{}).forEach(function(k){var id=p.equipped[k];if(id&&cosmSlots.indexOf(k)<0)eqIds.push(id);});
+              var items=eqIds.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);
+              var inner=items.length?('<div class="erow">'+items.map(function(i){return '<span class="epill epill-eq">'+(i.icon||'')+' '+i.name+'<button class="info-btn info-btn-pill" title="Veure info" onclick="event.stopPropagation();showItemDetails(\''+i.id+'\')">i</button></span>';}).join('')+'</div>'):'<div class="peq-empty">Sense equipament.</div>';
+              return '<div class="peq-group"><div class="stitle">⚔️ Equipament</div>'+inner+'</div>';
             })()}
             ${recent.length?`<div class="stitle">Últimes missions</div>`+recent.map(m=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:12px;color:var(--text);">${m.name}</span><span class="badge b-teal">+${m.xp} XP</span></div>`).join(''):''}
           </div>
@@ -3606,16 +3610,17 @@ function renderAvatarEditor(previewId,controlsId){
       +'</div>';
   }
   // Colores
+  html+='<div class="stitle" style="grid-column:1/-1;">🎨 Colors</div>';
   html+=colorPicker('skinColor','Pell');
-  html+=colorPicker('bgColor','Color de fons');
-  html+=colorPicker('hairColor','Color cabell');
-  html+=colorPicker('eyesColor','Color ulls');
-  html+=colorPicker('clothingColor','Color roba');
-  html+=colorPicker('glassesColor','Color ulleres');
-  html+=colorPicker('hatColor','Color barret');
-  html+=colorPicker('accessoriesColor','Color accessoris');
-  html+='<div style="border-top:0.5px solid var(--border);margin:10px 0;padding-top:6px;"></div>';
+  html+=colorPicker('bgColor','Fons');
+  html+=colorPicker('hairColor','Cabell');
+  html+=colorPicker('eyesColor','Ulls');
+  html+=colorPicker('clothingColor','Roba');
+  html+=colorPicker('glassesColor','Ulleres');
+  html+=colorPicker('hatColor','Barret');
+  html+=colorPicker('accessoriesColor','Accessoris');
   // Formas (desplegables)
+  html+='<div class="stitle" style="grid-column:1/-1;margin-top:10px;">✂️ Formes</div>';
   html+=selector('hair','Pentinat');
   html+=selector('eyes','Ulls');
   html+=selector('mouth','Boca');
