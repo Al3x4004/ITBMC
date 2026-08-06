@@ -3641,31 +3641,30 @@ function renderAvatarEditor(previewId,controlsId){
     }else{
       html+='<div style="grid-column:1/-1;font-size:11px;color:var(--muted);margin-bottom:8px;">🖱️ Arrossega els cosmètics sobre l\'avatar per moure\'ls.</div>';
     }
+    html+='<div class="cosm-slots">';
     cosmeticSlots.forEach(function(sl,idx){
       var cur=p.equipped[sl.key]||'';
       var opts='<option value="">— Buit —</option>'+ownedCosmetics.map(function(id){
         var it=shopItems.find(function(i){return i.id===id;});
         return '<option value="'+id+'"'+(cur===id?' selected':'')+'>'+(it.icon||'✨')+' '+it.name+'</option>';
       }).join('');
-      html+='<div style="grid-column:1/-1;margin-bottom:10px;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px;">'
-        +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">'
-        +'<span style="font-size:12px;color:var(--muted);flex-shrink:0;">Cosmètic</span>'
-        +'<select onchange="equipFromEditor(\''+sl.key+'\',this.value)" style="flex:1;padding:6px;font-size:12px;border:2px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">'+opts+'</select>'
-        +'</div>';
       var it=cur?shopItems.find(function(i){return i.id===cur;}):null;
-      if(it&&it.imageUrl){
+      var filled=!!(it&&it.imageUrl);
+      html+='<div class="cosm-slot'+(cur?' filled':'')+'">'
+        +'<select onchange="equipFromEditor(\''+sl.key+'\',this.value)" class="cosm-sel">'+opts+'</select>';
+      if(filled){
         var ps=p.equipPos[sl.key]||it.avatarPos||sl.pos;
-        html+='<div style="display:flex;align-items:center;gap:6px;">'
-          +'<span style="font-size:11px;width:40px;">⛶ Mida</span>'
+        html+='<div class="cosm-size">'
+          +'<span class="cosm-size-ic">⛶</span>'
           +'<button class="ava-cycle-btn" onclick="nudgeEquipPos(\''+sl.key+'\',\'w\',-4)">−</button>'
-          +'<input type="range" min="8" max="140" value="'+ps.w+'" style="flex:1;" oninput="setEquipPos(\''+sl.key+'\',\'w\',this.value)"/>'
+          +'<input type="range" min="8" max="140" value="'+ps.w+'" oninput="setEquipPos(\''+sl.key+'\',\'w\',this.value)"/>'
           +'<button class="ava-cycle-btn" onclick="nudgeEquipPos(\''+sl.key+'\',\'w\',4)">+</button>'
-          +'<span style="font-size:11px;width:32px;text-align:right;" id="eqp-w-'+sl.key+'">'+Math.round(ps.w)+'</span>'
-          +'</div>'
-          +'<button class="btn btn-sm" style="width:100%;margin-top:4px;" onclick="resetEquipPos(\''+sl.key+'\')">↺ Posició per defecte</button>';
+          +'<button class="cosm-reset" title="Posició per defecte" onclick="resetEquipPos(\''+sl.key+'\')">↺</button>'
+          +'</div>';
       }
       html+='</div>';
     });
+    html+='</div>';
   }
       html+='<div style="margin-top:12px;"><button class="btn btn-sm" style="width:100%;" onclick="randomizeAvatar()">🎲 Aleatori</button></div>';
   var cc=document.getElementById(controlsId);if(cc)cc.innerHTML=html;
