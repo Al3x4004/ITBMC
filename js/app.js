@@ -1596,23 +1596,38 @@ function renderHeroProfile(i){
           <div class="xpt"><div class="xpf" style="width:${xpPct}%;background:${p.color};"></div></div>
         </div>
         <div class="g4" style="margin-bottom:1.25rem;">
-          <div class="smini"><div class="v">${p.xp.toLocaleString()}</div><div class="l">XP total</div></div>
-          <div class="smini"><div class="v"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> ${p.gold}</div><div class="l">Or</div></div>
-          <div class="smini"><div class="v">${p.fragments||0} ✨</div><div class="l">Fragments</div></div>
-          <div class="smini"><div class="v">${p.missions}</div><div class="l">Missions</div></div>
+          <div class="smini"><div class="v">${p.xp.toLocaleString()} ⭐</div><div class="l">XP total</div></div>
+          <div class="smini"><div class="v">${(p.gold||0).toLocaleString()} <svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg></div><div class="l">Or</div></div>
+          <div class="smini"><div class="v">${(p.fragments||0).toLocaleString()} ✨</div><div class="l">Fragments</div></div>
+          <div class="smini"><div class="v">${p.missions} 🎯</div><div class="l">Missions</div></div>
         </div>
           </aside>
           <div class="pinfo-main">
         <div class="pbody">
           <div>
-            <div class="pstats-row">
+            <div class="stitle">📊 Atributs</div>
+            <div class="pstats-top">
               <div class="pstats-radar">${buildPentagon(getEffectiveAttrs(p),p.color)}</div>
-              <div class="pstats-bars">
-                <div class="stitle">Atributs</div>
-                <div class="attrs-grid">
-                ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;var full=attrName(k),shortNm=full.split('(')[0].trim();return '<div class="attr-chip" title="'+full+'"><span class="attr-ic">'+attrIcon(k)+'</span><div class="attr-body"><div class="attr-top"><span class="attr-nm">'+shortNm+'</span><span class="attr-vl">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div><div class="strk"><div class="sfill" style="width:'+Math.round(Math.min(100,ev/99*100))+'%;background:'+AC[k]+';"></div></div></div></div>';}).join('');})()}
-                </div>
+              <div class="pslots">
+                ${(function(){
+                  function slotRow(sl){
+                    var iid=p.equipped&&p.equipped[sl.key];
+                    var item=iid?shopItems.find(function(i){return i.id===iid;}):null;
+                    var ic=item?(item.imageUrl?'<img class="pslot-img" src="'+item.imageUrl+'" alt="">':(item.icon||sl.icon)):sl.icon;
+                    return '<div class="pslot'+(item?' filled':'')+'"'+(item?' onclick="showItemDetails(\''+iid+'\')" title="Veure detalls"':'')+'>'
+                      +'<span class="pslot-ic">'+ic+'</span>'
+                      +'<div class="pslot-txt"><div class="pslot-name">'+(item?item.name:'Buit')+'</div><div class="pslot-lbl">'+sl.label+'</div></div>'
+                      +'</div>';
+                  }
+                  var eq=SLOT_DEFS.filter(function(s){return !s.cosmetic;});
+                  var cosm=SLOT_DEFS.filter(function(s){return s.cosmetic;});
+                  return '<div class="pslot-group"><div class="pslot-h">⚔️ Equipament</div>'+eq.map(slotRow).join('')+'</div>'
+                    +'<div class="pslot-group"><div class="pslot-h">✨ Cosmètics</div>'+cosm.map(slotRow).join('')+'</div>';
+                })()}
               </div>
+            </div>
+            <div class="attrs-grid">
+            ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;var full=attrName(k),shortNm=full.split('(')[0].trim();return '<div class="attr-chip" title="'+full+'"><span class="attr-ic">'+attrIcon(k)+'</span><div class="attr-body"><div class="attr-top"><span class="attr-nm">'+shortNm+'</span><span class="attr-vl">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div><div class="strk"><div class="sfill" style="width:'+Math.round(Math.min(100,ev/99*100))+'%;background:'+AC[k]+';"></div></div></div></div>';}).join('');})()}
             </div>
           </div>
           <div>
@@ -1620,22 +1635,6 @@ function renderHeroProfile(i){
             <p class="plore" style="margin-bottom:1rem;">${p.lore}</p>
             <div class="stitle">Showcase</div>
             <div class="hero-showcase">${(function(){if(!p.showcase)p.showcase=[null,null,null];return p.showcase.map(function(cid,si){var card=cid?gachaCards.find(function(x){return x.id===cid;}):null;var url=card?(card.imageUrl||CFG.GITHUB_RAW+card.image):'';var canEdit=session.playerId===p.id;if(card&&url)return '<img class="showcase-img" src="'+url+'" alt="'+card.name+'"'+(canEdit?' onclick="openShowcaseSelector('+si+')" title="Clic per canviar"':'')+' onerror="this.style.opacity=0"/>';return canEdit?'<div class="showcase-empty" onclick="openShowcaseSelector('+si+')" title="Afegir carta del gacha">＋</div>':'<div class="showcase-empty" style="cursor:default;opacity:.4;">✦</div>';}).join('');})()}</div>
-            ${(function(){
-              var cosmSlots=SLOT_DEFS.filter(function(s){return s.cosmetic;}).map(function(s){return s.key;});
-              var cosmIds=[];
-              Object.keys(p.equipped||{}).forEach(function(k){var id=p.equipped[k];if(id&&cosmSlots.indexOf(k)>=0)cosmIds.push(id);});
-              var items=cosmIds.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);
-              var inner=items.length?('<div class="erow">'+items.map(function(i){return '<span class="epill epill-cosm">'+(i.icon||'')+' '+i.name+'<button class="info-btn info-btn-pill" title="Veure info" onclick="event.stopPropagation();showItemDetails(\''+i.id+'\')">i</button></span>';}).join('')+'</div>'):'<div class="peq-empty">Sense cosmètics.</div>';
-              return '<div class="peq-group"><div class="stitle">✨ Cosmètics</div>'+inner+'</div>';
-            })()}
-            ${(function(){
-              var cosmSlots=SLOT_DEFS.filter(function(s){return s.cosmetic;}).map(function(s){return s.key;});
-              var eqIds=[];
-              Object.keys(p.equipped||{}).forEach(function(k){var id=p.equipped[k];if(id&&cosmSlots.indexOf(k)<0)eqIds.push(id);});
-              var items=eqIds.map(function(id){return shopItems.find(function(i){return i.id===id;});}).filter(Boolean);
-              var inner=items.length?('<div class="erow">'+items.map(function(i){return '<span class="epill epill-eq">'+(i.icon||'')+' '+i.name+'<button class="info-btn info-btn-pill" title="Veure info" onclick="event.stopPropagation();showItemDetails(\''+i.id+'\')">i</button></span>';}).join('')+'</div>'):'<div class="peq-empty">Sense equipament.</div>';
-              return '<div class="peq-group"><div class="stitle">⚔️ Equipament</div>'+inner+'</div>';
-            })()}
             ${recent.length?`<div class="stitle">Últimes missions</div>`+recent.map(m=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:12px;color:var(--text);">${m.name}</span><span class="badge b-teal">+${m.xp} XP</span></div>`).join(''):''}
           </div>
         </div>
