@@ -394,7 +394,7 @@ async function mirrorPlayersToTable(list,removedIds){
       quote:p.quote||'',lore:p.lore||'',last_daily:p.lastDaily||'',avatar_frame:p.avatarFrame||'',
       updated_at:now,
       // A "data" només hi queden les estructures (llistes/objectes) que no caben en columnes
-      data:{attrs:p.attrs,avatar:p.avatar,equipped:p.equipped,equipPos:p.equipPos,showcase:p.showcase,widgets:p.widgets,widgetSizes:p.widgetSizes,gallery:p.gallery,inventory:p.inventory,pin:p.pin}
+      data:{attrs:p.attrs,baseAttrs:p.baseAttrs,avatar:p.avatar,equipped:p.equipped,equipPos:p.equipPos,showcase:p.showcase,widgets:p.widgets,widgetSizes:p.widgetSizes,gallery:p.gallery,inventory:p.inventory,pin:p.pin}
     };});
     await fetch(CFG.SUPABASE_URL+'/rest/v1/players',{
       method:'POST',
@@ -838,7 +838,7 @@ function saveNewChar(){
     var item=shopItems.find(function(i){return i.id===iid;});
     if(item&&equipped.hasOwnProperty(item.slot)&&!equipped[item.slot])equipped[item.slot]=iid;
   });
-  const np={id:'pj'+Date.now(),realName:rn,name:pn,cls:cpState.cls.name,role:cpState.cls.role,emblem:cpState.emblem,color:cpState.color.hex,colorBg:cpState.color.bg,level:1,xp:0,xpNext:100,gold:0,missions:0,lore:lore||'Història per escriure...',quote:quote||'...',pin,attrs:{...cpState.cls.attrs},gachaTokens:0,fragments:0,gallery:[],lastDaily:'',inventory:startItems,equipped:equipped,pendingAttrPts:0};
+  const np={id:'pj'+Date.now(),realName:rn,name:pn,cls:cpState.cls.name,role:cpState.cls.role,emblem:cpState.emblem,color:cpState.color.hex,colorBg:cpState.color.bg,level:1,xp:0,xpNext:100,gold:0,missions:0,lore:lore||'Història per escriure...',quote:quote||'...',pin,attrs:{...cpState.cls.attrs},baseAttrs:{...cpState.cls.attrs},gachaTokens:0,fragments:0,gallery:[],lastDaily:'',inventory:startItems,equipped:equipped,pendingAttrPts:0};
   players.push(np);
   checkDailyMissions();
   if(CFG.MODE==='supabase')saveToSupabase();
@@ -2167,7 +2167,7 @@ function saveEdit(){
     var clsChanged=newCls!==p.cls;
     p.cls=newCls;
     var cls=CLASSES.find(c=>c.name===p.cls);
-    if(cls){p.role=cls.role;if(clsChanged)p.attrs={...cls.attrs};}
+    if(cls){p.role=cls.role;if(clsChanged){p.attrs={...cls.attrs};p.baseAttrs={...cls.attrs};}}
     // Stats manuales (siempre se aplican, después del posible reset por cambio de clase)
     attrKeys().forEach(function(k){
       var el=document.getElementById('e-attr-'+k);
@@ -3089,21 +3089,34 @@ function toggleClassCard(idx){
 }
 async function recalcAllStats(){
   if(!players.length){toast('No hi ha personatges.');return;}
-  if(!confirm('Recalcular els stats de TOTS els personatges ('+players.length+') segons la seva classe + creixement pel nivell?\n\nATENCIÓ: es perdran els punts guanyats per missions o editats a mà.'))return;
+  if(!confirm('Sincronitzar els stats base de TOTS els personatges ('+players.length+') amb la base de la seva classe?\n\nNomés canvia la part base (la diferència). Es mantenen els punts guanyats per nivell i missions.'))return;
   var ids=[];
   players.forEach(function(p){
     var cls=CLASSES.find(function(c){return c.name===p.cls;});
     if(!cls)return;
-    var g=classGrowthMap[cls.name]||defaultGrowth(cls);
     if(!p.attrs)p.attrs={};
-    var lv=Math.max(1,p.level||1);
-    attrKeys().forEach(function(k){p.attrs[k]=Math.max(0,(cls.attrs[k]||0)+(g[k]||0)*(lv-1));});
+    // Base de classe actual del personatge. Si no en té (PJ antic), s'infereix
+    // restant el creixement acumulat pel seu nivell, de manera que els punts
+    // repartits per nivell/missions es conserven.
+    var base=p.baseAttrs;
+    if(!base){
+      base={};
+      var g=classGrowthMap[cls.name]||defaultGrowth(cls);
+      var lv=Math.max(1,p.level||1);
+      attrKeys().forEach(function(k){base[k]=Math.max(0,(p.attrs[k]||0)-(g[k]||0)*(lv-1));});
+    }
+    // Aplicar només la diferència entre la base de la classe i la base del PJ
+    attrKeys().forEach(function(k){
+      var diff=(cls.attrs[k]||0)-(base[k]||0);
+      p.attrs[k]=Math.max(0,(p.attrs[k]||0)+diff);
+    });
+    p.baseAttrs=Object.assign({},cls.attrs);
     ids.push(p.id);
   });
   if(!ids.length){toast('Cap personatge amb una classe vàlida.');return;}
   if(CFG.MODE==='supabase'){saveToSupabase(ids);}
   renderClassesAdmin();renderAll();
-  toast(ids.length+' personatge'+(ids.length>1?'s':'')+' recalculats segons la seva classe');
+  toast(ids.length+' personatge'+(ids.length>1?'s':'')+' sincronitzats amb la base de la classe');
 }
 function renderClassesAdmin(){
   var wrap=document.getElementById('classes-list');
@@ -3222,10 +3235,12 @@ async function saveClassEdit(idx){
   players.forEach(function(p){
     if(p.cls!==oldName)return;
     if(!p.attrs)p.attrs={};
+    if(!p.baseAttrs)p.baseAttrs={...oldAttrs};
     var changed=false;
     attrKeys().forEach(function(k){
       var diff=(cls.attrs[k]||0)-(oldAttrs[k]||0);
       if(diff!==0){p.attrs[k]=Math.max(0,(p.attrs[k]||0)+diff);changed=true;}
+      p.baseAttrs[k]=cls.attrs[k]||0;
     });
     if(changed)affectedIds.push(p.id);
   });
