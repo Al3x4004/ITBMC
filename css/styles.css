@@ -23,13 +23,13 @@
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;transition:background .2s,color .2s;}
 /* ══ LAYOUT (topbar) ══ */
 .topbar{position:sticky;top:0;z-index:50;background:var(--bg2);border-bottom:0.5px solid var(--border);width:100%;}
-.topbar-inner{display:flex;align-items:center;gap:1.25rem;max-width:1700px;margin:0 auto;padding:.6rem 1.5rem;}
+.topbar-inner{display:flex;align-items:center;gap:.75rem;max-width:1700px;margin:0 auto;padding:.35rem 1.25rem;}
 .topbar-logo{flex-shrink:0;display:flex;align-items:center;}
 .nav{display:flex;flex-direction:row;align-items:center;flex-wrap:wrap;gap:2px;flex:1;min-width:0;}
-.nb{padding:7px 12px;border-radius:var(--radius);border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s;text-align:left;display:flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0;}
+.nb{padding:5px 9px;border-radius:var(--radius);border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:12.5px;font-family:inherit;transition:all .15s;text-align:left;display:flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0;}
 .nb:hover{background:var(--bg3);color:var(--text);}
 .nb.active{background:var(--bg3);color:var(--text);font-weight:500;}
-.nb .nb-icon{font-size:14px;width:18px;text-align:center;}
+.nb .nb-icon{font-size:13px;width:16px;text-align:center;}
 .topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
 .uwrap{position:relative;}
 .umenu-dropdown{position:absolute;right:0;top:calc(100% + 6px);min-width:180px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:.5rem;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.25);}
@@ -1104,7 +1104,7 @@ body{background-color:var(--bg);background-image:radial-gradient(1200px 600px at
 .shop-item .btn,.inv-item .btn{width:100%;margin-top:auto;}
 .shop-item{padding-top:1.1rem;}
 /* Graella que NO estira les targetes (cada una la seva alçada) i columnes més amples/quadrades */
-.shop-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr)) !important;align-items:start !important;gap:14px !important;}
+.shop-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr)) !important;align-items:stretch !important;gap:14px !important;}
 /* Zona d'imatge/icona quadrada i consistent */
 .item-media{width:100%;aspect-ratio:1/1;max-height:150px;display:flex;align-items:center;justify-content:center;background:var(--bg3);border-radius:var(--radius);overflow:hidden;margin-bottom:2px;}
 .item-media img{width:100%;height:100%;object-fit:contain;padding:8px;}
