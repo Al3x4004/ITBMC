@@ -4220,7 +4220,18 @@ function createArc(){
 /* ══ ARRANQUE DE LA APP ══ */
 function hideBootLoader(){var b=document.getElementById('boot-loader');if(b){b.classList.add('hide');setTimeout(function(){if(b&&b.parentNode)b.parentNode.removeChild(b);},400);}}
 // PWA: registrar el service worker (instal·lable + càrrega ràpida)
-if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(e){console.warn('SW no registrat',e);});});}
+if('serviceWorker' in navigator){window.addEventListener('load',function(){
+  var hadController=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('sw.js').then(function(reg){
+    // Comprova si hi ha una versió nova cada 60s (sense recarregar res encara)
+    setInterval(function(){reg.update().catch(function(){});},60000);
+  }).catch(function(e){console.warn('SW no registrat',e);});
+  var reloaded=false;
+  navigator.serviceWorker.addEventListener('controllerchange',function(){
+    if(reloaded||!hadController)return; // no recarreguis en la primera instal·lació
+    reloaded=true;location.reload();
+  });
+});}
 (async()=>{
   initTheme();
   try{
