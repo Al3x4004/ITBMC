@@ -165,7 +165,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .pquote{font-size:13px;color:var(--muted);font-style:italic;line-height:1.6;}
 .pbody{display:grid;grid-template-columns:1fr 1fr;gap:32px 40px;margin-top:2rem;padding-top:1.75rem;border-top:0.5px solid var(--border);}
 /* ── Ficha professional: sidebar (avatar) + contingut ── */
-.pinfo-layout{display:grid;grid-template-columns:290px 1fr;gap:1.75rem;align-items:start;}
+.pinfo-layout{display:grid;grid-template-columns:340px 1fr;gap:1.75rem;align-items:start;}
+.pinfo-side .smini .v{font-size:15px;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:5px;}
+.pinfo-side .smini{padding:12px 8px;}
 .pinfo-side{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem 1.25rem;position:sticky;top:72px;box-shadow:var(--shadow-sm);}
 .pinfo-side .phead{margin-bottom:1rem;}
 .pinfo-side .pedit-btn{position:static !important;margin:0 auto .85rem !important;display:block;}
@@ -416,7 +418,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 
 /* ══ PENTAGON ══ */
 .pentagon-wrap{display:flex;justify-content:center;margin:1rem 0;}
-.penta-bg{fill:none;stroke:var(--border);stroke-width:1;}
+.penta-bg{fill:none;stroke:var(--border);stroke-width:1;opacity:.55;}
 .penta-fill{fill-opacity:.15;stroke-width:2;}
 .penta-lbl{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;height:100%;white-space:nowrap;line-height:1;font-family:'Segoe UI',system-ui,sans-serif,"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji","Segoe UI Symbol";}
 .penta-ic{font-size:17px;font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji","Segoe UI Symbol",sans-serif;flex-shrink:0;}

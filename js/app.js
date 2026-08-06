@@ -62,11 +62,11 @@ var SLOT_DEFS=[
   {key:'accesorio',label:'Accessori',icon:'💎',pos:{x:8,y:22,w:30,z:4}},
   {key:'casco',label:'Casc',icon:'⛑️',pos:{x:18,y:-2,w:64,z:6}},
   {key:'botas',label:'Botes',icon:'👟',pos:{x:26,y:78,w:48,z:2}},
-  {key:'cosm1',label:'Cosmètic 1',icon:'✨',pos:{x:20,y:20,w:60,z:10},cosmetic:true},
-  {key:'cosm2',label:'Cosmètic 2',icon:'✨',pos:{x:20,y:20,w:60,z:11},cosmetic:true},
-  {key:'cosm3',label:'Cosmètic 3',icon:'✨',pos:{x:20,y:20,w:60,z:12},cosmetic:true},
-  {key:'cosm4',label:'Cosmètic 4',icon:'✨',pos:{x:20,y:20,w:60,z:13},cosmetic:true},
-  {key:'cosm5',label:'Cosmètic 5',icon:'✨',pos:{x:20,y:20,w:60,z:14},cosmetic:true}
+  {key:'cosm1',label:'Cosmètic',icon:'✨',pos:{x:20,y:20,w:60,z:10},cosmetic:true},
+  {key:'cosm2',label:'Cosmètic',icon:'✨',pos:{x:20,y:20,w:60,z:11},cosmetic:true},
+  {key:'cosm3',label:'Cosmètic',icon:'✨',pos:{x:20,y:20,w:60,z:12},cosmetic:true},
+  {key:'cosm4',label:'Cosmètic',icon:'✨',pos:{x:20,y:20,w:60,z:13},cosmetic:true},
+  {key:'cosm5',label:'Cosmètic',icon:'✨',pos:{x:20,y:20,w:60,z:14},cosmetic:true}
 ];
 function slotDefaultPos(k){var s=SLOT_DEFS.find(function(x){return x.key===k;});return s?s.pos:{x:20,y:20,w:60,z:4};}
 function emptyEquipped(){var o={};SLOT_DEFS.forEach(function(s){o[s.key]=null;});return o;}
@@ -3796,10 +3796,22 @@ function buildPentagon(attrs,color){
     var pts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;return (cx+r*lv*Math.cos(a)).toFixed(1)+','+(cy+r*lv*Math.sin(a)).toFixed(1);}).join(' ');
     return '<polygon class="penta-bg" points="'+pts+'"/>';
   }).join('');
-  var axes=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;return '<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+r*Math.cos(a)).toFixed(1)+'" y2="'+(cy+r*Math.sin(a)).toFixed(1)+'" stroke="var(--border)" stroke-width="1"/>';}).join('');
+  // Plat de fons (dona profunditat)
+  var outerPts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;return (cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1);}).join(' ');
+  var plate='<polygon points="'+outerPts+'" fill="var(--bg3)" opacity="0.5"/>';
+  var axes=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;return '<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+r*Math.cos(a)).toFixed(1)+'" y2="'+(cy+r*Math.sin(a)).toFixed(1)+'" stroke="var(--border)" stroke-width="1" opacity="0.7"/>';}).join('');
+  var defs='<defs>'
+    +'<radialGradient id="pgGrad" cx="50%" cy="50%" r="65%">'
+      +'<stop offset="0%" stop-color="'+color+'" stop-opacity="0.34"/>'
+      +'<stop offset="100%" stop-color="'+color+'" stop-opacity="0.06"/>'
+    +'</radialGradient>'
+    +'<filter id="pgGlow" x="-40%" y="-40%" width="180%" height="180%">'
+      +'<feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="'+color+'" flood-opacity="0.55"/>'
+    +'</filter>'
+  +'</defs>';
   var dataPts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;var v=Math.min(100,attrs[k]||0)/100;return {x:cx+r*v*Math.cos(a),y:cy+r*v*Math.sin(a),lx:cx+(r+30)*Math.cos(a),ly:cy+(r+30)*Math.sin(a),label:labels[i],val:attrs[k]||0};});
   var fillPts=dataPts.map(function(p){return p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');
-  var dots=dataPts.map(function(p){return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="3.5" fill="'+color+'"/>';}).join('');
+  var dots=dataPts.map(function(p){return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="4.5" fill="'+color+'" stroke="var(--bg2)" stroke-width="2"/>';}).join('');
   // Etiquetes amb HTML real (foreignObject): els emojis es renderitzen sempre
   // (mateix motor que la resta de la pàgina) i no es pisen amb el text.
   var BW=110,BH=42;
@@ -3812,7 +3824,10 @@ function buildPentagon(attrs,color){
       +'</div>'
     +'</foreignObject>';
   }).join('');
-  return '<svg width="440" height="440" viewBox="-60 -50 520 520" style="overflow:visible;max-width:100%;">'+bgSvg+axes+'<polygon class="penta-fill" points="'+fillPts+'" fill="'+color+'" stroke="'+color+'"/>'+dots+lblSvg+'</svg>';
+  return '<svg viewBox="-60 -50 520 520" preserveAspectRatio="xMidYMid meet" style="overflow:visible;width:100%;height:auto;max-width:520px;display:block;margin:0 auto;">'
+    +defs+plate+bgSvg+axes
+    +'<polygon points="'+fillPts+'" fill="url(#pgGrad)" stroke="'+color+'" stroke-width="2.5" stroke-linejoin="round" filter="url(#pgGlow)"/>'
+    +dots+lblSvg+'</svg>';
 }
 
 /* ══ INVENTARIO ══ */
