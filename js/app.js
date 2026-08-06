@@ -1579,6 +1579,8 @@ function renderHeroProfile(i){
         ${canEdit?`<div class="ptab" onclick="switchPTab(this,'pcustom');renderInlineAvatarEditor('${p.id}')">🎨 Personalització</div>`:''}
       </div>
       <div class="ptab-panel active" id="pinfo">
+        <div class="pinfo-layout">
+          <aside class="pinfo-side">
         <div class="phead">
           <div class="phead-ava">${frameWrap(p,renderAvatar(p,"pixel-avatar-lg"))}</div>
           <div class="phead-info">
@@ -1599,6 +1601,8 @@ function renderHeroProfile(i){
           <div class="smini"><div class="v">${p.fragments||0} ✨</div><div class="l">Fragments</div></div>
           <div class="smini"><div class="v">${p.missions}</div><div class="l">Missions</div></div>
         </div>
+          </aside>
+          <div class="pinfo-main">
         <div class="pbody">
           <div>
             <div class="pstats-row">
@@ -1633,6 +1637,8 @@ function renderHeroProfile(i){
               return '<div class="peq-group"><div class="stitle">⚔️ Equipament</div>'+inner+'</div>';
             })()}
             ${recent.length?`<div class="stitle">Últimes missions</div>`+recent.map(m=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:12px;color:var(--text);">${m.name}</span><span class="badge b-teal">+${m.xp} XP</span></div>`).join(''):''}
+          </div>
+        </div>
           </div>
         </div>
       </div>
