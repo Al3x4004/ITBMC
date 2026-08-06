@@ -3581,6 +3581,11 @@ function avaOptLabel(v,index){
   var name=map[prefix]||'Estil';
   return name+' '+num;
 }
+function toggleCustSec(head){
+  var body=head.nextElementSibling;
+  var collapsed=head.classList.toggle('collapsed');
+  if(body)body.style.display=collapsed?'none':'';
+}
 function renderAvatarEditor(previewId,controlsId){
   previewId=previewId||(window._avaTargets&&window._avaTargets.preview)||'avatar-editor-preview';
   controlsId=controlsId||(window._avaTargets&&window._avaTargets.controls)||'avatar-editor-controls';
@@ -3609,8 +3614,8 @@ function renderAvatarEditor(previewId,controlsId){
       +'<select onchange="setAvatarShape(\''+key+'\',this.value)" style="flex:1;padding:6px 8px;font-size:13px;border:2px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);cursor:pointer;">'+opts+'</select>'
       +'</div>';
   }
-  // Colores
-  html+='<div class="stitle" style="grid-column:1/-1;">🎨 Colors</div>';
+  // Colors (secció plegable)
+  html+='<div class="cust-sec"><div class="cust-head" onclick="toggleCustSec(this)"><span class="cust-chev">▾</span><span>🎨 Colors</span></div><div class="cust-body cust-grid">';
   html+=colorPicker('skinColor','Pell');
   html+=colorPicker('bgColor','Fons');
   html+=colorPicker('hairColor','Cabell');
@@ -3619,8 +3624,9 @@ function renderAvatarEditor(previewId,controlsId){
   html+=colorPicker('glassesColor','Ulleres');
   html+=colorPicker('hatColor','Barret');
   html+=colorPicker('accessoriesColor','Accessoris');
-  // Formas (desplegables)
-  html+='<div class="stitle" style="grid-column:1/-1;margin-top:10px;">✂️ Formes</div>';
+  html+='</div></div>';
+  // Formes (secció plegable)
+  html+='<div class="cust-sec"><div class="cust-head" onclick="toggleCustSec(this)"><span class="cust-chev">▾</span><span>✂️ Formes</span></div><div class="cust-body cust-grid">';
   html+=selector('hair','Pentinat');
   html+=selector('eyes','Ulls');
   html+=selector('mouth','Boca');
@@ -3629,17 +3635,17 @@ function renderAvatarEditor(previewId,controlsId){
   html+=selector('beard','Barba');
   html+=selector('hat','Barret');
   html+=selector('accessories','Accessoris');
-  // Cosmètics: 5 slots per posar qualsevol cosmètic que tinguis
+  html+='</div></div>';
+  // Cosmètics (secció plegable): 5 slots per posar qualsevol cosmètic que tinguis
   if(p.equipped){
     if(!p.equipPos)p.equipPos={};
     var cosmeticSlots=SLOT_DEFS.filter(function(sl){return sl.cosmetic;});
     var ownedCosmetics=(p.inventory||[]).filter(function(id){var it=shopItems.find(function(i){return i.id===id;});return it&&it.isCosmetic;});
-    html+='<div style="grid-column:1/-1;border-top:0.5px solid var(--border);margin:10px 0;padding-top:6px;"></div>';
-    html+='<div class="stitle" style="grid-column:1/-1;">✨ Cosmètics</div>';
+    html+='<div class="cust-sec"><div class="cust-head" onclick="toggleCustSec(this)"><span class="cust-chev">▾</span><span>✨ Cosmètics</span></div><div class="cust-body">';
     if(!ownedCosmetics.length){
-      html+='<div style="grid-column:1/-1;font-size:12px;color:var(--muted);margin-bottom:8px;">No tens cap cosmètic encara. Aconsegueix-ne a la botiga o al gacha!</div>';
+      html+='<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">No tens cap cosmètic encara. Aconsegueix-ne a la botiga o al gacha!</div>';
     }else{
-      html+='<div style="grid-column:1/-1;font-size:11px;color:var(--muted);margin-bottom:8px;">🖱️ Arrossega els cosmètics sobre l\'avatar per moure\'ls.</div>';
+      html+='<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">🖱️ Arrossega els cosmètics sobre l\'avatar per moure\'ls.</div>';
     }
     html+='<div class="cosm-slots">';
     cosmeticSlots.forEach(function(sl,idx){
@@ -3665,6 +3671,7 @@ function renderAvatarEditor(previewId,controlsId){
       html+='</div>';
     });
     html+='</div>';
+    html+='</div></div>';
   }
       html+='<div style="margin-top:12px;"><button class="btn btn-sm" style="width:100%;" onclick="randomizeAvatar()">🎲 Aleatori</button></div>';
   var cc=document.getElementById(controlsId);if(cc)cc.innerHTML=html;
