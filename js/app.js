@@ -3089,34 +3089,34 @@ function toggleClassCard(idx){
 }
 async function recalcAllStats(){
   if(!players.length){toast('No hi ha personatges.');return;}
-  if(!confirm('Sincronitzar els stats base de TOTS els personatges ('+players.length+') amb la base de la seva classe?\n\nNomés canvia la part base (la diferència). Es mantenen els punts guanyats per nivell i missions.'))return;
-  var ids=[];
+  if(!confirm('Sincronitzar els stats base de TOTS els personatges ('+players.length+') amb la base de la seva classe?\n\nNomés canvia la part base (la diferència respecte de la base que tenien). Es mantenen els punts guanyats per nivell i missions.\n\nEls personatges que encara no tenen base registrada NO es modifiquen (només se\'ls registra la base actual).'))return;
+  var ids=[];var changedCount=0;var anchoredCount=0;
   players.forEach(function(p){
     var cls=CLASSES.find(function(c){return c.name===p.cls;});
     if(!cls)return;
     if(!p.attrs)p.attrs={};
-    // Base de classe actual del personatge. Si no en té (PJ antic), s'infereix
-    // restant el creixement acumulat pel seu nivell, de manera que els punts
-    // repartits per nivell/missions es conserven.
-    var base=p.baseAttrs;
-    if(!base){
-      base={};
-      var g=classGrowthMap[cls.name]||defaultGrowth(cls);
-      var lv=Math.max(1,p.level||1);
-      attrKeys().forEach(function(k){base[k]=Math.max(0,(p.attrs[k]||0)-(g[k]||0)*(lv-1));});
+    if(!p.baseAttrs){
+      // PJ sense base registrada: NO toquem els seus stats (evitem esborrar
+      // valors posats a mà). Només ancorem la base a la que ja tenen, perquè
+      // els futurs canvis de classe s'apliquin per diferència.
+      p.baseAttrs={};attrKeys().forEach(function(k){p.baseAttrs[k]=p.attrs[k]||0;});
+      anchoredCount++;ids.push(p.id);
+      return;
     }
     // Aplicar només la diferència entre la base de la classe i la base del PJ
+    var changed=false;
     attrKeys().forEach(function(k){
-      var diff=(cls.attrs[k]||0)-(base[k]||0);
-      p.attrs[k]=Math.max(0,(p.attrs[k]||0)+diff);
+      var diff=(cls.attrs[k]||0)-(p.baseAttrs[k]||0);
+      if(diff!==0){p.attrs[k]=Math.max(0,(p.attrs[k]||0)+diff);changed=true;}
+      p.baseAttrs[k]=cls.attrs[k]||0;
     });
-    p.baseAttrs=Object.assign({},cls.attrs);
+    if(changed)changedCount++;
     ids.push(p.id);
   });
   if(!ids.length){toast('Cap personatge amb una classe vàlida.');return;}
   if(CFG.MODE==='supabase'){saveToSupabase(ids);}
   renderClassesAdmin();renderAll();
-  toast(ids.length+' personatge'+(ids.length>1?'s':'')+' sincronitzats amb la base de la classe');
+  toast(changedCount+' ajustats · '+anchoredCount+' amb base registrada (sense canvis)');
 }
 function renderClassesAdmin(){
   var wrap=document.getElementById('classes-list');
