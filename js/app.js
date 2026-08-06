@@ -3782,8 +3782,19 @@ function buildPentagon(attrs,color){
   var dataPts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;var v=Math.min(100,attrs[k]||0)/100;return {x:cx+r*v*Math.cos(a),y:cy+r*v*Math.sin(a),lx:cx+(r+30)*Math.cos(a),ly:cy+(r+30)*Math.sin(a),label:labels[i],val:attrs[k]||0};});
   var fillPts=dataPts.map(function(p){return p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');
   var dots=dataPts.map(function(p){return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="3.5" fill="'+color+'"/>';}).join('');
-  var lblSvg=dataPts.map(function(p){return '<text class="penta-label" x="'+p.lx.toFixed(1)+'" y="'+p.ly.toFixed(1)+'" text-anchor="middle" dominant-baseline="middle"><tspan class="penta-icon">'+p.label.icon+'</tspan>'+p.label.txt+'</text><text class="penta-value" x="'+(p.x+(p.lx-p.x)*0.35).toFixed(1)+'" y="'+(p.y+(p.ly-p.y)*0.35).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" fill="'+color+'">'+p.val+'</text>';}).join('');
-  return '<svg width="400" height="400" viewBox="0 0 400 400" style="overflow:visible;max-width:100%;">'+bgSvg+axes+'<polygon class="penta-fill" points="'+fillPts+'" fill="'+color+'" stroke="'+color+'"/>'+dots+lblSvg+'</svg>';
+  // Etiquetes amb HTML real (foreignObject): els emojis es renderitzen sempre
+  // (mateix motor que la resta de la pàgina) i no es pisen amb el text.
+  var BW=110,BH=42;
+  var lblSvg=dataPts.map(function(p){
+    return '<foreignObject x="'+(p.lx-BW/2).toFixed(1)+'" y="'+(p.ly-BH/2).toFixed(1)+'" width="'+BW+'" height="'+BH+'" style="overflow:visible;">'
+      +'<div xmlns="http://www.w3.org/1999/xhtml" class="penta-lbl">'
+        +'<span class="penta-ic">'+p.label.icon+'</span>'
+        +'<span class="penta-tx">'+p.label.txt+'</span>'
+        +'<span class="penta-val" style="color:'+color+';">'+p.val+'</span>'
+      +'</div>'
+    +'</foreignObject>';
+  }).join('');
+  return '<svg width="440" height="440" viewBox="-60 -50 520 520" style="overflow:visible;max-width:100%;">'+bgSvg+axes+'<polygon class="penta-fill" points="'+fillPts+'" fill="'+color+'" stroke="'+color+'"/>'+dots+lblSvg+'</svg>';
 }
 
 /* ══ INVENTARIO ══ */
