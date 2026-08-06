@@ -856,7 +856,7 @@ function renderInicio(){
     var name=session.isAdmin?'Dios 👑':(p?p.name.split(' ')[0]:'—');
     var sub=session.isAdmin
       ?'Tens el control absolut d\'ITBMC.'
-      :(p?('Nivell '+p.level+' · '+p.cls+' · 🪙 '+p.gold.toLocaleString()):'');
+      :(p?('Nivell '+p.level+' · '+p.cls+' · <svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+p.gold.toLocaleString()):'');
     hero.innerHTML='<div class="card" style="padding:1.25rem 1.5rem;">'
       +'<div style="font-size:22px;font-weight:700;margin-bottom:4px;">Hola, '+name+' 👋</div>'
       +'<div style="font-size:13px;color:var(--muted);">'+sub+'</div>'
@@ -1084,7 +1084,7 @@ function renderMStats(){
     <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Pendents</div><div style="font-size:22px;font-weight:700;">${act}</div></div>
     <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Completades</div><div style="font-size:22px;font-weight:700;">${don}</div></div>
     <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Nivell de l'equip</div><div style="font-size:22px;font-weight:700;">${tlvl.toLocaleString()}</div></div>
-    <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">🪙 Or de l'equip</div><div style="font-size:22px;font-weight:700;">${tg.toLocaleString()}</div></div>`;
+    <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> Or de l'equip</div><div style="font-size:22px;font-weight:700;">${tg.toLocaleString()}</div></div>`;
 }
 
 /* ── misiones ── */
@@ -1240,7 +1240,7 @@ function mCard(m){
     </div>
     <div class="mrews">
       <span class="rchip"><span>${m.xp}</span> XP</span>
-      <span class="rchip"><span>🪙 ${m.gold}</span></span>
+      <span class="rchip"><span><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> ${m.gold}</span></span>
       ${prioBadge}
       ${statusBadge}
       ${assignBtn}
@@ -1431,7 +1431,7 @@ function showRewardPopup(m,p,assignees){
   var mFrag=m.frag||({D:20,C:50,B:100,A:200,S:400}[m.diff]||0);
   document.getElementById('rp-chips').innerHTML=`
     <span class="badge b-purple">+${m.xp} XP</span>
-    <span class="badge b-gold">🪙 +${m.gold}</span>
+    <span class="badge b-gold"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> +${m.gold}</span>
     ${mFrag?`<span class="badge b-purple" style="background:var(--accent-bg);">+${mFrag} ✨</span>`:''}
     ${m.attr?`<span class="badge b-teal">+${m.attrPts} ${m.attr}</span>`:''}`;
   document.getElementById('reward-pop').classList.add('show');
@@ -1588,7 +1588,7 @@ function renderHeroProfile(i){
         </div>
         <div class="g4" style="margin-bottom:1.25rem;">
           <div class="smini"><div class="v">${p.xp.toLocaleString()}</div><div class="l">XP total</div></div>
-          <div class="smini"><div class="v">🪙 ${p.gold}</div><div class="l">Or</div></div>
+          <div class="smini"><div class="v"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> ${p.gold}</div><div class="l">Or</div></div>
           <div class="smini"><div class="v">${p.fragments||0} ✨</div><div class="l">Fragments</div></div>
           <div class="smini"><div class="v">${p.missions}</div><div class="l">Missions</div></div>
         </div>
@@ -1692,7 +1692,7 @@ function renderRanking(){
       <div style="flex:1;"><div style="font-size:13px;font-weight:500;">${p.name}</div><div style="font-size:11px;color:var(--muted);">${p.cls}</div></div>
       <div class="lbstat"><div class="lbstat-v">${score(p).toLocaleString()}</div><div class="lbstat-l">punts</div></div>
       <div class="lbstat"><div class="lbstat-v">${p.level}</div><div class="lbstat-l">nivell</div></div>
-      <div class="lbstat"><div class="lbstat-v" style="color:var(--gold);">🪙 ${p.gold.toLocaleString()}</div><div class="lbstat-l">or</div></div>
+      <div class="lbstat"><div class="lbstat-v" style="color:var(--gold);"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> ${p.gold.toLocaleString()}</div><div class="lbstat-l">or</div></div>
     </div>`;
   }).join('');
 }
@@ -1954,7 +1954,7 @@ function renderMarketHistory(){
   host.innerHTML='<div style="display:flex;flex-direction:column;gap:6px;">'+marketHistory.map(function(h){
     var desc;
     if(h.type==='trade')desc='🔄 <b>'+pname(h.toId)+'</b> va donar <b>'+cname(h.wantCardId)+'</b> i va rebre <b>'+cname(h.cardId)+'</b> de <b>'+pname(h.fromId)+'</b>';
-    else desc='🛒 <b>'+pname(h.toId)+'</b> va comprar <b>'+cname(h.cardId)+'</b> a <b>'+pname(h.fromId)+'</b> per '+(h.mode==='gold'?('🪙 '+h.price):('✨ '+h.price));
+    else desc='🛒 <b>'+pname(h.toId)+'</b> va comprar <b>'+cname(h.cardId)+'</b> a <b>'+pname(h.fromId)+'</b> per '+(h.mode==='gold'?('<svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+h.price):('✨ '+h.price));
     return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;">'
       +'<span style="color:var(--text);">'+desc+'</span>'
       +'<span style="color:var(--muted);white-space:nowrap;font-size:11px;">'+when(h.ts)+'</span></div>';
@@ -1964,7 +1964,7 @@ function renderMarket(){
   renderCardPickers();renderQuickSell();renderMarketHistory();
   var p=players.find(function(pl){return pl.id===session.playerId;});
   var w=document.getElementById('mercat-wallet');
-  if(w)w.innerHTML=p?('El teu moneder: 🪙 '+p.gold+' or · ✨ '+(p.fragments||0)+' fragments'):'Entra amb un personatge per operar al mercat.';
+  if(w)w.innerHTML=p?('El teu moneder: <svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+p.gold+' or · ✨ '+(p.fragments||0)+' fragments'):'Entra amb un personatge per operar al mercat.';
   var host=document.getElementById('mercat-list');if(!host)return;
   if(!market.length){host.innerHTML='<div style="font-size:13px;color:var(--muted);padding:1rem;">No hi ha res al mercat. Sigues el primer en publicar una carta!</div>';return;}
   host.innerHTML='<div class="gallery-grid">'+market.map(function(l){
@@ -1975,7 +1975,7 @@ function renderMarket(){
     var counts=galleryCounts(p);
     var imgUrl=c.imageUrl||(c.image?CFG.GITHUB_RAW+c.image:'');
     var priceLine='',wantBlock='';
-    if(l.mode==='gold')priceLine='🪙 '+l.price+' or';
+    if(l.mode==='gold')priceLine='<svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+l.price+' or';
     else if(l.mode==='frag')priceLine='✨ '+l.price+' fragments';
     else{
       var wc=mkCardById(l.wantCardId);
@@ -2260,10 +2260,10 @@ function renderShop(){
     // Botó de compra
     var btn='';
     if(soldOut)btn='<div class="soldout-lbl">Esgotat</div>';
-    else if(buyable)btn='<button class="btn btn-sm btn-gold" onclick="buyItem(\''+item.id+'\')">Comprar 🪙 '+item.cost+'</button>';
+    else if(buyable)btn='<button class="btn btn-sm btn-gold" onclick="buyItem(\''+item.id+'\')">Comprar <svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+item.cost+'</button>';
     else if(perReached)btn='<div style="font-size:11px;color:var(--muted);">Límit assolit</div>';
     else if(!meetsR)btn='<div style="font-size:11px;color:var(--coral);">🔒 Requisits no complerts</div>';
-    else btn='<div style="font-size:11px;color:var(--coral);">🪙 Or insuficient</div>';
+    else btn='<div style="font-size:11px;color:var(--coral);"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> Or insuficient</div>';
     // Equipar/Desequipar si ja el té (només items amb slot d'equip real)
     var eqBtn='';
     if(equipped)eqBtn='<button class="btn btn-sm" onclick="unequipItem(\''+item.id+'\')">Desequipar</button>';
@@ -2274,7 +2274,7 @@ function renderShop(){
       +'<div class="item-name">'+item.name+'</div>'
       +'<div class="item-desc">'+item.desc+'</div>'
       +stockInfo
-      +'<div class="item-cost">🪙 '+item.cost+'</div>'
+      +'<div class="item-cost"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+item.cost+'</div>'
       +btn+eqBtn+'</div>';
   }).join('')+'</div>';
 }
@@ -2573,7 +2573,7 @@ function renderCustomTraitsAdmin(){
       +(item.imageUrl?'<img src="'+item.imageUrl+'" style="width:40px;height:40px;object-fit:contain;background:var(--bg3);border-radius:var(--radius);flex-shrink:0;"/>':'<span style="font-size:24px;width:40px;text-align:center;">'+(item.icon||'📦')+'</span>')
       +'<div style="flex:1;min-width:0;">'
       +'<div style="font-size:13px;font-weight:500;">'+item.name+'</div>'
-      +'<div style="font-size:11px;color:var(--muted);">'+(sl?sl.icon+' '+sl.label:item.slot)+' · '+item.rareza+' · 🪙 '+item.cost+' · '+viaLabel+'</div>'
+      +'<div style="font-size:11px;color:var(--muted);">'+(sl?sl.icon+' '+sl.label:item.slot)+' · '+item.rareza+' · <svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+item.cost+' · '+viaLabel+'</div>'
       +'</div>'
       +'<button class="btn btn-sm" onclick="openAdminEditItem(\''+item.id+'\')">✎</button>'
       +'<button class="btn btn-sm" style="color:var(--coral);border-color:var(--coral-border);" onclick="adminDeleteItemFull(\''+item.id+'\')">✕</button>'
@@ -3822,7 +3822,7 @@ function showItemDetails(id){
     +'<div class="stitle">Bonus d\'atributs</div><div style="margin-bottom:1rem;">'+bonus+'</div>'
     +'<div class="stitle">Requisits</div><div style="margin-bottom:1rem;">'+reqs+'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
-      +'<div class="csm" style="text-align:center;"><div style="font-size:16px;font-weight:600;">🪙 '+(it.cost||0)+'</div><div style="font-size:10px;color:var(--muted);">Cost</div></div>'
+      +'<div class="csm" style="text-align:center;"><div style="font-size:16px;font-weight:600;"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+(it.cost||0)+'</div><div style="font-size:10px;color:var(--muted);">Cost</div></div>'
       +'<div class="csm" style="text-align:center;"><div style="font-size:16px;font-weight:600;">Nvl '+(it.minLevel||1)+'</div><div style="font-size:10px;color:var(--muted);">Nivell mínim</div></div>'
     +'</div>';
   document.getElementById('item-detail-modal').style.display='flex';
@@ -3906,7 +3906,7 @@ function openMissionModal(id){
   document.getElementById('mm-desc').textContent=m.desc||m.name;
   document.getElementById('mm-stats').innerHTML=
     `<div class="smini"><div class="v">${m.xp}</div><div class="l">XP</div></div>`
-    +`<div class="smini"><div class="v">🪙 ${m.gold}</div><div class="l">Or</div></div>`
+    +`<div class="smini"><div class="v"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> ${m.gold}</div><div class="l">Or</div></div>`
     +`<div class="smini"><div class="v">${m.diff||'C'}</div><div class="l">Dificultat</div></div>`;
   const canComplete=(session.isAdmin||(session.playerId===m.playerId))&&m.status!=='done';
   const canDel=session.isAdmin||(m.createdBy===session.playerId);
