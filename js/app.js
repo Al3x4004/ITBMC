@@ -1595,11 +1595,13 @@ function renderHeroProfile(i){
         <div class="pbody">
           <div>
             <div class="pstats-row">
+              <div class="pstats-radar">${buildPentagon(getEffectiveAttrs(p),p.color)}</div>
               <div class="pstats-bars">
                 <div class="stitle">Atributs</div>
-                ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;return '<div class="srow"><span class="slbl" title="'+attrName(k)+'"><span class="attr-ic">'+attrIcon(k)+'</span> '+attrName(k)+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(Math.min(100,ev/99*100))+'%;background:'+AC[k]+';"></div></div><span class="snum">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div>';}).join('');})()}
+                <div class="attrs-grid">
+                ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;var full=attrName(k),shortNm=full.split('(')[0].trim();return '<div class="attr-chip" title="'+full+'"><span class="attr-ic">'+attrIcon(k)+'</span><div class="attr-body"><div class="attr-top"><span class="attr-nm">'+shortNm+'</span><span class="attr-vl">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div><div class="strk"><div class="sfill" style="width:'+Math.round(Math.min(100,ev/99*100))+'%;background:'+AC[k]+';"></div></div></div></div>';}).join('');})()}
+                </div>
               </div>
-              <div class="pstats-radar">${buildPentagon(getEffectiveAttrs(p),p.color)}</div>
             </div>
             ${(function(){
               var cosmSlots=SLOT_DEFS.filter(function(s){return s.cosmetic;}).map(function(s){return s.key;});

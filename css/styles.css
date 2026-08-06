@@ -171,9 +171,17 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .smini .l{font-size:10px;color:var(--muted);margin-top:3px;}
 .phead-ava{flex-shrink:0;}
 .phead-info{max-width:520px;}
-.pstats-row{display:flex;gap:40px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:2rem;}
-.pstats-bars{flex:1;min-width:260px;max-width:440px;}
-.pstats-radar{flex-shrink:0;display:flex;justify-content:center;align-items:center;}
+.pstats-row{display:flex;flex-direction:column;align-items:center;gap:1.5rem;margin-bottom:2rem;}
+.pstats-bars{width:100%;}
+.pstats-radar{width:100%;display:flex;justify-content:center;align-items:center;}
+/* Atributs en graella compacta (icona · nom curt · barra · valor) */
+.attrs-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px 26px;}
+.attr-chip{display:flex;align-items:center;gap:9px;min-width:0;}
+.attr-chip .attr-ic{font-size:15px;flex-shrink:0;line-height:1;}
+.attr-body{flex:1;min-width:0;}
+.attr-top{display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-bottom:4px;}
+.attr-nm{font-size:11.5px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.attr-vl{font-size:12.5px;font-weight:700;color:var(--text);flex-shrink:0;font-variant-numeric:tabular-nums;}
 .peq-group{margin-top:1.5rem;padding-top:1.25rem;border-top:0.5px solid var(--border);}
 .peq-group:first-child{margin-top:0;padding-top:0;border-top:0;}
 .pbody .stitle{margin-top:1.5rem;}
@@ -856,6 +864,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent) !important;bo
 }
 @media(max-width:400px){
   .g4,.g3,.g2{grid-template-columns:1fr;}
+  .attrs-grid{grid-template-columns:1fr;gap:9px;}
 }
 
 /* ═══════════ BARRA DE FILTRES ═══════════ */
@@ -997,6 +1006,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent) !important;bo
   .nb{flex-shrink:0;}
   /* Menys "lift" i ombres per alleugerir el pintat */
   .btn:hover,.btn-complete:hover,.mcrd:hover,.htab:hover{transform:none;}
+  /* El halo difuminat de la capçalera també és car en mòbil */
+  .phead::before{display:none;}
 }
 @media(max-width:560px){
   body{font-size:13px;}
