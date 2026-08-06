@@ -1,5 +1,5 @@
 /* Service Worker — BMC Global ITBMC */
-const CACHE='itbmc-v5';
+const CACHE='itbmc-v6';
 const SHELL=['./','./index.html','./css/styles.css','./js/app.js'];
 
 self.addEventListener('install',function(e){

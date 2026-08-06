@@ -20,7 +20,7 @@
   --coral:#d85a30;--coral-bg:rgba(216,90,48,0.12);--coral-border:rgba(216,90,48,0.28);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;transition:background .2s,color .2s;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif,"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji","Segoe UI Symbol";transition:background .2s,color .2s;}
 /* ══ LAYOUT (topbar) ══ */
 .topbar{position:sticky;top:0;z-index:50;background:var(--bg2);border-bottom:0.5px solid var(--border);width:100%;}
 .topbar-inner{display:flex;align-items:center;gap:.75rem;max-width:1700px;margin:0 auto;padding:.35rem 1.25rem;}
@@ -363,7 +363,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .penta-bg{fill:none;stroke:var(--border);stroke-width:1;}
 .penta-fill{fill-opacity:.15;stroke-width:2;}
 .penta-label{font-size:12px;fill:var(--muted);font-family:inherit;font-weight:600;letter-spacing:.03em;}
-.penta-icon{font-size:18px;}
+.penta-icon{font-size:18px;font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji","Segoe UI Symbol",sans-serif;}
 .penta-value{font-size:14px;font-weight:700;font-family:inherit;}
 /* ══ INVENTARIO ══ */
 .inv-slots{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:1.25rem;}
@@ -420,8 +420,8 @@ body.admin-mode .nb-edit-btn{display:inline-flex;}
 
 /* Fuentes: Press Start 2P (títulos/UI) · VT323 (texto largo legible) */
 :root{
-  --font-pixel:'Inter','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
-  --font-read:'Inter','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --font-pixel:'Inter','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif,"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji","Segoe UI Symbol";
+  --font-read:'Inter','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif,"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji","Segoe UI Symbol";
   --radius:0px;--radius-lg:0px;
 }
 
