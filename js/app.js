@@ -220,6 +220,7 @@ function missionToRow(m){
     id:m.id,nombre:m.name,descripcion:m.desc||'',arco:m.arc||'',
     player_id:m.playerId||'',status:m.status||'pending',diff:m.diff||'C',
     xp:m.xp||0,gold:m.gold||0,frag:m.frag||0,attr:m.attr||'',attr_pts:m.attrPts||0,
+    duration_h:m.durationH||0,stars:m.stars||0,
     deadline:m.deadline||'',daily:!!m.daily,is_daily_instance:!!m.isDaily_instance,
     template_id:m.templateId||'',planner_id:m.plannerId||'',
     from_planner:!!m.fromPlanner,created_by:m.createdBy||'',
@@ -231,6 +232,7 @@ function rowToMission(r){
     id:r.id,name:r.nombre,desc:r.descripcion||'',arc:r.arco||'General',
     playerId:r.player_id||'',status:r.status||'pending',diff:r.diff||'C',
     xp:r.xp||0,gold:r.gold||0,frag:r.frag||0,attr:r.attr||'',attrPts:r.attr_pts||0,
+    durationH:r.duration_h||0,stars:r.stars||0,
     deadline:r.deadline||'',daily:!!r.daily,isDaily_instance:!!r.is_daily_instance,
     templateId:r.template_id||'',plannerId:r.planner_id||'',
     fromPlanner:!!r.from_planner,createdBy:r.created_by||'',
@@ -1357,7 +1359,43 @@ function setMissionStatus(missionId,status){
   try{openMissionModal(missionId);}catch(e){}
 }
 
+// Modal per triar estrelles (1-5) en completar una missió amb durada. Crida cb(stars).
+function askMissionStars(title,cb){
+  var ov=document.getElementById('star-ask');
+  if(!ov){ov=document.createElement('div');ov.id='star-ask';document.body.appendChild(ov);}
+  ov.className='reward-pop show';ov.style.zIndex=500;
+  var sb='';for(var i=1;i<=5;i++){sb+='<button type="button" data-s="'+i+'" class="star-btn" style="background:none;border:none;font-size:34px;line-height:1;cursor:pointer;filter:grayscale(1);opacity:.5;transition:all .12s;padding:2px;">⭐</button>';}
+  ov.innerHTML='<div class="reward-box" onclick="event.stopPropagation()">'
+    +'<div style="font-size:15px;font-weight:600;margin-bottom:6px;">Quantes estrelles?</div>'
+    +'<div style="font-size:12px;color:var(--muted);margin-bottom:14px;">'+title+'</div>'
+    +'<div id="star-row" style="display:flex;justify-content:center;gap:4px;">'+sb+'</div>'
+    +'<div id="star-val" style="font-size:12px;color:var(--muted);height:18px;margin:8px 0 12px;"></div>'
+    +'<button class="btn btn-sm" onclick="closeStarAsk()">Cancel·lar</button>'
+    +'</div>';
+  var btns=ov.querySelectorAll('.star-btn');
+  function paint(n){btns.forEach(function(b){var s=+b.getAttribute('data-s');b.style.filter=s<=n?'none':'grayscale(1)';b.style.opacity=s<=n?'1':'.5';});}
+  btns.forEach(function(b){
+    var s=+b.getAttribute('data-s');
+    b.onmouseenter=function(){paint(s);document.getElementById('star-val').textContent=s+'★ · '+(s*20)+'% de l\'or';};
+    b.onclick=function(e){e.stopPropagation();closeStarAsk();cb(s);};
+  });
+  ov.onclick=function(){closeStarAsk();};
+}
+function closeStarAsk(){var ov=document.getElementById('star-ask');if(ov)ov.className='reward-pop';}
 function completeMission(id){
+  const m=missions.find(m=>m.id===id);if(!m||m.status==='done')return;
+  // Si té durada definida, pregunta quantes estrelles per calcular l'or (durada × estrelles).
+  if(m.durationH>0&&!m.stars){
+    askMissionStars(m.name,function(stars){
+      m.stars=stars;
+      m.gold=Math.round(m.durationH*(stars/5)*100)/100;
+      _doCompleteMission(id);
+    });
+    return;
+  }
+  _doCompleteMission(id);
+}
+function _doCompleteMission(id){
   const m=missions.find(m=>m.id===id);if(!m||m.status==='done')return;
   var assignees=getAssignees(m);
   const p=players.find(p=>p.id===m.playerId);
@@ -4093,7 +4131,9 @@ function openMissionModal(id){
   document.getElementById('mm-stats').innerHTML=
     `<div class="smini"><div class="v">${m.xp}</div><div class="l">XP</div></div>`
     +`<div class="smini"><div class="v"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> ${m.gold}</div><div class="l">Or</div></div>`
-    +`<div class="smini"><div class="v" style="font-size:.72em;">${_prio[0]}</div><div class="l">Prioritat</div></div>`;
+    +`<div class="smini"><div class="v" style="font-size:.72em;">${_prio[0]}</div><div class="l">Prioritat</div></div>`
+    +(m.durationH>0?`<div class="smini"><div class="v" style="font-size:.8em;">${Math.floor(m.durationH)}h ${Math.round((m.durationH%1)*60)}m</div><div class="l">Durada</div></div>`:'')
+    +(m.stars>0?`<div class="smini"><div class="v" style="font-size:.8em;">${'⭐'.repeat(m.stars)}</div><div class="l">Estrelles</div></div>`:'');
   const canComplete=(session.isAdmin||(session.playerId===m.playerId))&&m.status!=='done';
   const canDel=session.isAdmin||(m.createdBy===session.playerId);
   if(session.isAdmin){
@@ -4221,6 +4261,9 @@ function toggleDailyFields(){
   var type=document.getElementById('nm-type').value;
   var diffWrap=document.getElementById('nm-diff-wrap');
   if(diffWrap)diffWrap.style.display=(type==='daily'||type==='weekly')?'none':'block';
+  // La durada només aplica a missions normals (l'or es calcula amb estrelles en completar)
+  var durWrap=document.getElementById('nm-dur-wrap');
+  if(durWrap)durWrap.style.display=(type==='daily'||type==='weekly')?'none':'block';
 }
 
 function populateArcSelect(){
@@ -4253,10 +4296,14 @@ function createMission(){
   var attrKey=document.getElementById('nm-attr')?document.getElementById('nm-attr').value:'';
   var attrName_=attrKey?attrName(attrKey):'';
   var attrPts=parseInt(document.getElementById('nm-attrpts')?document.getElementById('nm-attrpts').value:'0')||0;
-  // Prioritat → dificultat/recompensa
+  // Prioritat (només etiqueta/grau, es desa a "diff")
   var priorityMap={'urgente':'A','importante':'B','media':'C','baja':'D'};
   var prio=(document.getElementById('nm-priority')?document.getElementById('nm-priority').value:'media');
   var prioDiff=priorityMap[prio]||'C';
+  // Durada → hores decimals (per calcular l'or en completar, segons estrelles)
+  var durH=parseInt(document.getElementById('nm-dur-h')?document.getElementById('nm-dur-h').value:'0')||0;
+  var durM=parseInt(document.getElementById('nm-dur-m')?document.getElementById('nm-dur-m').value:'0')||0;
+  var durationH=durH+durM/60;
   // Assignació múltiple: admin tria (checkboxes); la resta s'assigna a un mateix
   var assignIds=[];
   if(session.isAdmin){
@@ -4285,7 +4332,9 @@ function createMission(){
     status:'pending',
     diff:isDaily?'C':prioDiff,
     xp:MISSION_XP,
-    gold:MISSION_GOLD,
+    // Missió normal: l'or es calcula en completar (durada × estrelles). Diària: or fix.
+    gold:isDaily?MISSION_GOLD:0,
+    durationH:isDaily?0:durationH,
     frag:MISSION_FRAG,
     attr:attrName_,
     attrPts:attrPts,
