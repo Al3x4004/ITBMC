@@ -396,7 +396,7 @@ async function mirrorPlayersToTable(list,removedIds){
       quote:p.quote||'',lore:p.lore||'',last_daily:p.lastDaily||'',avatar_frame:p.avatarFrame||'',
       updated_at:now,
       // A "data" només hi queden les estructures (llistes/objectes) que no caben en columnes
-      data:{attrs:p.attrs,baseAttrs:p.baseAttrs,avatar:p.avatar,equipped:p.equipped,equipPos:p.equipPos,showcase:p.showcase,widgets:p.widgets,widgetSizes:p.widgetSizes,gallery:p.gallery,inventory:p.inventory,pin:p.pin}
+      data:{attrs:p.attrs,baseAttrs:p.baseAttrs,avatar:p.avatar,equipped:p.equipped,equipPos:p.equipPos,showcase:p.showcase,widgets:p.widgets,widgetSizes:p.widgetSizes,widgetPos:p.widgetPos,gallery:p.gallery,inventory:p.inventory,pin:p.pin}
     };});
     await fetch(CFG.SUPABASE_URL+'/rest/v1/players',{
       method:'POST',
@@ -881,19 +881,77 @@ function renderUserWidgets(){
     return;
   }
   if(!p.widgetSizes)p.widgetSizes={};
-  var html=manageBtn+'<div class="widgets-grid">';
-  p.widgets.forEach(function(wid){
+  if(!p.widgetPos)p.widgetPos={};
+  var html=manageBtn+'<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Arrossega la capçalera per moure el widget · cantonada ◢ per redimensionar</div>';
+  html+='<div class="widgets-canvas" id="widgets-canvas">';
+  p.widgets.forEach(function(wid,idx){
     var w=widgetCatalog.find(function(x){return x.id===wid;});
     if(!w)return;
     var sz=normWidgetSize(p.widgetSizes[wid],w);
-    html+='<div id="wcard-'+wid+'" class="card widget-card widget-'+w.type+'" style="width:'+sz.w+'px;">'
-      +'<div class="stitle" style="margin:0 0 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(w.icon||'🧩')+' '+w.name+'</div>'
+    var pos=(p.widgetPos&&p.widgetPos[wid])?p.widgetPos[wid]:_defaultWidgetPos(idx,sz);
+    html+='<div id="wcard-'+wid+'" class="card widget-card widget-'+w.type+'" style="width:'+sz.w+'px;left:'+pos.x+'px;top:'+pos.y+'px;">'
+      +'<div class="stitle widget-drag" onmousedown="startWidgetDrag(event,\''+wid+'\')" ontouchstart="startWidgetDrag(event,\''+wid+'\')" title="Arrossega per moure" style="margin:0 0 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:move;">⠿ '+(w.icon||'🧩')+' '+w.name+'</div>'
       +'<iframe id="wframe-'+wid+'" src="'+w.embedUrl+'" width="100%" height="'+sz.h+'" frameborder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style="border-radius:10px;display:block;height:'+sz.h+'px;"></iframe>'
       +'<div class="widget-resize" title="Arrossega per canviar la mida" onmousedown="startWidgetResize(event,\''+wid+'\')" ontouchstart="startWidgetResize(event,\''+wid+'\')">◢</div>'
       +'</div>';
   });
   html+='</div>';
   cont.innerHTML=html;
+  setTimeout(updateWidgetCanvasHeight,60);
+}
+// Posició per defecte (graella suau) per a widgets encara sense posició desada
+function _defaultWidgetPos(idx,sz){
+  var perRow=3,gap=16,colW=(sz&&sz.w?sz.w:340)+gap;
+  return {x:(idx%perRow)*colW,y:Math.floor(idx/perRow)*260};
+}
+// Ajusta l'alçada del llenç perquè càpiguen tots els widgets absoluts
+function updateWidgetCanvasHeight(){
+  var canvas=document.getElementById('widgets-canvas');if(!canvas)return;
+  var max=0;
+  canvas.querySelectorAll('.widget-card').forEach(function(c){var b=c.offsetTop+c.offsetHeight;if(b>max)max=b;});
+  canvas.style.minHeight=(max+24)+'px';
+}
+/* ── Moure widgets lliurement (drag de la capçalera) ── */
+var _wDrag=null;
+function startWidgetDrag(e,wid){
+  var card=document.getElementById('wcard-'+wid);
+  var canvas=document.getElementById('widgets-canvas');
+  if(!card||!canvas)return;
+  if(e.cancelable)e.preventDefault();
+  var pt=e.touches?e.touches[0]:e;
+  _wDrag={wid:wid,card:card,canvas:canvas,startX:pt.clientX,startY:pt.clientY,origX:card.offsetLeft,origY:card.offsetTop};
+  document.querySelectorAll('.widget-card iframe').forEach(function(f){f.style.pointerEvents='none';});
+  card.style.zIndex=100;card.classList.add('dragging');
+  document.body.style.userSelect='none';
+  document.addEventListener('mousemove',onWidgetDragMove);
+  document.addEventListener('mouseup',endWidgetDrag);
+  document.addEventListener('touchmove',onWidgetDragMove,{passive:false});
+  document.addEventListener('touchend',endWidgetDrag);
+}
+function onWidgetDragMove(e){
+  if(!_wDrag)return;
+  if(e.cancelable)e.preventDefault();
+  var pt=e.touches?e.touches[0]:e;
+  var x=_wDrag.origX+(pt.clientX-_wDrag.startX);
+  var y=_wDrag.origY+(pt.clientY-_wDrag.startY);
+  var maxX=Math.max(0,_wDrag.canvas.clientWidth-_wDrag.card.offsetWidth);
+  x=Math.max(0,Math.min(x,maxX));
+  y=Math.max(0,y);
+  _wDrag.card.style.left=x+'px';_wDrag.card.style.top=y+'px';
+}
+function endWidgetDrag(){
+  if(!_wDrag)return;
+  var p=players.find(function(pl){return pl.id===session.playerId;});
+  if(p){if(!p.widgetPos)p.widgetPos={};p.widgetPos[_wDrag.wid]={x:Math.round(_wDrag.card.offsetLeft),y:Math.round(_wDrag.card.offsetTop)};if(CFG.MODE==='supabase')saveToSupabase();}
+  _wDrag.card.style.zIndex='';_wDrag.card.classList.remove('dragging');
+  document.querySelectorAll('.widget-card iframe').forEach(function(f){f.style.pointerEvents='';});
+  document.body.style.userSelect='';
+  document.removeEventListener('mousemove',onWidgetDragMove);
+  document.removeEventListener('mouseup',endWidgetDrag);
+  document.removeEventListener('touchmove',onWidgetDragMove);
+  document.removeEventListener('touchend',endWidgetDrag);
+  updateWidgetCanvasHeight();
+  _wDrag=null;
 }
 function normWidgetSize(v,w){
   var dw=340,dh=(w&&w.height)||200;
@@ -935,6 +993,7 @@ function endWidgetResize(){
   document.removeEventListener('mouseup',endWidgetResize);
   document.removeEventListener('touchmove',onWidgetResizeMove);
   document.removeEventListener('touchend',endWidgetResize);
+  updateWidgetCanvasHeight();
   _wResize=null;
 }
 function openWidgetPicker(){
