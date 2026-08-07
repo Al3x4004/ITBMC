@@ -3810,7 +3810,7 @@ function _hexA(hex,a){if(!/^#([0-9a-fA-F]{6})$/.test(hex||''))return hex||'rgba(
 // Genera el contenidor + canvas; el gràfic es crea a initRadars() després d'inserir-lo al DOM.
 function buildPentagon(attrs,color){
   var keys=attrKeys();
-  var labels=keys.map(function(k){var raw=(attrName(k)||k).replace(/^[^\p{L}]+/u,'').trim();return (raw.split('(')[0].trim()||raw||k);});
+  var labels=keys.map(function(k){return attrIcon(k);});
   var values=keys.map(function(k){return Math.min(100,attrs[k]||0);});
   var cfg={labels:labels,values:values,color:color||'#7f77dd'};
   return '<div class="radar-wrap"><canvas class="radar-canvas" data-cfg="'+encodeURIComponent(JSON.stringify(cfg))+'"></canvas></div>';
@@ -3826,12 +3826,15 @@ function initRadars(){
     var grid=(css.getPropertyValue('--border')||'#ddd').trim()||'#ddd';
     var txt=(css.getPropertyValue('--text')||'#333').trim()||'#333';
     var col=cfg.color||'#7f77dd';
+    var EMOJI_FONT='"Segoe UI Emoji","Noto Color Emoji","Apple Color Emoji","Segoe UI Symbol",sans-serif';
     cv._chart=new Chart(cv,{
       type:'radar',
       data:{labels:cfg.labels,datasets:[{label:'Nivell',data:cfg.values,borderColor:col,backgroundColor:_hexA(col,0.22),pointBackgroundColor:col,pointBorderColor:'#fff',pointBorderWidth:1.5,pointRadius:3,pointHoverRadius:5,borderWidth:2}]},
-      options:{responsive:true,maintainAspectRatio:true,animation:false,plugins:{legend:{display:false},tooltip:{enabled:true}},scales:{r:{suggestedMin:0,suggestedMax:100,grid:{color:grid},angleLines:{color:grid},ticks:{display:false,stepSize:25,backdropColor:'transparent'},pointLabels:{color:txt,font:{size:12,weight:'600'}}}}}
+      options:{responsive:true,maintainAspectRatio:true,animation:false,layout:{padding:8},plugins:{legend:{display:false},tooltip:{enabled:true}},scales:{r:{suggestedMin:0,suggestedMax:100,grid:{color:grid},angleLines:{color:grid},ticks:{display:false,stepSize:25,backdropColor:'transparent'},pointLabels:{color:txt,font:{size:20,family:EMOJI_FONT}}}}}
     });
   });
+  // Els emojis en canvas necessiten la font carregada: reintenta un cop quan estigui llesta
+  if(document.fonts&&!window._radarFontRetry){window._radarFontRetry=true;document.fonts.ready.then(function(){try{initRadars();}catch(e){}});}
 }
 
 /* ══ INVENTARIO ══ */
