@@ -1242,8 +1242,35 @@ body{background-color:var(--bg);background-image:radial-gradient(1200px 600px at
   padding-right:max(1.5rem,calc((100vw - 212px - 1400px) / 2));}
 /* Barres i toasts fixats: desplaçar-los per no tapar-se amb la sidebar */
 #undo-bar{left:calc(50% + 106px);}
+
+/* ── Botó recollir/desplegar la barra lateral ── */
+.sidebar-toggle{align-self:flex-end;width:26px;height:26px;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg3);color:var(--muted);cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;margin:-4px 0 2px;}
+.sidebar-toggle:hover{color:var(--text);background:var(--bg2);}
+body.sidebar-collapsed .topbar{width:62px;}
+body.sidebar-collapsed .topbar-inner{padding:1rem .45rem 1.2rem;}
+body.sidebar-collapsed .topbar-logo{padding:.25rem 0 .8rem;}
+body.sidebar-collapsed .topbar-logo img{height:22px !important;}
+body.sidebar-collapsed .sidebar-toggle{align-self:center;}
+body.sidebar-collapsed .nav .nb{justify-content:center;padding:9px 0;font-size:0;gap:0;}
+body.sidebar-collapsed .nav .nb .nb-icon{font-size:17px;width:auto;}
+body.sidebar-collapsed .nb-edit-btn{display:none !important;}
+body.sidebar-collapsed .topbar-right .theme-btn{justify-content:center;padding:0;}
+body.sidebar-collapsed .topbar-right .theme-btn::after{content:none !important;}
+body.sidebar-collapsed .topbar-right .upill{justify-content:center;}
+body.sidebar-collapsed .topbar-right .upill #ulabel{display:none;}
+body.sidebar-collapsed .app{margin-left:62px;
+  padding-left:max(1.5rem,calc((100vw - 62px - 1400px) / 2));
+  padding-right:max(1.5rem,calc((100vw - 62px - 1400px) / 2));}
+body.sidebar-collapsed #undo-bar{left:calc(50% + 31px);}
+
 /* En mòbil/tauleta: torna a barra superior horitzontal */
 @media(max-width:820px){
+  .sidebar-toggle{display:none !important;}
+  body.sidebar-collapsed .topbar{width:100%;}
+  body.sidebar-collapsed .app{margin-left:0;padding-left:1rem;padding-right:1rem;}
+  body.sidebar-collapsed .nav .nb{font-size:12px;padding:5px 9px;}
+  body.sidebar-collapsed .nav .nb .nb-icon{font-size:13px;}
+  body.sidebar-collapsed .topbar-right .upill #ulabel{display:inline;}
   .topbar{position:sticky;top:0;left:auto;right:auto;bottom:auto;width:100%;height:auto;border-right:none;border-bottom:0.5px solid var(--border);overflow:visible;}
   .topbar-inner{flex-direction:row;align-items:center;padding:.4rem .6rem;min-height:0;gap:.5rem;}
   .topbar-logo{border-bottom:none;padding:0;margin:0;}

@@ -4242,6 +4242,23 @@ function initTheme(){
   const _tbl=document.getElementById('theme-label');if(_tbl)_tbl.textContent=saved==='dark'?'Mode fosc':'Mode clar';
 }
 
+/* ══ RECOLLIR / DESPLEGAR BARRA LATERAL ══ */
+function _applySidebarBtn(collapsed){
+  var b=document.getElementById('sidebar-toggle');
+  if(b){b.textContent=collapsed?'»':'«';b.title=collapsed?'Desplegar menú':'Recollir menú';b.setAttribute('aria-label',b.title);}
+}
+function toggleSidebar(){
+  var collapsed=!document.body.classList.contains('sidebar-collapsed');
+  document.body.classList.toggle('sidebar-collapsed',collapsed);
+  localStorage.setItem('cg_sidebar',collapsed?'collapsed':'open');
+  _applySidebarBtn(collapsed);
+}
+function initSidebar(){
+  var collapsed=localStorage.getItem('cg_sidebar')==='collapsed';
+  document.body.classList.toggle('sidebar-collapsed',collapsed);
+  _applySidebarBtn(collapsed);
+}
+
 /* ══ ARRANQUE ══ */
 /* ══ CREAR MISIONES/ARCOS ══ */
 const DIFF_REWARDS={D:{xp:25,gold:10,frag:20},C:{xp:75,gold:25,frag:50},B:{xp:150,gold:50,frag:100},A:{xp:300,gold:100,frag:200},S:{xp:500,gold:200,frag:400}};
@@ -4399,6 +4416,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',function(){
 });}
 (async()=>{
   initTheme();
+  try{initSidebar();}catch(e){}
   try{
     await loadData();
     loadMenuNames();
