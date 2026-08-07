@@ -1220,7 +1220,10 @@ body{background-color:var(--bg);background-image:radial-gradient(1200px 600px at
 .topbar-right .uwrap{width:100%;}
 .topbar-right .upill{width:100%;justify-content:flex-start;box-sizing:border-box;}
 .umenu-dropdown{position:absolute;left:0;right:auto;bottom:calc(100% + 6px);top:auto;width:100%;min-width:0;box-sizing:border-box;}
-.app{margin-left:212px;max-width:1400px;}
+.app{margin-left:212px;margin-right:0;max-width:none;box-sizing:border-box;
+  padding-top:1.75rem;padding-bottom:2.5rem;
+  padding-left:max(1.5rem,calc((100vw - 212px - 1400px) / 2));
+  padding-right:max(1.5rem,calc((100vw - 212px - 1400px) / 2));}
 /* Barres i toasts fixats: desplaçar-los per no tapar-se amb la sidebar */
 #undo-bar{left:calc(50% + 106px);}
 /* En mòbil/tauleta: torna a barra superior horitzontal */
@@ -1235,6 +1238,6 @@ body{background-color:var(--bg);background-image:radial-gradient(1200px 600px at
   .topbar-right .theme-btn::after{content:none;}
   .topbar-right .uwrap,.topbar-right .upill{width:auto;}
   .umenu-dropdown{top:calc(100% + 6px);bottom:auto;left:auto;right:0;width:auto;min-width:180px;}
-  .app{margin-left:0;max-width:1700px;}
+  .app{margin-left:0;max-width:1700px;padding-left:1rem;padding-right:1rem;}
   #undo-bar{left:12px;}
 }
