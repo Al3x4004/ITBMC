@@ -3838,22 +3838,12 @@ function buildPentagon(attrs,color){
   var dataPts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;var v=Math.min(100,attrs[k]||0)/100;return {x:cx+r*v*Math.cos(a),y:cy+r*v*Math.sin(a),lx:cx+(r+20)*Math.cos(a),ly:cy+(r+20)*Math.sin(a),label:labels[i],val:attrs[k]||0};});
   var fillPts=dataPts.map(function(p){return p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');
   var dots=dataPts.map(function(p){return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="4.5" fill="'+color+'" stroke="var(--bg2)" stroke-width="2"/>';}).join('');
-  // Etiquetes amb HTML real (foreignObject): els emojis es renderitzen sempre
-  // (mateix motor que la resta de la pàgina) i no es pisen amb el text.
-  var BW=110,BH=42;
-  var lblSvg=dataPts.map(function(p){
-    return '<foreignObject x="'+(p.lx-BW/2).toFixed(1)+'" y="'+(p.ly-BH/2).toFixed(1)+'" width="'+BW+'" height="'+BH+'" style="overflow:visible;">'
-      +'<div xmlns="http://www.w3.org/1999/xhtml" class="penta-lbl">'
-        +'<span class="penta-ic">'+p.label.icon+'</span>'
-        +'<span class="penta-tx">'+p.label.txt+'</span>'
-        +'<span class="penta-val" style="color:'+color+';">'+p.val+'</span>'
-      +'</div>'
-    +'</foreignObject>';
-  }).join('');
-  return '<svg viewBox="-44 -36 488 488" preserveAspectRatio="xMidYMid meet" style="overflow:visible;width:100%;height:auto;max-width:500px;display:block;margin:0 auto;">'
+  // Hexàgon net, sense etiquetes al voltant (els noms i valors ja surten a la
+  // graella d'atributs de sota, així s'evita qualsevol solapament).
+  return '<svg viewBox="34 34 332 332" preserveAspectRatio="xMidYMid meet" style="overflow:visible;width:100%;height:auto;max-width:440px;display:block;margin:0 auto;">'
     +defs+plate+bgSvg+axes
     +'<polygon points="'+fillPts+'" fill="url(#pgGrad)" stroke="'+color+'" stroke-width="2.5" stroke-linejoin="round" filter="url(#pgGlow)"/>'
-    +dots+lblSvg+'</svg>';
+    +dots+'</svg>';
 }
 
 /* ══ INVENTARIO ══ */
