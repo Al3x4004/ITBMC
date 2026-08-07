@@ -1682,6 +1682,7 @@ function renderHeroProfile(i){
         </div>
       </div>`:''}
     </div>`;
+  try{initRadars();}catch(e){}
 }
 
 function switchPTab(btn,panelId){
@@ -3804,46 +3805,33 @@ function saveAvatar(){
   toast('Avatar desat');
 }
 
-/* ══ PENTAGON ══ */
+/* ══ RADAR D'ATRIBUTS (Chart.js) ══ */
+function _hexA(hex,a){if(!/^#([0-9a-fA-F]{6})$/.test(hex||''))return hex||'rgba(127,119,221,'+a+')';var n=parseInt(hex.slice(1),16);return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';}
+// Genera el contenidor + canvas; el gràfic es crea a initRadars() després d'inserir-lo al DOM.
 function buildPentagon(attrs,color){
   var keys=attrKeys();
-  var labels=keys.map(function(k){
-    var raw=(attrName(k)||k);
-    var def=ATTRS.find(function(x){return x.key===k;});
-    var lead=(raw.match(/^[^\p{L}]+/u)||[''])[0].trim();
-    var ic=(def&&def.icon&&def.icon!=='⭐')?def.icon:(lead||'⭐');
-    var rest=raw.replace(/^[^\p{L}]+/u,'').trim();
-    var t=rest.slice(0,3);
-    return {icon:ic,txt:t.charAt(0).toUpperCase()+t.slice(1).toLowerCase()};
+  var labels=keys.map(function(k){var raw=(attrName(k)||k).replace(/^[^\p{L}]+/u,'').trim();return (raw.split('(')[0].trim()||raw||k);});
+  var values=keys.map(function(k){return Math.min(100,attrs[k]||0);});
+  var cfg={labels:labels,values:values,color:color||'#7f77dd'};
+  return '<div class="radar-wrap"><canvas class="radar-canvas" data-cfg="'+encodeURIComponent(JSON.stringify(cfg))+'"></canvas></div>';
+}
+// Inicialitza (o reinicia) tots els radars presents al DOM
+function initRadars(){
+  if(typeof Chart==='undefined')return;
+  document.querySelectorAll('canvas.radar-canvas').forEach(function(cv){
+    var raw=cv.getAttribute('data-cfg');if(!raw)return;
+    var cfg;try{cfg=JSON.parse(decodeURIComponent(raw));}catch(e){return;}
+    if(cv._chart){try{cv._chart.destroy();}catch(e){}}
+    var css=getComputedStyle(document.body);
+    var grid=(css.getPropertyValue('--border')||'#ddd').trim()||'#ddd';
+    var txt=(css.getPropertyValue('--text')||'#333').trim()||'#333';
+    var col=cfg.color||'#7f77dd';
+    cv._chart=new Chart(cv,{
+      type:'radar',
+      data:{labels:cfg.labels,datasets:[{label:'Nivell',data:cfg.values,borderColor:col,backgroundColor:_hexA(col,0.22),pointBackgroundColor:col,pointBorderColor:'#fff',pointBorderWidth:1.5,pointRadius:3,pointHoverRadius:5,borderWidth:2}]},
+      options:{responsive:true,maintainAspectRatio:true,animation:false,plugins:{legend:{display:false},tooltip:{enabled:true}},scales:{r:{suggestedMin:0,suggestedMax:100,grid:{color:grid},angleLines:{color:grid},ticks:{display:false,stepSize:25,backdropColor:'transparent'},pointLabels:{color:txt,font:{size:12,weight:'600'}}}}}
+    });
   });
-  var cx=200,cy=200,r=155,n=keys.length||1;
-  var bgLvls=[0.25,0.5,0.75,1.0];
-  var bgSvg=bgLvls.map(function(lv){
-    var pts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;return (cx+r*lv*Math.cos(a)).toFixed(1)+','+(cy+r*lv*Math.sin(a)).toFixed(1);}).join(' ');
-    return '<polygon class="penta-bg" points="'+pts+'"/>';
-  }).join('');
-  // Plat de fons (dona profunditat)
-  var outerPts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;return (cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1);}).join(' ');
-  var plate='<polygon points="'+outerPts+'" fill="var(--bg3)" opacity="0.5"/>';
-  var axes=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;return '<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+r*Math.cos(a)).toFixed(1)+'" y2="'+(cy+r*Math.sin(a)).toFixed(1)+'" stroke="var(--border)" stroke-width="1" opacity="0.7"/>';}).join('');
-  var defs='<defs>'
-    +'<radialGradient id="pgGrad" cx="50%" cy="50%" r="65%">'
-      +'<stop offset="0%" stop-color="'+color+'" stop-opacity="0.34"/>'
-      +'<stop offset="100%" stop-color="'+color+'" stop-opacity="0.06"/>'
-    +'</radialGradient>'
-    +'<filter id="pgGlow" x="-40%" y="-40%" width="180%" height="180%">'
-      +'<feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="'+color+'" flood-opacity="0.55"/>'
-    +'</filter>'
-  +'</defs>';
-  var dataPts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;var v=Math.min(100,attrs[k]||0)/100;return {x:cx+r*v*Math.cos(a),y:cy+r*v*Math.sin(a),lx:cx+(r+20)*Math.cos(a),ly:cy+(r+20)*Math.sin(a),label:labels[i],val:attrs[k]||0};});
-  var fillPts=dataPts.map(function(p){return p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');
-  var dots=dataPts.map(function(p){return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="4.5" fill="'+color+'" stroke="var(--bg2)" stroke-width="2"/>';}).join('');
-  // Hexàgon net, sense etiquetes al voltant (els noms i valors ja surten a la
-  // graella d'atributs de sota, així s'evita qualsevol solapament).
-  return '<svg viewBox="34 34 332 332" preserveAspectRatio="xMidYMid meet" style="overflow:visible;width:100%;height:auto;max-width:440px;display:block;margin:0 auto;">'
-    +defs+plate+bgSvg+axes
-    +'<polygon points="'+fillPts+'" fill="url(#pgGrad)" stroke="'+color+'" stroke-width="2.5" stroke-linejoin="round" filter="url(#pgGlow)"/>'
-    +dots+'</svg>';
 }
 
 /* ══ INVENTARIO ══ */
