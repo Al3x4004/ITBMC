@@ -2005,7 +2005,8 @@ function renderMarket(){
   if(w)w.innerHTML=p?('El teu moneder: <svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+p.gold+' or · ✨ '+(p.fragments||0)+' fragments'):'Entra amb un personatge per operar al mercat.';
   var host=document.getElementById('mercat-list');if(!host)return;
   if(!market.length){host.innerHTML='<div style="font-size:13px;color:var(--muted);padding:1rem;">No hi ha res al mercat. Sigues el primer en publicar una carta!</div>';return;}
-  host.innerHTML='<div class="gallery-grid">'+market.map(function(l){
+  var RARCOL={comun:'#9aa0a6',rara:'#4a90d9',epica:'#a855f7',legendaria:'#e4a428'};
+  host.innerHTML='<div class="mkt-grid">'+market.map(function(l){
     var c=mkCardById(l.cardId);if(!c)return '';
     var seller=players.find(function(pl){return pl.id===l.sellerId;});
     var sellerName=seller?seller.name.split(' ')[0]:'?';
@@ -2019,9 +2020,9 @@ function renderMarket(){
       var wc=mkCardById(l.wantCardId);
       var wimg=wc?(wc.imageUrl||(wc.image?CFG.GITHUB_RAW+wc.image:'')):'';
       priceLine='🔄 Vol a canvi:';
-      wantBlock='<div class="trade-want">'
+      wantBlock='<div class="mkt-want">'
         +(wc?'<img src="'+wimg+'" alt="'+wc.name+'" onerror="this.style.background=\'var(--bg3)\';">':'')
-        +'<div><div class="tw-name">'+(wc?wc.name:'?')+'</div><div class="grarity rarity-'+(wc?wc.rarity:'comun')+'" style="font-size:9px;">'+(wc?RARITY_LABEL[wc.rarity]:'')+'</div></div>'
+        +'<div style="min-width:0;"><div class="tw-name">'+(wc?wc.name:'?')+'</div><div class="grarity rarity-'+(wc?wc.rarity:'comun')+'" style="font-size:9px;">'+(wc?RARITY_LABEL[wc.rarity]:'')+'</div></div>'
         +'</div>';
     }
     var btn='';
@@ -2037,15 +2038,16 @@ function renderMarket(){
         btn='<button class="btn btn-sm btn-p" style="width:100%;" '+(can?'':'disabled')+' onclick="buyListing(\''+l.id+'\')">'+(can?'Comprar':'Sense saldo')+'</button>';
       }
     }
-    return '<div class="gallery-card rarity-frame-'+c.rarity+'">'
-      +'<img src="'+imgUrl+'" alt="'+c.name+'" onerror="this.style.background=\'var(--bg3)\';this.style.minHeight=\'120px\';">'
-      +'<div class="gallery-card-label">'
-      +(l.mode==='trade'?'<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Ofereix</div>':'')
-      +'<div class="gname">'+c.name+'</div>'
-      +'<div class="grarity rarity-'+c.rarity+'">'+RARITY_LABEL[c.rarity]+'</div>'
-      +'<div style="font-size:11px;margin-top:3px;font-weight:600;">'+priceLine+'</div>'
+    var accent=RARCOL[c.rarity]||'#9aa0a6';
+    return '<div class="mkt-card" style="border-left:3px solid '+accent+';">'
+      +'<div class="mkt-img"><img src="'+imgUrl+'" alt="'+c.name+'" onerror="this.style.background=\'var(--bg3)\';"></div>'
+      +'<div class="mkt-body">'
+      +(l.mode==='trade'?'<div class="mkt-tag">Ofereix</div>':'')
+      +'<div class="mkt-name">'+c.name+'</div>'
+      +'<div class="grarity rarity-'+c.rarity+'" style="font-size:11px;">'+RARITY_LABEL[c.rarity]+'</div>'
+      +'<div class="mkt-price">'+priceLine+'</div>'
       +wantBlock
-      +'<div style="font-size:10px;color:var(--muted);margin:4px 0 5px;">de '+sellerName+'</div>'
+      +'<div class="mkt-seller">de '+sellerName+'</div>'
       +btn
       +'</div></div>';
   }).join('')+'</div>';
