@@ -524,7 +524,7 @@ function checkDailyMissions(){
           id:instanceId,
           name:tpl.name,arc:tpl.arc||'General',
           playerId:p.id,status:'pending',
-          diff:'D',xp:25,gold:10,
+          diff:'C',xp:MISSION_XP,gold:MISSION_GOLD,frag:MISSION_FRAG,
           attr:'Saviesa',attrPts:1,
           deadline:today,daily:true,
           isDaily_instance:true,templateId:tpl.id,
@@ -1429,6 +1429,10 @@ function classGrowthFor(p){
   var cls=CLASSES.find(function(c){return c.name===p.cls;});
   return defaultGrowth(cls);
 }
+// Recompensa FIXA de missions (la prioritat és només una etiqueta/grau, no afecta l'XP)
+var MISSION_XP=10;      // totes les missions donen 10 XP
+var MISSION_GOLD=10;    // or fix per a missions creades a mà
+var MISSION_FRAG=20;    // fragments fixos per missió
 var GOLD_MONTH_CAP=100;
 function curMonthKey(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
 function goldEarnedThisMonth(p){if(!p)return 0;return (p.goldMonthKey===curMonthKey())?(p.goldMonth||0):0;}
@@ -3055,9 +3059,7 @@ function confirmPlannerImport(){
   var tagsCol='Etiquetas';
   var notesCol='Notas';
 
-  // Dificultad por defecto FIJA
   var DEFAULT_DIFF='C';
-  var DIFF_REWARDS={D:{xp:25,gold:10,frag:20},C:{xp:75,gold:25,frag:50},B:{xp:150,gold:50,frag:100},A:{xp:300,gold:100,frag:200},S:{xp:500,gold:200,frag:400}};
   var imported=0;
 
   plannerRows.forEach(function(row){
@@ -3081,14 +3083,13 @@ function confirmPlannerImport(){
     var assignedPlayer=players.find(function(p){return p.realName&&cn&&norm(p.realName)===cn;})
       ||players.find(function(p){return p.realName&&cn&&(norm(p.realName).indexOf(cn)>=0||cn.indexOf(norm(p.realName))>=0);});
 
-    // Difficulty by priority (fallback to default)
+    // Grau de PRIORITAT (només etiqueta, no afecta recompensa). Es desa a "diff" per compatibilitat.
     var priorityMap={'urgente':'A','importante':'B','media':'C','baja':'D'};
     var taskPriority=(row['Priority']||row['Prioridad']||'').toLowerCase().trim();
     var taskDiff=priorityMap[taskPriority]||DEFAULT_DIFF;
-    var rewards=DIFF_REWARDS[taskDiff]||DIFF_REWARDS[DEFAULT_DIFF];
 
     // OR: es calcula pel temps (columna C "Depósito") × estrelles (columna R "Etiquetas").
-    // 5★=100% … 1★=20% · ratio 1 or = 1 hora a 5★. Sense temps o estrelles → 0. XP i fragments es mantenen per dificultat.
+    // 5★=100% … 1★=20% · 1 or = 1 hora a 5★. Sense temps o estrelles → 0. XP i fragments són fixos.
     var plGold=plannerGoldFor(row);
 
     // Build description: Notas + Etiquetas + Creado por + Asignado
@@ -3104,9 +3105,9 @@ function confirmPlannerImport(){
       playerId:assignedPlayer?assignedPlayer.id:'',
       status:status,
       diff:taskDiff,
-      xp:rewards.xp,
+      xp:MISSION_XP,
       gold:plGold,
-      frag:rewards.frag||50,
+      frag:MISSION_FRAG,
       attr:'Intel·ligència',attrPts:2,
       deadline:row[deadlineCol]||'',
       daily:false,isDaily_instance:false,
@@ -3387,7 +3388,7 @@ function renderPlannerImported(){
     var statusCls=m.status==='done'?'b-teal':m.status==='active'?'b-gold':'b-gray';
     return '<div style="padding:10px 0;border-bottom:0.5px solid var(--border);">'
       +'<div style="display:flex;align-items:center;gap:10px;">'
-        +'<span class="badge d'+m.diff+'">'+m.diff+'</span>'
+        +(function(){var pr={A:['Urgent','b-coral'],B:['Important','b-gold'],C:['Mitjana','b-gray'],D:['Baixa','b-teal']}[m.diff]||['Mitjana','b-gray'];return '<span class="badge '+pr[1]+'">'+pr[0]+'</span>';})()
         +'<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:500;">'+m.name+'</div></div>'
         +'<span class="badge '+statusCls+'">'+statusLabel+'</span>'
         +'<button class="btn btn-sm" style="font-size:11px;" data-mid="'+m.id+'" onclick="deleteMission(this.dataset.mid)">✕</button>'
@@ -4092,7 +4093,7 @@ function openMissionModal(id){
   document.getElementById('mm-stats').innerHTML=
     `<div class="smini"><div class="v">${m.xp}</div><div class="l">XP</div></div>`
     +`<div class="smini"><div class="v"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> ${m.gold}</div><div class="l">Or</div></div>`
-    +`<div class="smini"><div class="v">${m.diff||'C'}</div><div class="l">Dificultat</div></div>`;
+    +`<div class="smini"><div class="v" style="font-size:.72em;">${_prio[0]}</div><div class="l">Prioritat</div></div>`;
   const canComplete=(session.isAdmin||(session.playerId===m.playerId))&&m.status!=='done';
   const canDel=session.isAdmin||(m.createdBy===session.playerId);
   if(session.isAdmin){
@@ -4266,7 +4267,7 @@ function createMission(){
   // Etiquetes
   var tags=(document.getElementById('nm-tags')?document.getElementById('nm-tags').value.trim():'');
   if(isWeekly){
-    weeklyTemplates.push({id:'wt'+Date.now(),name:name,desc:document.getElementById('nm-desc')?document.getElementById('nm-desc').value.trim():'',arc:arc||'General',playerId:assignTo||session.playerId,diff:prioDiff,xp:150,gold:60,frag:80,attr:attrName_,attrPts:attrPts});
+    weeklyTemplates.push({id:'wt'+Date.now(),name:name,desc:document.getElementById('nm-desc')?document.getElementById('nm-desc').value.trim():'',arc:arc||'General',playerId:assignTo||session.playerId,diff:prioDiff,xp:MISSION_XP,gold:MISSION_GOLD,frag:MISSION_FRAG,attr:attrName_,attrPts:attrPts});
     checkWeeklyMissions();
     if(CFG.MODE==='supabase')saveToSupabase();
     document.getElementById('nm-name').value='';
@@ -4275,7 +4276,6 @@ function createMission(){
     renderAll();
     return;
   }
-  var _rw=(typeof DIFF_REWARDS!=='undefined'&&DIFF_REWARDS[prioDiff])?DIFF_REWARDS[prioDiff]:{xp:75,gold:25,frag:50};
   var newM={
     id:'m'+Date.now(),
     name:name,
@@ -4283,10 +4283,10 @@ function createMission(){
     arc:arc||'General',
     playerId:isDaily?session.playerId:(assignTo||''),
     status:'pending',
-    diff:isDaily?'D':prioDiff,
-    xp:isDaily?25:_rw.xp,
-    gold:isDaily?10:_rw.gold,
-    frag:isDaily?20:(_rw.frag||50),
+    diff:isDaily?'C':prioDiff,
+    xp:MISSION_XP,
+    gold:MISSION_GOLD,
+    frag:MISSION_FRAG,
     attr:attrName_,
     attrPts:attrPts,
     deadline:isDaily?'':deadline||'',
