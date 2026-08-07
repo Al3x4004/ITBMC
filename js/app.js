@@ -746,6 +746,8 @@ function enterApp(){
   if(classNav)classNav.style.display=session.isAdmin?'flex':'none';
   var wgNav=document.getElementById('nav-widgets-admin');
   if(wgNav)wgNav.style.display=session.isAdmin?'flex':'none';
+  var plNav=document.getElementById('nav-planner');
+  if(plNav)plNav.style.display=session.isAdmin?'flex':'none';
   var rb=document.getElementById('menu-restore');
   if(rb)rb.style.display=session.isAdmin?'block':'none';
   var sb=document.getElementById('menu-server-backups');

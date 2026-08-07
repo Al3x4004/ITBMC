@@ -188,7 +188,7 @@
         <button class="nb" onclick="showPage('mercat',this)" id="nav-mercat"><span class="nb-icon">🕶️</span>Mercat negre</button>
         <button class="nb" onclick="showPage('inventario',this)" id="nav-inventario"><span class="nb-icon">🎒</span>Inventari</button>
         <button class="nb" onclick="showPage('calendario',this)" id="nav-calendario"><span class="nb-icon">📅</span>Calendari</button>
-        <button class="nb" onclick="showPage('planner',this)" id="nav-planner"><span class="nb-icon">📋</span>Planner</button>
+        <button class="nb admin-only" onclick="showPage('planner',this)" id="nav-planner" style="display:none;"><span class="nb-icon">📋</span>Planner</button>
         <button class="nb admin-only" onclick="showPage('items-admin',this)" id="nav-items-admin" style="display:none;"><span class="nb-icon">⚙️</span>Items</button>
         <button class="nb admin-only" onclick="showPage('classes-admin',this)" id="nav-classes-admin" style="display:none;"><span class="nb-icon">🎭</span>Classes</button>
         <button class="nb admin-only" onclick="showPage('widgets-admin',this)" id="nav-widgets-admin" style="display:none;"><span class="nb-icon">🧩</span>Widgets</button>
@@ -941,6 +941,6 @@
   window.dispatchEvent(new Event('dicebear-ready'));
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="js/app.js?v=65"></script>
+<script src="js/app.js?v=66"></script>
 </body>
 </html>
