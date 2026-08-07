@@ -882,7 +882,7 @@ function renderUserWidgets(){
   }
   if(!p.widgetSizes)p.widgetSizes={};
   if(!p.widgetPos)p.widgetPos={};
-  var html=manageBtn+'<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Arrossega la capçalera per moure el widget · cantonada ◢ per redimensionar</div>';
+  var html=manageBtn;
   html+='<div class="widgets-canvas" id="widgets-canvas">';
   p.widgets.forEach(function(wid,idx){
     var w=widgetCatalog.find(function(x){return x.id===wid;});
@@ -932,11 +932,9 @@ function onWidgetDragMove(e){
   if(!_wDrag)return;
   if(e.cancelable)e.preventDefault();
   var pt=e.touches?e.touches[0]:e;
+  // Moviment lliure: sense límits de marge (l'usuari col·loca on vulgui)
   var x=_wDrag.origX+(pt.clientX-_wDrag.startX);
   var y=_wDrag.origY+(pt.clientY-_wDrag.startY);
-  var maxX=Math.max(0,_wDrag.canvas.clientWidth-_wDrag.card.offsetWidth);
-  x=Math.max(0,Math.min(x,maxX));
-  y=Math.max(0,y);
   _wDrag.card.style.left=x+'px';_wDrag.card.style.top=y+'px';
 }
 function endWidgetDrag(){
