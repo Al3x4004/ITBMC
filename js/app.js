@@ -1620,8 +1620,8 @@ function renderHeroProfile(i){
           <div class="xpl"><span>${inLvl} / ${XP_PER_LEVEL} XP</span><span>${atMax?'Nivell màxim (100)':('Falten '+toNext+' XP per al nivell '+(lvl+1))}</span></div>
           <div class="xpt"><div class="xpf" style="width:${xpPct}%;background:${p.color};"></div></div>
         </div>
-        ${(function(){var gm=goldEarnedThisMonth(p);var gp=Math.min(100,Math.round(gm/GOLD_MONTH_CAP*100));var gl=Math.max(0,GOLD_MONTH_CAP-gm);return `<div class="xpw">
-          <div class="xpl"><span>Or aquest mes: ${gm} / ${GOLD_MONTH_CAP}</span><span>${gl>0?('Queden '+gl):'Límit assolit'}</span></div>
+        ${(function(){var gm=goldEarnedThisMonth(p);var gp=Math.min(100,Math.round(gm/GOLD_MONTH_CAP*100));var gl=Math.max(0,GOLD_MONTH_CAP-gm);var r2=function(n){return Math.round(n*100)/100;};return `<div class="xpw">
+          <div class="xpl"><span>Or aquest mes: ${r2(gm)} / ${GOLD_MONTH_CAP}</span><span>${gl>0?('Queden '+r2(gl)):'Límit assolit'}</span></div>
           <div class="xpt"><div class="xpf" style="width:${gp}%;background:linear-gradient(90deg,#d4a017,#ffcf40);"></div></div>
         </div>`;})()}
         <div class="g4" style="margin-bottom:1.25rem;">
@@ -2871,6 +2871,31 @@ function deleteEvent(){
 let plannerRows=[];
 let plannerHeaders=[];
 
+// Decodifica el temps de la columna "Depósito" (emojis-dígit tipus 0️⃣:1️⃣5️⃣) → hores decimals.
+// Els emojis-teclat són dígit ASCII + U+FE0F + U+20E3; treiem els modificadors i queda "0:15".
+function plannerParseHours(raw){
+  if(raw==null)return 0;
+  var s=(''+raw).replace(/[️⃣]/g,'').trim();
+  var m=s.match(/(\d+)\s*[:hH]\s*(\d+)/);      // format h:mm
+  if(m)return parseInt(m[1],10)+parseInt(m[2],10)/60;
+  var only=s.match(/\d+/);                       // un sol número → minuts
+  if(only)return parseInt(only[0],10)/60;
+  return 0;
+}
+// Compta les estrelles (⭐ = U+2B50) a la columna "Etiquetas". Màxim 5.
+function plannerCountStars(raw){
+  if(!raw)return 0;
+  var m=(''+raw).match(/⭐/g);
+  return m?Math.min(5,m.length):0;
+}
+// Oro = hores × (estrelles × 20%). 5★=100% … 1★=20%. Sense temps o sense estrelles → 0. Arrodonit a 2 decimals.
+function plannerGoldFor(row){
+  var hours=plannerParseHours(row['Depósito']!=null?row['Depósito']:row['Deposito']);
+  var stars=plannerCountStars(row['Etiquetas']!=null?row['Etiquetas']:row['Etiquetes']);
+  if(hours<=0||stars<=0)return 0;
+  return Math.round(hours*(stars/5)*100)/100;
+}
+
 function showPage_planner(){
   renderPlannerImported();
 }
@@ -2941,9 +2966,10 @@ function parsePlannerExcel(buffer){
   }
   try{
     var wb=XLSX.read(new Uint8Array(buffer),{type:'array'});
-    // Preferim la fulla "Tareas"; si no, la primera
-    var sheetName=wb.SheetNames.indexOf('Tareas')>=0?'Tareas':
-                  (wb.SheetNames.indexOf('Tasques')>=0?'Tasques':wb.SheetNames[0]);
+    // Preferim la fulla "Datos consolidados" (conté temps + etiquetes); si no, "Tareas"; si no, la primera
+    var _pref=['Datos consolidados','Dades consolidades','Tareas','Tasques'];
+    var sheetName=wb.SheetNames[0];
+    for(var _pi=0;_pi<_pref.length;_pi++){if(wb.SheetNames.indexOf(_pref[_pi])>=0){sheetName=_pref[_pi];break;}}
     var ws=wb.Sheets[sheetName];
     var matrix=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false,blankrows:false});
     if(!matrix.length){toast('La fulla "'+sheetName+'" està buida.');return;}
@@ -2974,12 +3000,15 @@ function showPlannerPreview(){
   // Only show columns that actually exist
   cols=cols.filter(function(col){return plannerHeaders.indexOf(col)>=0;});
   if(!cols.length)cols=plannerHeaders.slice(0,6);
+  var thGold='<th style="text-align:right;padding:6px 8px;border-bottom:0.5px solid var(--border);font-size:11px;color:var(--gold);font-weight:600;">Or (calc.)</th>';
   table.innerHTML='<thead><tr>'+cols.map(function(h){
     return '<th style="text-align:left;padding:6px 8px;border-bottom:0.5px solid var(--border);font-size:11px;color:var(--muted);font-weight:500;">'+h+'</th>';
-  }).join('')+'</tr></thead><tbody>'+plannerRows.slice(0,10).map(function(row){
+  }).join('')+thGold+'</tr></thead><tbody>'+plannerRows.slice(0,10).map(function(row){
+    var _g=plannerGoldFor(row);var _st=plannerCountStars(row['Etiquetas']);var _h=plannerParseHours(row['Depósito']);
+    var tdGold='<td title="'+(_h?_h.toFixed(2)+'h × '+_st+'★':'sense temps/estrelles')+'" style="padding:6px 8px;border-bottom:0.5px solid var(--border);font-size:12px;text-align:right;font-weight:600;color:'+(_g>0?'var(--gold)':'var(--muted)')+';">'+_g+'</td>';
     return '<tr>'+cols.map(function(h){
       return '<td style="padding:6px 8px;border-bottom:0.5px solid var(--border);font-size:12px;color:var(--text);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(row[h]||'')+'</td>';
-    }).join('')+'</tr>';
+    }).join('')+tdGold+'</tr>';
   }).join('')+'</tbody>';
 }
 
@@ -3025,6 +3054,10 @@ function confirmPlannerImport(){
     var taskDiff=priorityMap[taskPriority]||DEFAULT_DIFF;
     var rewards=DIFF_REWARDS[taskDiff]||DIFF_REWARDS[DEFAULT_DIFF];
 
+    // OR: es calcula pel temps (columna C "Depósito") × estrelles (columna R "Etiquetas").
+    // 5★=100% … 1★=20% · ratio 1 or = 1 hora a 5★. Sense temps o estrelles → 0. XP i fragments es mantenen per dificultat.
+    var plGold=plannerGoldFor(row);
+
     // Build description: Notas + Etiquetas + Creado por + Asignado
     var notes=(row[notesCol]||'').trim();
     var tags=(row[tagsCol]||'').trim();
@@ -3039,7 +3072,7 @@ function confirmPlannerImport(){
       status:status,
       diff:taskDiff,
       xp:rewards.xp,
-      gold:rewards.gold,
+      gold:plGold,
       frag:rewards.frag||50,
       attr:'Intel·ligència',attrPts:2,
       deadline:row[deadlineCol]||'',
