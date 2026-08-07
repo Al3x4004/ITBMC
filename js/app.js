@@ -1331,9 +1331,8 @@ function completeMission(id){
   var mFrag=m.frag||({D:20,C:50,B:100,A:200,S:400}[m.diff]||50);
   // Recompensa a TOTES les persones assignades
   assignees.forEach(function(ap){
-    ap.xp+=m.xp;ap.gold+=m.gold;ap.fragments=(ap.fragments||0)+mFrag;ap.missions++;
+    ap.xp+=m.xp;awardGold(ap,m.gold);ap.fragments=(ap.fragments||0)+mFrag;ap.missions++;
     if(m.attrPts&&m.attr){var k=attrKeyFromName(m.attr);if(k)ap.attrs[k]=(ap.attrs[k]||0)+m.attrPts;}
-    ap.level=Math.floor(ap.xp/100)+1;
     checkLevelUp(ap);
   });
   if(assignees.length){showRewardPopup(m,assignees[0],assignees);}
@@ -1342,7 +1341,7 @@ function completeMission(id){
     const myDailies=missions.filter(mx=>mx.daily&&mx.playerId===p.id);
     if(myDailies.length>=1&&myDailies.length<=4&&myDailies.every(mx=>mx.status==='done')){
       const bx=myDailies.reduce((s,mx)=>s+mx.xp,0),bg=myDailies.reduce((s,mx)=>s+mx.gold,0);
-      p.xp+=bx;p.gold+=bg;
+      p.xp+=bx;awardGold(p,bg);
       setTimeout(()=>showRewardPopup({name:'Bonus diari!',xp:bx,gold:bg,attr:null},p),600);
     }
   }
@@ -1356,7 +1355,7 @@ function completeMission(id){
         arc[bonusKey]=true;
         arc.status='done';
         const bx=arcMs.reduce((s,mx)=>s+mx.xp,0),bg=arcMs.reduce((s,mx)=>s+mx.gold,0);
-        p.xp+=bx;p.gold+=bg;
+        p.xp+=bx;awardGold(p,bg);
         setTimeout(()=>showRewardPopup({name:'Arc completat: '+m.arc+'!',xp:bx,gold:bg,attr:null},p),1200);
       }
     }
@@ -1372,9 +1371,9 @@ function claimMissionReward(id){
   if(!assignees.length){alert('Aquesta missió no té ningú assignat. Assigna-la abans de reclamar la recompensa.');return;}
   var mFrag=m.frag||({D:20,C:50,B:100,A:200,S:400}[m.diff]||50);
   assignees.forEach(function(ap){
-    ap.xp+=m.xp;ap.gold+=m.gold;ap.fragments=(ap.fragments||0)+mFrag;ap.missions++;
+    ap.xp+=m.xp;awardGold(ap,m.gold);ap.fragments=(ap.fragments||0)+mFrag;ap.missions++;
     if(m.attrPts&&m.attr){var k=attrKeyFromName(m.attr);if(k)ap.attrs[k]=(ap.attrs[k]||0)+m.attrPts;}
-    ap.level=Math.floor(ap.xp/100)+1;checkLevelUp(ap);
+    checkLevelUp(ap);
   });
   delete rewardsPending[id];
   showRewardPopup(m,assignees[0],assignees);
@@ -1395,6 +1394,18 @@ function classGrowthFor(p){
   if(classGrowthMap[p.cls])return classGrowthMap[p.cls];
   var cls=CLASSES.find(function(c){return c.name===p.cls;});
   return defaultGrowth(cls);
+}
+var GOLD_MONTH_CAP=100;
+function curMonthKey(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function goldEarnedThisMonth(p){if(!p)return 0;return (p.goldMonthKey===curMonthKey())?(p.goldMonth||0):0;}
+// Dona oro respectant el límit mensual (màxim 100/mes). Retorna el que realment ha rebut.
+function awardGold(p,amount){
+  if(!p||!amount||amount<=0)return 0;
+  var mk=curMonthKey();
+  if(p.goldMonthKey!==mk){p.goldMonthKey=mk;p.goldMonth=0;}
+  var give=Math.min(amount,Math.max(0,GOLD_MONTH_CAP-(p.goldMonth||0)));
+  p.gold=(p.gold||0)+give;p.goldMonth=(p.goldMonth||0)+give;
+  return give;
 }
 var MAX_LEVEL=100, XP_PER_LEVEL=100;
 // Nivell derivat automàticament de l'XP (100 XP per nivell, màxim 100)
@@ -1607,6 +1618,10 @@ function renderHeroProfile(i){
           <div class="xpl"><span>${inLvl} / ${XP_PER_LEVEL} XP</span><span>${atMax?'Nivell màxim (100)':('Falten '+toNext+' XP per al nivell '+(lvl+1))}</span></div>
           <div class="xpt"><div class="xpf" style="width:${xpPct}%;background:${p.color};"></div></div>
         </div>
+        ${(function(){var gm=goldEarnedThisMonth(p);var gp=Math.min(100,Math.round(gm/GOLD_MONTH_CAP*100));var gl=Math.max(0,GOLD_MONTH_CAP-gm);return `<div class="xpw">
+          <div class="xpl"><span>Or aquest mes: ${gm} / ${GOLD_MONTH_CAP}</span><span>${gl>0?('Queden '+gl):'Límit assolit'}</span></div>
+          <div class="xpt"><div class="xpf" style="width:${gp}%;background:linear-gradient(90deg,#d4a017,#ffcf40);"></div></div>
+        </div>`;})()}
         <div class="g4" style="margin-bottom:1.25rem;">
           <div class="smini"><div class="v">${p.xp.toLocaleString()} ⭐</div><div class="l">XP total</div></div>
           <div class="smini"><div class="v">${(p.gold||0).toLocaleString()} <svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg></div><div class="l">Or</div></div>
@@ -3818,7 +3833,7 @@ function buildPentagon(attrs,color){
       +'<feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="'+color+'" flood-opacity="0.55"/>'
     +'</filter>'
   +'</defs>';
-  var dataPts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;var v=Math.min(100,attrs[k]||0)/100;return {x:cx+r*v*Math.cos(a),y:cy+r*v*Math.sin(a),lx:cx+(r+44)*Math.cos(a),ly:cy+(r+44)*Math.sin(a),label:labels[i],val:attrs[k]||0};});
+  var dataPts=keys.map(function(k,i){var a=(Math.PI*2/n)*i-Math.PI/2;var v=Math.min(100,attrs[k]||0)/100;return {x:cx+r*v*Math.cos(a),y:cy+r*v*Math.sin(a),lx:cx+(r+20)*Math.cos(a),ly:cy+(r+20)*Math.sin(a),label:labels[i],val:attrs[k]||0};});
   var fillPts=dataPts.map(function(p){return p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');
   var dots=dataPts.map(function(p){return '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="4.5" fill="'+color+'" stroke="var(--bg2)" stroke-width="2"/>';}).join('');
   // Etiquetes amb HTML real (foreignObject): els emojis es renderitzen sempre
@@ -3833,7 +3848,7 @@ function buildPentagon(attrs,color){
       +'</div>'
     +'</foreignObject>';
   }).join('');
-  return '<svg viewBox="-74 -64 548 548" preserveAspectRatio="xMidYMid meet" style="overflow:visible;width:100%;height:auto;max-width:540px;display:block;margin:0 auto;">'
+  return '<svg viewBox="-44 -36 488 488" preserveAspectRatio="xMidYMid meet" style="overflow:visible;width:100%;height:auto;max-width:500px;display:block;margin:0 auto;">'
     +defs+plate+bgSvg+axes
     +'<polygon points="'+fillPts+'" fill="url(#pgGrad)" stroke="'+color+'" stroke-width="2.5" stroke-linejoin="round" filter="url(#pgGlow)"/>'
     +dots+lblSvg+'</svg>';
