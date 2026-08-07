@@ -3043,7 +3043,8 @@ function confirmPlannerImport(){
     // Assignar per "Creado por" = nom real del personatge (ex: "Pol Figuerola" → personatge amb realName "Pol Figuerola")
     var creatorName=(row[creatorCol]||'').trim();
     var assigneeName=(row[assignCol]||'').trim(); // es guarda per referència
-    function norm(s){return (s||'').toLowerCase().replace(/\s+/g,' ').trim();}
+    // Ignora accents/diacrítics (à→a, ï→i, ç→c...) i majúscules per emparellar noms
+    function norm(s){return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();}
     var cn=norm(creatorName);
     var assignedPlayer=players.find(function(p){return p.realName&&cn&&norm(p.realName)===cn;})
       ||players.find(function(p){return p.realName&&cn&&(norm(p.realName).indexOf(cn)>=0||cn.indexOf(norm(p.realName))>=0);});
