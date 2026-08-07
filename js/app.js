@@ -4061,34 +4061,55 @@ function closeMissionModal(){
 
 
 /* ══ REANOMENAR MENÚS (ADMIN) ══ */
-var menuNames={
-  misiones:'Missions',heroe:'Herois',arcos:'Arcs',ranking:'Rànquing',
-  gacha:'Gacha',tienda:'Botiga',inventario:'Inventari',
-  calendario:'Calendari',planner:'Planner'
+// Noms per defecte de TOTES les pestanyes (l'admin pot sobreescriure qualsevol)
+var menuDefaults={
+  inicio:'Inici',misiones:'Missions',heroe:'Herois',arcos:'Arcs',ranking:'Rànquing',
+  gacha:'Gacha',tienda:'Botiga',mercat:'Mercat negre',inventario:'Inventari',
+  calendario:'Calendari',planner:'Planner','items-admin':'Items','classes-admin':'Classes','widgets-admin':'Widgets'
 };
+var menuNames={}; // només sobreescriptures desades
+function menuKeyFromId(id){return (id&&id.indexOf('nav-')===0)?id.slice(4):'';}
+function menuLabelFor(key,btn){
+  if(menuNames[key])return menuNames[key];
+  if(menuDefaults[key])return menuDefaults[key];
+  // pestanya nova sense default: fes servir el text actual del botó
+  if(btn){var t=(btn.getAttribute('data-label')||'').trim();if(t)return t;}
+  return key;
+}
 function loadMenuNames(){
   var saved=localStorage.getItem('cg_menu_names');
-  if(saved){try{menuNames=JSON.parse(saved);}catch(e){}}
+  if(saved){try{menuNames=JSON.parse(saved)||{};}catch(e){menuNames={};}}
   applyMenuNames();
 }
 function applyMenuNames(){
-  Object.keys(menuNames).forEach(function(k){
-    var btn=document.getElementById('nav-'+k);
-    if(!btn)return;
+  // Recorre TOTS els botons de navegació (així també val per a pestanyes noves)
+  document.querySelectorAll('.nav .nb').forEach(function(btn){
+    var key=menuKeyFromId(btn.id);
+    if(!key)return;
+    // Desa el text original una sola vegada, per si no hi ha default
+    if(!btn.hasAttribute('data-label')){
+      var clone=btn.cloneNode(true);
+      var ic=clone.querySelector('.nb-icon');if(ic)ic.remove();
+      var eb0=clone.querySelector('.nb-edit-btn');if(eb0)eb0.remove();
+      btn.setAttribute('data-label',(clone.textContent||'').trim());
+    }
+    var label=menuLabelFor(key,btn);
     var icon=btn.querySelector('.nb-icon');
     var iconHtml=icon?icon.outerHTML:'';
-    btn.innerHTML=iconHtml+menuNames[k]+(session.isAdmin?'<button class="nb-edit-btn" title="Reanomenar">✏️</button>':'');
+    btn.innerHTML=iconHtml+label+(session.isAdmin?'<button class="nb-edit-btn" title="Reanomenar">✏️</button>':'');
     if(session.isAdmin){
       var eb=btn.querySelector('.nb-edit-btn');
-      if(eb){eb.addEventListener('click',function(ev){ev.stopPropagation();promptRenameMenu(k);});}
+      if(eb){eb.addEventListener('click',function(ev){ev.stopPropagation();promptRenameMenu(key);});}
     }
   });
 }
 function promptRenameMenu(key){
-  var current=menuNames[key]||key;
-  var newName=prompt('Nou nom per a "'+current+'":',current);
-  if(!newName||!newName.trim())return;
-  menuNames[key]=newName.trim();
+  var current=menuNames[key]||menuDefaults[key]||key;
+  var newName=prompt('Nou nom per a la pestanya "'+current+'":',current);
+  if(newName===null)return;
+  newName=newName.trim();
+  if(!newName){delete menuNames[key];}   // buit = torna al nom per defecte
+  else{menuNames[key]=newName;}
   localStorage.setItem('cg_menu_names',JSON.stringify(menuNames));
   applyMenuNames();
 }
