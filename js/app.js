@@ -1117,8 +1117,39 @@ function clearMissionFilters(){
 }
 /* ── accions massives (admin) ── */
 var selMissions={};
+var _lastMissionAnchor=null;
 function toggleMissionSel(id,on){if(on)selMissions[id]=true;else delete selMissions[id];renderBulkBar();}
-function clearMissionSel(){selMissions={};renderMissions();}
+// Clic a un checkbox de missió. Amb Shift, selecciona/deselecciona tot el rang des de l'últim clicat.
+function missionCheckClick(ev,el){
+  var id=el.getAttribute('data-mid');
+  var boxes=Array.prototype.slice.call(document.querySelectorAll('.mcrd-sel'));
+  var idx=boxes.indexOf(el);
+  var target=el.checked; // estat nou del checkbox clicat (s'aplica a tot el rang)
+  if(ev.shiftKey&&_lastMissionAnchor){
+    var aIdx=-1;
+    for(var j=0;j<boxes.length;j++){if(boxes[j].getAttribute('data-mid')===_lastMissionAnchor){aIdx=j;break;}}
+    if(aIdx>=0&&idx>=0){
+      var lo=Math.min(aIdx,idx),hi=Math.max(aIdx,idx);
+      for(var i=lo;i<=hi;i++){
+        var mid=boxes[i].getAttribute('data-mid');
+        boxes[i].checked=target;
+        if(target)selMissions[mid]=true;else delete selMissions[mid];
+      }
+    }
+  }else{
+    if(target)selMissions[id]=true;else delete selMissions[id];
+  }
+  _lastMissionAnchor=id;
+  renderBulkBar();
+}
+function clearMissionSel(){selMissions={};_lastMissionAnchor=null;renderMissions();}
+// Marca totes les missions visibles (les que tenen checkbox al DOM ara mateix)
+function selectAllVisibleMissions(){
+  var boxes=document.querySelectorAll('.mcrd-sel');
+  boxes.forEach(function(b){var mid=b.getAttribute('data-mid');b.checked=true;selMissions[mid]=true;});
+  if(boxes.length)_lastMissionAnchor=boxes[boxes.length-1].getAttribute('data-mid');
+  renderBulkBar();
+}
 function _selIds(){return Object.keys(selMissions).filter(function(id){return missions.find(function(m){return m.id===id;});});}
 function renderBulkBar(){
   var bar=document.getElementById('m-bulkbar');if(!bar)return;
@@ -1126,6 +1157,7 @@ function renderBulkBar(){
   if(!session.isAdmin||!ids.length){bar.style.display='none';bar.innerHTML='';return;}
   bar.style.display='flex';
   bar.innerHTML='<span style="font-weight:600;">'+ids.length+' seleccionades</span>'
+    +'<button class="btn btn-sm" onclick="selectAllVisibleMissions()" title="Marcar totes les visibles">☑️ Totes</button>'
     +'<button class="btn btn-sm btn-p" onclick="bulkComplete()">✓ Completar</button>'
     +'<select class="filter-chip" style="padding:6px 10px;" onchange="bulkAssign(this.value);this.value=\'\';"><option value="">Reassignar a…</option>'+players.map(function(p){return '<option value="'+p.id+'">'+p.emblem+' '+p.name.split(' ')[0]+'</option>';}).join('')+'<option value="__none__">Sense assignar</option></select>'
     +'<button class="btn btn-sm" style="color:var(--coral);border-color:var(--coral-border);" onclick="bulkDelete()">🗑️ Esborrar</button>'
@@ -1234,7 +1266,7 @@ function mCard(m){
   var _tags=(m.plannerTags&&m.plannerTags.indexOf('weekly:')!==0)?m.plannerTags:'';
   const tagsHtml=_tags?_tags.split(';').map(t=>t.trim()).filter(Boolean).map(t=>`<span class="mtag">${t}</span>`).join(''):'';
   const assignBtn=session.isAdmin?`<button class="btn-complete" onclick="event.stopPropagation();openMissionModal('${m.id}')" title="Assignar persones">👥</button>`:'';
-  const selChk=session.isAdmin?`<input type="checkbox" class="mcrd-sel" ${selMissions[m.id]?'checked':''} onclick="event.stopPropagation();toggleMissionSel('${m.id}',this.checked)" title="Seleccionar" style="margin-right:8px;flex-shrink:0;">`:'';
+  const selChk=session.isAdmin?`<input type="checkbox" class="mcrd-sel" data-mid="${m.id}" ${selMissions[m.id]?'checked':''} onclick="event.stopPropagation();missionCheckClick(event,this)" title="Seleccionar (Shift+clic per rang)" style="margin-right:8px;flex-shrink:0;">`:'';
   return `<div class="mcrd ${m.daily?'daily-mission':''}" onclick="openMissionModal('${m.id}')" style="cursor:pointer;">
     ${selChk}
     <div class="minfo">
