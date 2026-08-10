@@ -3995,18 +3995,21 @@ function initRadars(){
     var acolors=(cfg.colors&&cfg.colors.length)?cfg.colors:cfg.labels.map(function(){return col;});
     // Colors dels punts = color de cada atribut
     var pointColors=acolors.slice();
-    // Plugin: dibuixa el nombre de punts dins d'una pastilla amb el color de l'atribut a cada vèrtex
+    // Plugin: dibuixa el nombre de punts en una pastilla al PERÍMETRE (angle fix de cada atribut,
+    // vora el seu emoji) — així no es solapen encara que els valors siguin baixos o 0.
     var valuePlugin={
       id:'attrValues',
       afterDatasetsDraw:function(chart){
-        var ctx=chart.ctx;var meta=chart.getDatasetMeta(0);if(!meta||!meta.data)return;
-        meta.data.forEach(function(pt,i){
-          var v=cfg.values[i];if(v==null)return;
+        var ctx=chart.ctx;var r=chart.scales.r;if(!r||!r.getPointPosition)return;
+        var rad=r.drawingArea||100;
+        for(var i=0;i<cfg.values.length;i++){
+          var v=cfg.values[i];if(v==null)continue;
+          var pos=r.getPointPosition(i,rad*0.9);
           var txtv=String(v);
           ctx.save();
           ctx.font='700 12px system-ui,sans-serif';
           var w=ctx.measureText(txtv).width;var padX=6,h=17,rw=w+padX*2;
-          var x=pt.x,y=pt.y;
+          var x=pos.x,y=pos.y;
           ctx.fillStyle=acolors[i]||col;
           ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=1.5;
           if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x-rw/2,y-h/2,rw,h,8);ctx.fill();ctx.stroke();}
@@ -4014,7 +4017,7 @@ function initRadars(){
           ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';
           ctx.fillText(txtv,x,y+0.5);
           ctx.restore();
-        });
+        }
       }
     };
     cv._chart=new Chart(cv,{
@@ -4023,7 +4026,7 @@ function initRadars(){
         borderColor:col,
         backgroundColor:function(c){var a=c.chart.chartArea;if(!a)return _hexA(col,0.28);var g=c.chart.ctx.createLinearGradient(0,a.top,0,a.bottom);g.addColorStop(0,_hexA(col,0.42));g.addColorStop(1,_hexA(col,0.06));return g;},
         pointBackgroundColor:pointColors,pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:4,pointHoverRadius:6,borderWidth:2.5,tension:0.02}]},
-      options:{responsive:true,maintainAspectRatio:true,animation:false,layout:{padding:14},plugins:{legend:{display:false},tooltip:{enabled:true}},scales:{r:{suggestedMin:0,suggestedMax:100,grid:{color:grid},angleLines:{color:grid},ticks:{display:true,stepSize:25,color:txt,backdropColor:'transparent',font:{size:9},showLabelBackdrop:false,z:1,callback:function(val){return (val===0)?'':val;}},pointLabels:{color:txt,font:{size:22,family:EMOJI_FONT}}}}},
+      options:{responsive:true,maintainAspectRatio:true,animation:false,layout:{padding:14},plugins:{legend:{display:false},tooltip:{enabled:true}},scales:{r:{suggestedMin:0,suggestedMax:100,grid:{color:grid},angleLines:{color:grid},ticks:{display:false,stepSize:25,backdropColor:'transparent'},pointLabels:{color:txt,font:{size:22,family:EMOJI_FONT}}}}},
       plugins:[valuePlugin]
     });
   });
