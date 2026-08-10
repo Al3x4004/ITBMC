@@ -353,14 +353,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .create-panel[open] summary::before{content:'－';}
 .create-form{margin-top:1rem;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .create-form .full{grid-column:1/-1;}
-.diff-select{display:flex;gap:6px;flex-wrap:wrap;}
-.diff-opt{padding:4px 12px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;cursor:pointer;font-size:12px;font-weight:500;color:var(--muted);transition:all .15s;font-family:inherit;}
-.diff-opt:hover{border-color:var(--border2);background:var(--bg3);}
-.diff-opt.sel-D{background:var(--bg3);color:var(--muted);border-color:var(--border2);}
-.diff-opt.sel-C{background:var(--teal-bg);color:var(--teal);border-color:var(--teal-border);}
-.diff-opt.sel-B{background:var(--gold-bg);color:var(--gold);border-color:var(--gold-border);}
-.diff-opt.sel-A{background:var(--coral-bg);color:var(--coral);border-color:var(--coral-border);}
-.diff-opt.sel-S{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-border);}
 .daily-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--gold-bg);color:var(--gold);border:0.5px solid var(--gold-border);margin-left:6px;}
 
 
@@ -843,7 +835,6 @@ input:focus,select:focus,textarea:focus{
 
 
 /* ── Repositorio de widgets ── */
-.widgets-grid{display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-start;}
 /* Llenç lliure: els widgets es col·loquen on vulgui l'usuari */
 .widgets-canvas{position:relative;width:100%;min-height:200px;}
 .widgets-canvas .widget-card{position:absolute;}
