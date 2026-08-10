@@ -902,9 +902,9 @@ function renderInicio(){
     var sub=session.isAdmin
       ?'Tens el control absolut d\'ITBMC.'
       :(p?('Nivell '+p.level+' · '+p.cls+' · <svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+fmtGold(p.gold)):'');
-    hero.innerHTML='<div class="card" style="padding:1.25rem 1.5rem;">'
-      +'<div style="font-size:22px;font-weight:700;margin-bottom:4px;">Hola, '+name+' 👋</div>'
-      +'<div style="font-size:13px;color:var(--muted);">'+sub+'</div>'
+    hero.innerHTML='<div class="card hero-card">'
+      +'<div class="hero-hi">Hola, '+_esc(name)+' 👋</div>'
+      +'<div class="hero-sub">'+sub+'</div>'
       +'</div>';
   }
   renderUserWidgets();
