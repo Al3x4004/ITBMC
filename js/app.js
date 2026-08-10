@@ -4025,7 +4025,7 @@ function initRadars(){
       data:{labels:cfg.labels,datasets:[{label:'Nivell',data:cfg.values,
         borderColor:col,
         backgroundColor:function(c){var a=c.chart.chartArea;if(!a)return _hexA(col,0.28);var g=c.chart.ctx.createLinearGradient(0,a.top,0,a.bottom);g.addColorStop(0,_hexA(col,0.42));g.addColorStop(1,_hexA(col,0.06));return g;},
-        pointBackgroundColor:pointColors,pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:4,pointHoverRadius:6,borderWidth:2.5,tension:0.02}]},
+        pointBackgroundColor:pointColors,pointBorderColor:'#fff',pointBorderWidth:0,pointRadius:0,pointHoverRadius:0,borderWidth:2.5,tension:0.02}]},
       options:{responsive:true,maintainAspectRatio:true,animation:false,layout:{padding:14},plugins:{legend:{display:false},tooltip:{enabled:true}},scales:{r:{suggestedMin:0,suggestedMax:100,grid:{color:grid},angleLines:{color:grid},ticks:{display:false,stepSize:25,backdropColor:'transparent'},pointLabels:{color:txt,font:{size:22,family:EMOJI_FONT}}}}},
       plugins:[valuePlugin]
     });
