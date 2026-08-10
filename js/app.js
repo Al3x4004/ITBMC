@@ -3976,7 +3976,8 @@ function buildPentagon(attrs,color){
   var keys=attrKeys();
   var labels=keys.map(function(k){return attrIcon(k);});
   var values=keys.map(function(k){return Math.min(100,attrs[k]||0);});
-  var cfg={labels:labels,values:values,color:color||'#7f77dd'};
+  var colors=keys.map(function(k){return attrColor(k);});
+  var cfg={labels:labels,values:values,colors:colors,color:color||'#7f77dd'};
   return '<div class="radar-wrap"><canvas class="radar-canvas" data-cfg="'+encodeURIComponent(JSON.stringify(cfg))+'"></canvas></div>';
 }
 // Inicialitza (o reinicia) tots els radars presents al DOM
@@ -3991,7 +3992,10 @@ function initRadars(){
     var txt=(css.getPropertyValue('--text')||'#333').trim()||'#333';
     var col=cfg.color||'#7f77dd';
     var EMOJI_FONT='"Segoe UI Emoji","Noto Color Emoji","Apple Color Emoji","Segoe UI Symbol",sans-serif';
-    // Plugin: dibuixa el nombre de punts dins d'una pastilla a cada vèrtex del polígon
+    var acolors=(cfg.colors&&cfg.colors.length)?cfg.colors:cfg.labels.map(function(){return col;});
+    // Colors dels punts = color de cada atribut
+    var pointColors=acolors.slice();
+    // Plugin: dibuixa el nombre de punts dins d'una pastilla amb el color de l'atribut a cada vèrtex
     var valuePlugin={
       id:'attrValues',
       afterDatasetsDraw:function(chart){
@@ -4003,8 +4007,9 @@ function initRadars(){
           ctx.font='700 12px system-ui,sans-serif';
           var w=ctx.measureText(txtv).width;var padX=6,h=17,rw=w+padX*2;
           var x=pt.x,y=pt.y;
-          ctx.fillStyle=col;
-          if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x-rw/2,y-h/2,rw,h,8);ctx.fill();}
+          ctx.fillStyle=acolors[i]||col;
+          ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=1.5;
+          if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x-rw/2,y-h/2,rw,h,8);ctx.fill();ctx.stroke();}
           else{ctx.fillRect(x-rw/2,y-h/2,rw,h);}
           ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';
           ctx.fillText(txtv,x,y+0.5);
@@ -4014,8 +4019,11 @@ function initRadars(){
     };
     cv._chart=new Chart(cv,{
       type:'radar',
-      data:{labels:cfg.labels,datasets:[{label:'Nivell',data:cfg.values,borderColor:col,backgroundColor:_hexA(col,0.28),pointBackgroundColor:col,pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:4,pointHoverRadius:6,borderWidth:2.5,tension:0.02}]},
-      options:{responsive:true,maintainAspectRatio:true,animation:false,layout:{padding:14},plugins:{legend:{display:false},tooltip:{enabled:true}},scales:{r:{suggestedMin:0,suggestedMax:100,grid:{color:grid},angleLines:{color:grid},ticks:{display:false,stepSize:25,backdropColor:'transparent'},pointLabels:{color:txt,font:{size:22,family:EMOJI_FONT}}}}},
+      data:{labels:cfg.labels,datasets:[{label:'Nivell',data:cfg.values,
+        borderColor:col,
+        backgroundColor:function(c){var a=c.chart.chartArea;if(!a)return _hexA(col,0.28);var g=c.chart.ctx.createLinearGradient(0,a.top,0,a.bottom);g.addColorStop(0,_hexA(col,0.42));g.addColorStop(1,_hexA(col,0.06));return g;},
+        pointBackgroundColor:pointColors,pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:4,pointHoverRadius:6,borderWidth:2.5,tension:0.02}]},
+      options:{responsive:true,maintainAspectRatio:true,animation:false,layout:{padding:14},plugins:{legend:{display:false},tooltip:{enabled:true}},scales:{r:{suggestedMin:0,suggestedMax:100,grid:{color:grid},angleLines:{color:grid},ticks:{display:true,stepSize:25,color:txt,backdropColor:'transparent',font:{size:9},showLabelBackdrop:false,z:1,callback:function(val){return (val===0)?'':val;}},pointLabels:{color:txt,font:{size:22,family:EMOJI_FONT}}}}},
       plugins:[valuePlugin]
     });
   });
