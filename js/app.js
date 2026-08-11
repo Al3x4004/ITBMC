@@ -552,10 +552,12 @@ function checkDailyMissions(){
       return m.daily&&!m.isDaily_instance&&m.playerId===p.id;
     });
     if(!myTemplates.length)return;
-    // Remove completed instances from previous days
-    missions=missions.filter(function(m){
-      return !(m.isDaily_instance&&m.playerId===p.id&&m.status==='done'&&m.deadline!==today);
-    });
+    // Treure instàncies completades de dies anteriors (i esborrar-les de la BD per no acumular)
+    var _oldD=missions.filter(function(m){return m.isDaily_instance&&m.playerId===p.id&&m.status==='done'&&m.deadline!==today;}).map(function(m){return m.id;});
+    if(_oldD.length){
+      missions=missions.filter(function(m){return _oldD.indexOf(m.id)<0;});
+      if(CFG.MODE==='supabase')_oldD.forEach(function(id){deleteMissionFromSupabase(id);});
+    }
     // Create today's instances for any template that doesn't have one yet
     myTemplates.forEach(function(tpl){
       var instanceId=tpl.id+'_'+today;
@@ -1507,7 +1509,7 @@ function _doCompleteMission(id){
   if(assignees.length){showRewardPopup(m,assignees[0],assignees);}
   // Bonus diarias
   if(m.daily&&p){
-    const myDailies=missions.filter(mx=>mx.daily&&mx.playerId===p.id);
+    const myDailies=missions.filter(mx=>mx.daily&&mx.isDaily_instance&&mx.playerId===p.id);
     if(myDailies.length>=1&&myDailies.length<=4&&myDailies.every(mx=>mx.status==='done')){
       const bx=myDailies.reduce((s,mx)=>s+mx.xp,0),bg=myDailies.reduce((s,mx)=>s+mx.gold,0);
       p.xp+=bx;awardGold(p,bg);
@@ -2365,9 +2367,9 @@ function saveEdit(){
   p.lore=document.getElementById('e-lore').value.trim();
   p.quote=document.getElementById('e-quote').value.trim();
   if(session.isAdmin){
-    p.xp=parseInt(document.getElementById('e-xp').value)||p.xp;
+    var _exp=parseInt(document.getElementById('e-xp').value);p.xp=isNaN(_exp)?p.xp:Math.max(0,_exp);
     var _egold=parseFloat(document.getElementById('e-gold').value);p.gold=isNaN(_egold)?p.gold:Math.round(_egold*100)/100;
-    p.fragments=parseInt(document.getElementById('e-frag').value)||0;
+    var _efrag=parseInt(document.getElementById('e-frag').value);p.fragments=isNaN(_efrag)?0:Math.max(0,_efrag);
     // Nivel: si el admin lo pone manualmente lo respeta; si no, lo deriva de XP
     var manualLevel=parseInt(document.getElementById('e-level').value);
     p.level=manualLevel&&manualLevel>0?manualLevel:Math.floor(p.xp/100)+1;
@@ -3199,8 +3201,8 @@ function confirmPlannerImport(){
     var title=(row[titleCol]||'').trim();
     if(!title)return;
 
-    // Skip if already imported (same plannerId)
-    var existingId='planner_'+title.replace(/\s+/g,'_').toLowerCase().slice(0,30);
+    // Evitar duplicats: id derivat del títol COMPLET (abans es truncava a 30 → col·lisions)
+    var existingId='planner_'+title.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
     if(missions.find(function(m){return m.plannerId===existingId;}))return;
 
     // Map status — només 2 estats: completada o pendent
@@ -3542,17 +3544,19 @@ function cleanOldCompleted(){
       return m.status==='done'&&m.playerId===p.id&&!m.isDaily_instance&&!rewardsPending[m.id];
     });
     if(done.length>20){
-      // Sort by id (timestamp-based) descending, keep newest 20
-      done.sort(function(a,b){return b.id.localeCompare(a.id);});
+      // Ordenar per data de finalització (o id) descendent i conservar les 20 més noves
+      done.sort(function(a,b){return String(b.id).localeCompare(String(a.id));});
       var toRemove=done.slice(20).map(function(m){return m.id;});
       missions=missions.filter(function(m){return toRemove.indexOf(m.id)<0;});
+      // Esborrar també a Supabase perquè no reapareguin en recarregar
+      if(CFG.MODE==='supabase')toRemove.forEach(function(id){deleteMissionFromSupabase(id);});
     }
   });
-  // Remove daily instances older than today
+  // Treure instàncies diàries completades de dies anteriors (també a la BD)
   var today=new Date().toISOString().slice(0,10);
-  missions=missions.filter(function(m){
-    return !(m.isDaily_instance&&m.status==='done'&&m.deadline<today);
-  });
+  var oldDaily=missions.filter(function(m){return m.isDaily_instance&&m.status==='done'&&m.deadline<today;}).map(function(m){return m.id;});
+  missions=missions.filter(function(m){return oldDaily.indexOf(m.id)<0;});
+  if(CFG.MODE==='supabase')oldDaily.forEach(function(id){deleteMissionFromSupabase(id);});
 }
 
 
@@ -4551,12 +4555,14 @@ if('serviceWorker' in navigator){window.addEventListener('load',function(){
 // Accessibilitat: tancar modals amb la tecla Escape
 document.addEventListener('keydown',function(e){
   if(e.key!=='Escape')return;
-  ['mission-modal','server-backups-modal','showcase-modal','widget-picker-modal','event-modal','modal-edit','avatar-editor-modal','admin-edit-modal','item-detail-modal'].forEach(function(id){
+  ['mission-modal','server-backups-modal','showcase-modal','widget-picker-modal','modal-edit','avatar-editor-modal','modal-admin-edit','item-detail-modal'].forEach(function(id){
     var el=document.getElementById(id);
     if(el&&getComputedStyle(el).display!=='none'){el.style.display='none';}
   });
-  var rp=document.getElementById('reward-pop');if(rp)rp.classList.remove('show');
-  var lp=document.getElementById('levelup-pop');if(lp)lp.classList.remove('show');
+  // Modals que s'obren/tanquen per classe .show
+  ['reward-pop','levelup-pop','cal-event-modal','star-ask'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.classList.remove('show');
+  });
   var um=document.getElementById('umenu-inline');if(um)um.style.display='none';
 });
 
