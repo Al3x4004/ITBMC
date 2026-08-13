@@ -1765,8 +1765,11 @@ function renderHeroProfile(i){
   const xpPct=atMax?100:Math.round(inLvl/XP_PER_LEVEL*100);
   const canEdit=session.isAdmin||session.playerId===p.id;
   const recent=missions.filter(m=>m.playerId===p.id&&m.status==='done').slice(-3);
+  // El color triat pel jugador esdevé l'accent principal de tot el seu perfil
+  var _pc=(/^#[0-9a-fA-F]{3,8}$/.test(p.color||''))?p.color:'';
+  var colScope=_pc?`--accent:${_pc};--accent2:color-mix(in srgb,${_pc} 72%, #000);--accent-bg:color-mix(in srgb,${_pc} 15%, transparent);--accent-border:color-mix(in srgb,${_pc} 40%, transparent);`:'';
   document.getElementById('hprofile').innerHTML=`
-    <div class="card">
+    <div class="card" style="${colScope}">
       <div class="profile-tabs">
         <div class="ptab active" onclick="switchPTab(this,'pinfo')">Ficha</div>
         <div class="ptab" onclick="switchPTab(this,'pgallery')">Galería</div>

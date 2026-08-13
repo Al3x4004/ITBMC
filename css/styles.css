@@ -1398,3 +1398,8 @@ h1,h2,h3{font-family:var(--font-display);letter-spacing:-.02em;}
 .theme-btn .ic-moon{display:block;}
 [data-theme="dark"] .theme-btn .ic-sun{display:block;}
 [data-theme="dark"] .theme-btn .ic-moon{display:none;}
+
+/* Treure línies decoratives estàtiques (scanlines, filet superior de targeta, subratllat d'estadístiques) */
+body::after{display:none !important;}
+.card::before{display:none !important;}
+.smini::after{display:none !important;}
