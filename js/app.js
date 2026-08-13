@@ -336,7 +336,8 @@ function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:c
 // Registra una activitat (finalització de missió) per a les estadístiques setmanals/mensuals
 function logActivity(pid,m,goldGiven){
   if(!pid||!m)return;
-  statsLog.push({t:new Date().toISOString(),pid:pid,xp:m.xp||0,gold:goldGiven||0,frag:m.frag||0,hours:m.durationH||0,stars:m.stars||0,diff:m.diff||'C',arc:m.arc||'General'});
+  var tags=(m.plannerTags&&m.plannerTags.indexOf('weekly:')!==0)?m.plannerTags.split(';').map(function(t){return t.trim();}).filter(Boolean):[];
+  statsLog.push({t:new Date().toISOString(),pid:pid,xp:m.xp||0,gold:goldGiven||0,frag:m.frag||0,hours:m.durationH||0,stars:m.stars||0,diff:m.diff||'C',arc:m.arc||'General',tags:tags});
   // Poda: conservar ~13 mesos i màxim 4000 entrades
   var lim=new Date();lim.setMonth(lim.getMonth()-13);var limS=lim.toISOString();
   statsLog=statsLog.filter(function(e){return e.t>=limS;});
@@ -4643,9 +4644,10 @@ try{window.startWidgetResize=startWidgetResize;}catch(e){}
 try{window.closeWidgetPicker=closeWidgetPicker;}catch(e){}
 
 /* ══════════════ ESTADISTIQUES (setmanals / mensuals) ══════════════ */
-var statsPeriod='week',statsOffset=0;
+var statsPeriod='week',statsOffset=0,statsPid='';
 function setStatsPeriod(pr){statsPeriod=pr;statsOffset=0;renderStats();}
 function statsNav(d){statsOffset+=d;if(statsOffset>0)statsOffset=0;renderStats();}
+function setStatsPid(pid){statsPid=pid||'';renderStats();}
 function _fmtH(h){h=Math.max(0,h||0);var hh=Math.floor(h),mm=Math.round((h-hh)*60);if(mm===60){hh++;mm=0;}return hh+'h'+(mm?(' '+mm+'m'):'');}
 function _statsRange(period,offset){
   var now=new Date();
@@ -4661,19 +4663,39 @@ function _statsRange(period,offset){
 }
 function _statsAgg(start,end){
   var s=start.toISOString(),e=end.toISOString();
-  var agg={missions:0,xp:0,gold:0,hours:0,frag:0,starsSum:0,starsN:0,byPid:{},byDiff:{},byArc:{},byDay:{}};
+  var agg={missions:0,xp:0,gold:0,hours:0,frag:0,starsSum:0,starsN:0,byPid:{},byDiff:{},byArc:{},byTag:{},byDay:{}};
   statsLog.forEach(function(x){
     if(!(x.t>=s&&x.t<e))return;
+    if(statsPid&&x.pid!==statsPid)return;
     agg.missions++;agg.xp+=x.xp||0;agg.gold+=x.gold||0;agg.hours+=x.hours||0;agg.frag+=x.frag||0;
     if(x.stars>0){agg.starsSum+=x.stars;agg.starsN++;}
     var b=agg.byPid[x.pid]=agg.byPid[x.pid]||{missions:0,hours:0,xp:0,gold:0,starsSum:0,starsN:0};
     b.missions++;b.hours+=x.hours||0;b.xp+=x.xp||0;b.gold+=x.gold||0;if(x.stars>0){b.starsSum+=x.stars;b.starsN++;}
     agg.byDiff[x.diff||'C']=(agg.byDiff[x.diff||'C']||0)+1;
     agg.byArc[x.arc||'General']=(agg.byArc[x.arc||'General']||0)+1;
+    (x.tags||[]).forEach(function(tg){agg.byTag[tg]=(agg.byTag[tg]||0)+1;});
     var day=x.t.slice(0,10);var dd=agg.byDay[day]=agg.byDay[day]||{missions:0,hours:0,gold:0,xp:0};
     dd.missions++;dd.hours+=x.hours||0;dd.gold+=x.gold||0;dd.xp+=x.xp||0;
   });
   return agg;
+}
+// Sèrie de tendència: darrers N períodes (missions i hores) acabant al període actual
+function _statsTrend(){
+  var N=statsPeriod==='week'?8:6;var labels=[],missions=[],hours=[];
+  for(var i=N-1;i>=0;i--){
+    var rg=_statsRange(statsPeriod,statsOffset-i);var a=_statsAgg(rg.start,rg.end);
+    labels.push(statsPeriod==='week'?rg.start.toLocaleDateString('ca-ES',{day:'numeric',month:'short'}):rg.start.toLocaleDateString('ca-ES',{month:'short'}));
+    missions.push(a.missions);hours.push(Math.round(a.hours*10)/10);
+  }
+  return {labels:labels,missions:missions,hours:hours};
+}
+function exportStatsCSV(){
+  var r=_statsRange(statsPeriod,statsOffset),agg=_statsAgg(r.start,r.end);
+  var lines=[['Persona','Missions','Hores','XP','Or','Estrelles mitjana']];
+  Object.keys(agg.byPid).forEach(function(pid){var b=agg.byPid[pid];var p=players.find(function(x){return x.id===pid;});var nm=p?p.name:pid;var av=b.starsN?(b.starsSum/b.starsN).toFixed(2):'';lines.push([nm,b.missions,(Math.round(b.hours*100)/100),b.xp,(Math.round(b.gold*100)/100),av]);});
+  var csv=lines.map(function(row){return row.map(function(c){var s=String(c);return /[",;\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(';');}).join('\r\n');
+  var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='analitiques_'+statsPeriod+'_'+r.start.toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);
 }
 function _statsBuckets(period,start,end,byDay){
   var labels=[],hours=[],missions=[];
@@ -4716,15 +4738,28 @@ function renderStats(){
   var arcMax=arcArr.length?arcArr[0][1]:1;
   var arcHtml=arcArr.length?arcArr.map(function(a){var pct=Math.round(a[1]/arcMax*100);return '<div class="st-bar-row"><span class="st-bar-lbl">'+_esc(a[0])+'</span><div class="st-bar"><div class="st-bar-fill" style="width:'+pct+'%"></div></div><span class="st-bar-n">'+a[1]+'</span></div>';}).join(''):'<div class="stats-empty">-</div>';
   var bk=_statsBuckets(statsPeriod,r.start,r.end,agg.byDay);
+  var trend=_statsTrend();
+  // Etiquetes (top 8)
+  var tagArr=Object.keys(agg.byTag).map(function(k){return [k,agg.byTag[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  var tagMax=tagArr.length?tagArr[0][1]:1;
+  var tagHtml=tagArr.length?tagArr.map(function(a){var pct=Math.round(a[1]/tagMax*100);return '<div class="st-bar-row"><span class="st-bar-lbl">'+_esc(a[0])+'</span><div class="st-bar"><div class="st-bar-fill" style="width:'+pct+'%"></div></div><span class="st-bar-n">'+a[1]+'</span></div>';}).join(''):'<div class="stats-empty">Sense etiquetes en aquest periode.</div>';
+  // Selector de persona
+  var pplOpts='<option value="">Tot l\'equip</option>'+players.map(function(p){return '<option value="'+_esc(p.id)+'"'+(statsPid===p.id?' selected':'')+'>'+_esc(p.emblem+' '+p.name)+'</option>';}).join('');
   cont.innerHTML=
     '<div class="stats-controls">'
     +'<div class="stats-seg"><button class="'+(statsPeriod==='week'?'active':'')+'" onclick="setStatsPeriod(\'week\')">Setmana</button><button class="'+(statsPeriod==='month'?'active':'')+'" onclick="setStatsPeriod(\'month\')">Mes</button></div>'
     +'<div class="stats-nav"><button onclick="statsNav(-1)" aria-label="Anterior">&#8249;</button><span class="stats-period-lbl">'+_esc(r.label)+'</span><button onclick="statsNav(1)" '+(statsOffset>=0?'disabled':'')+' aria-label="Seguent">&#8250;</button></div>'
+    +'<select class="stats-person" onchange="setStatsPid(this.value)">'+pplOpts+'</select>'
+    +'<button class="btn btn-sm" onclick="exportStatsCSV()" title="Exportar a CSV">&#8681; CSV</button>'
     +'</div>'
     +'<div class="g4 stats-kpis">'+kpiHtml+'</div>'
     +'<div class="stats-grid">'
       +'<div class="card"><div class="stitle">'+(statsPeriod==='week'?'Hores per dia':'Hores per setmana')+'</div><div style="height:220px"><canvas id="stats-time"></canvas></div></div>'
+      +'<div class="card"><div class="stitle">Tendencia ('+(statsPeriod==='week'?'8 setmanes':'6 mesos')+')</div><div style="height:220px"><canvas id="stats-trend"></canvas></div></div>'
+    +'</div>'
+    +'<div class="stats-grid">'
       +'<div class="card"><div class="stitle">Per prioritat</div>'+prioHtml+'</div>'
+      +'<div class="card"><div class="stitle">Per etiqueta</div>'+tagHtml+'</div>'
     +'</div>'
     +'<div class="stats-grid">'
       +'<div class="card"><div class="stitle">Ranquing del periode</div>'+tbl+'</div>'
@@ -4738,9 +4773,17 @@ function renderStats(){
         var css=getComputedStyle(document.body);var grid=(css.getPropertyValue('--border')||'#333').trim();var txt=(css.getPropertyValue('--muted')||'#888').trim();var acc=(css.getPropertyValue('--accent')||'#d9a441').trim();
         cv._chart=new Chart(cv,{type:'bar',data:{labels:bk.labels,datasets:[{label:'Hores',data:bk.hours,backgroundColor:acc,borderRadius:5,maxBarThickness:40}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.parsed.y+' h - '+(bk.missions[c.dataIndex]||0)+' missions';}}}},scales:{x:{grid:{display:false},ticks:{color:txt}},y:{beginAtZero:true,grid:{color:grid},ticks:{color:txt,precision:0}}}}});
       }
+      var tv=document.getElementById('stats-trend');
+      if(tv){
+        if(tv._chart){try{tv._chart.destroy();}catch(e){}}
+        var css2=getComputedStyle(document.body);var grid2=(css2.getPropertyValue('--border')||'#333').trim();var txt2=(css2.getPropertyValue('--muted')||'#888').trim();var acc2=(css2.getPropertyValue('--accent')||'#d9a441').trim();
+        tv._chart=new Chart(tv,{type:'line',data:{labels:trend.labels,datasets:[{label:'Missions',data:trend.missions,borderColor:acc2,backgroundColor:'transparent',tension:.3,pointRadius:3,pointBackgroundColor:acc2,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.parsed.y+' missions - '+(trend.hours[c.dataIndex]||0)+' h';}}}},scales:{x:{grid:{display:false},ticks:{color:txt2}},y:{beginAtZero:true,grid:{color:grid2},ticks:{color:txt2,precision:0}}}}});
+      }
     }
   }catch(e){console.warn('stats chart',e);}
 }
 try{window.setStatsPeriod=setStatsPeriod;}catch(e){}
 try{window.statsNav=statsNav;}catch(e){}
+try{window.setStatsPid=setStatsPid;}catch(e){}
+try{window.exportStatsCSV=exportStatsCSV;}catch(e){}
 try{window.renderStats=renderStats;}catch(e){}
