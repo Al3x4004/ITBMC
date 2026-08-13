@@ -144,6 +144,7 @@ let galleryRarity='';
 var classGrowthMap={};/* {nomClasse:{attrKey:puntsPerNivell}} — punts que puja cada classe en pujar de nivell */
 var market=[];/* mercat negre: [{id,sellerId,cardId,mode:'gold'|'frag'|'trade',price,wantCardId}] */
 var marketHistory=[];/* historial: [{ts,type:'buy'|'trade',cardId,wantCardId,mode,price,fromId,toId}] (últimes 60) */
+var statsLog=[];/* registre d'activitat per a estadístiques: [{t:ISO,pid,xp,gold,frag,hours,stars,diff,arc}] */
 var weeklyTemplates=[];/* plantilles setmanals: [{id,name,desc,arc,playerId,diff,xp,gold,frag,attr,attrPts}] (a game_data) */
 var missionAssignees={};/* {missionId:[playerId,...]} assignació múltiple (a game_data) */
 var rewardsPending={};/* {missionId:true} missions completades importades amb recompensa sense reclamar (a game_data) */
@@ -331,7 +332,16 @@ async function saveClassToSupabase(cls,idx){
 }
 
 /* Config compartida (no és dada de compte). */
-function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market,market_history:marketHistory,weekly_templates:weeklyTemplates,mission_assignees:missionAssignees,rewards_pending:rewardsPending,item_limits:itemLimits,item_purchases:itemPurchases};}
+function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market,market_history:marketHistory,weekly_templates:weeklyTemplates,mission_assignees:missionAssignees,rewards_pending:rewardsPending,item_limits:itemLimits,item_purchases:itemPurchases,stats_log:statsLog};}
+// Registra una activitat (finalització de missió) per a les estadístiques setmanals/mensuals
+function logActivity(pid,m,goldGiven){
+  if(!pid||!m)return;
+  statsLog.push({t:new Date().toISOString(),pid:pid,xp:m.xp||0,gold:goldGiven||0,frag:m.frag||0,hours:m.durationH||0,stars:m.stars||0,diff:m.diff||'C',arc:m.arc||'General'});
+  // Poda: conservar ~13 mesos i màxim 4000 entrades
+  var lim=new Date();lim.setMonth(lim.getMonth()-13);var limS=lim.toISOString();
+  statsLog=statsLog.filter(function(e){return e.t>=limS;});
+  if(statsLog.length>4000)statsLog=statsLog.slice(statsLog.length-4000);
+}
 /*
  Desa fent FUSIÓ de jugadors: només sobreescriu els personatges que aquest client ha canviat
  (el de la sessió + els passats a extraPlayerIds). Per a la resta manté la versió de la BD.
@@ -489,6 +499,7 @@ async function loadData(){
       if(d.rewards_pending&&typeof d.rewards_pending==='object')rewardsPending=d.rewards_pending;
       if(d.item_limits&&typeof d.item_limits==='object')itemLimits=d.item_limits;
       if(d.item_purchases&&typeof d.item_purchases==='object')itemPurchases=d.item_purchases;
+      if(Array.isArray(d.stats_log))statsLog=d.stats_log;
       if(Array.isArray(d.attr_defs)&&d.attr_defs.length){
         ATTRS=d.attr_defs.map(function(a){return {key:a.key,name:a.name,color:a.color||'#888',icon:a.icon||''};});
       }else if(d.attr_names&&typeof d.attr_names==='object'){
@@ -639,6 +650,7 @@ function restoreData(input){
       if(d.rewards_pending&&typeof d.rewards_pending==='object')rewardsPending=d.rewards_pending;
       if(d.item_limits&&typeof d.item_limits==='object')itemLimits=d.item_limits;
       if(d.item_purchases&&typeof d.item_purchases==='object')itemPurchases=d.item_purchases;
+      if(Array.isArray(d.stats_log))statsLog=d.stats_log;
       if(Array.isArray(d.cal_events))calEvents=d.cal_events;
       if(Array.isArray(d.custom_traits))customTraits=d.custom_traits;
       if(Array.isArray(d.widget_catalog))widgetCatalog=d.widget_catalog;
@@ -1172,6 +1184,7 @@ function showPage(name,btn){
   if(name==='misiones')populateArcSelect();
   if(name==='calendario'){if(!calState.selectedDate)calState.selectedDate=new Date().toISOString().slice(0,10);renderCalendar();}
   if(name==='inicio'){try{renderInicio();}catch(e){}}
+  if(name==='estadistiques'){try{renderStats();}catch(e){}}
   if(name==='planner'){renderPlannerImported();}
   if(name==='items-admin'){renderAdminItemsPage();renderAdminCartasPage();}
   if(name==='classes-admin'){renderClassesAdmin();}
@@ -1502,8 +1515,9 @@ function _doCompleteMission(id){
   var mFrag=m.frag||fragForDiff(m.diff);
   // Recompensa a TOTES les persones assignades
   assignees.forEach(function(ap){
-    ap.xp+=m.xp;awardGold(ap,m.gold);ap.fragments=(ap.fragments||0)+mFrag;ap.missions++;
+    ap.xp+=m.xp;var _g=awardGold(ap,m.gold);ap.fragments=(ap.fragments||0)+mFrag;ap.missions++;
     if(m.attrPts&&m.attr){var k=attrKeyFromName(m.attr);if(k)ap.attrs[k]=(ap.attrs[k]||0)+m.attrPts;}
+    logActivity(ap.id,Object.assign({},m,{frag:mFrag}),_g);
     checkLevelUp(ap);
   });
   if(assignees.length){showRewardPopup(m,assignees[0],assignees);}
@@ -1542,8 +1556,9 @@ function claimMissionReward(id){
   if(!assignees.length){alert('Aquesta missió no té ningú assignat. Assigna-la abans de reclamar la recompensa.');return;}
   var mFrag=m.frag||fragForDiff(m.diff);
   assignees.forEach(function(ap){
-    ap.xp+=m.xp;awardGold(ap,m.gold);ap.fragments=(ap.fragments||0)+mFrag;ap.missions++;
+    ap.xp+=m.xp;var _g=awardGold(ap,m.gold);ap.fragments=(ap.fragments||0)+mFrag;ap.missions++;
     if(m.attrPts&&m.attr){var k=attrKeyFromName(m.attr);if(k)ap.attrs[k]=(ap.attrs[k]||0)+m.attrPts;}
+    logActivity(ap.id,Object.assign({},m,{frag:mFrag}),_g);
     checkLevelUp(ap);
   });
   delete rewardsPending[id];
@@ -4626,3 +4641,106 @@ try{window.openWidgetPicker=openWidgetPicker;}catch(e){}
 try{window.toggleUserWidget=toggleUserWidget;}catch(e){}
 try{window.startWidgetResize=startWidgetResize;}catch(e){}
 try{window.closeWidgetPicker=closeWidgetPicker;}catch(e){}
+
+/* ══════════════ ESTADISTIQUES (setmanals / mensuals) ══════════════ */
+var statsPeriod='week',statsOffset=0;
+function setStatsPeriod(pr){statsPeriod=pr;statsOffset=0;renderStats();}
+function statsNav(d){statsOffset+=d;if(statsOffset>0)statsOffset=0;renderStats();}
+function _fmtH(h){h=Math.max(0,h||0);var hh=Math.floor(h),mm=Math.round((h-hh)*60);if(mm===60){hh++;mm=0;}return hh+'h'+(mm?(' '+mm+'m'):'');}
+function _statsRange(period,offset){
+  var now=new Date();
+  if(period==='month'){
+    var start=new Date(now.getFullYear(),now.getMonth()+offset,1);
+    var end=new Date(start.getFullYear(),start.getMonth()+1,1);
+    return {start:start,end:end,label:start.toLocaleDateString('ca-ES',{month:'long',year:'numeric'})};
+  }
+  var base=new Date(now);base.setDate(base.getDate()+offset*7);
+  var off=(base.getDay()+6)%7;var mon=new Date(base.getFullYear(),base.getMonth(),base.getDate()-off);
+  var end=new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+7);
+  return {start:mon,end:end,label:'Setmana del '+mon.toLocaleDateString('ca-ES',{day:'numeric',month:'short'})};
+}
+function _statsAgg(start,end){
+  var s=start.toISOString(),e=end.toISOString();
+  var agg={missions:0,xp:0,gold:0,hours:0,frag:0,starsSum:0,starsN:0,byPid:{},byDiff:{},byArc:{},byDay:{}};
+  statsLog.forEach(function(x){
+    if(!(x.t>=s&&x.t<e))return;
+    agg.missions++;agg.xp+=x.xp||0;agg.gold+=x.gold||0;agg.hours+=x.hours||0;agg.frag+=x.frag||0;
+    if(x.stars>0){agg.starsSum+=x.stars;agg.starsN++;}
+    var b=agg.byPid[x.pid]=agg.byPid[x.pid]||{missions:0,hours:0,xp:0,gold:0,starsSum:0,starsN:0};
+    b.missions++;b.hours+=x.hours||0;b.xp+=x.xp||0;b.gold+=x.gold||0;if(x.stars>0){b.starsSum+=x.stars;b.starsN++;}
+    agg.byDiff[x.diff||'C']=(agg.byDiff[x.diff||'C']||0)+1;
+    agg.byArc[x.arc||'General']=(agg.byArc[x.arc||'General']||0)+1;
+    var day=x.t.slice(0,10);var dd=agg.byDay[day]=agg.byDay[day]||{missions:0,hours:0,gold:0,xp:0};
+    dd.missions++;dd.hours+=x.hours||0;dd.gold+=x.gold||0;dd.xp+=x.xp||0;
+  });
+  return agg;
+}
+function _statsBuckets(period,start,end,byDay){
+  var labels=[],hours=[],missions=[];
+  if(period==='week'){
+    var names=['Dl','Dt','Dc','Dj','Dv','Ds','Dg'];
+    for(var i=0;i<7;i++){var d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);var key=d.toISOString().slice(0,10);var b=byDay[key]||{hours:0,missions:0};labels.push(names[i]);hours.push(Math.round(b.hours*10)/10);missions.push(b.missions);}
+  } else {
+    var cur=new Date(start),wi=1;
+    while(cur<end){
+      var wEnd=new Date(cur.getFullYear(),cur.getMonth(),cur.getDate()+7);var h=0,m=0;
+      Object.keys(byDay).forEach(function(k){var dd=new Date(k+'T12:00:00');if(dd>=cur&&dd<wEnd&&dd<end){h+=byDay[k].hours;m+=byDay[k].missions;}});
+      labels.push('Set. '+wi);hours.push(Math.round(h*10)/10);missions.push(m);cur=wEnd;wi++;
+    }
+  }
+  return {labels:labels,hours:hours,missions:missions};
+}
+function renderStats(){
+  var cont=document.getElementById('stats-body');if(!cont)return;
+  var r=_statsRange(statsPeriod,statsOffset),agg=_statsAgg(r.start,r.end);
+  var pr=_statsRange(statsPeriod,statsOffset-1),prev=_statsAgg(pr.start,pr.end);
+  function delta(cur,old){if(!old&&!cur)return '';if(!old)return '<span class="st-up">&#9650;</span>';var dd=Math.round((cur-old)/old*100);if(dd===0)return '<span class="st-flat">&mdash;</span>';var cls=dd>0?'st-up':'st-down';return '<span class="'+cls+'">'+(dd>0?'&#9650;':'&#9660;')+' '+Math.abs(dd)+'%</span>';}
+  var avgStars=agg.starsN?(agg.starsSum/agg.starsN):0,prevAvg=prev.starsN?(prev.starsSum/prev.starsN):0;
+  var active=Object.keys(agg.byPid).length;
+  var coin='<svg width="0.9em" height="0.9em" viewBox="0 0 24 24" style="vertical-align:-2px"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg>';
+  var kpis=[
+    ['Missions',agg.missions,delta(agg.missions,prev.missions)],
+    ['Hores',_fmtH(agg.hours),delta(agg.hours,prev.hours)],
+    ['XP',agg.xp.toLocaleString(),delta(agg.xp,prev.xp)],
+    ['Or',fmtGold(agg.gold)+' '+coin,delta(agg.gold,prev.gold)],
+    ['Estrelles mitjana',(avgStars?avgStars.toFixed(1):'-'),delta(avgStars,prevAvg)],
+    ['Persones actives',active,'']
+  ];
+  var kpiHtml=kpis.map(function(k){return '<div class="smini stat-kpi"><div class="v">'+k[1]+'</div><div class="l">'+k[0]+'</div>'+(k[2]?'<div class="st-delta">'+k[2]+'</div>':'')+'</div>';}).join('');
+  var rows=Object.keys(agg.byPid).map(function(pid){var b=agg.byPid[pid];var p=players.find(function(x){return x.id===pid;});return {name:p?(p.emblem+' '+p.name):pid,color:p?p.color:'#888',b:b};}).sort(function(a,b){return b.b.missions-a.b.missions;});
+  var tbl=rows.length?('<div style="overflow-x:auto"><table class="stats-table"><thead><tr><th>Persona</th><th>Missions</th><th>Hores</th><th>XP</th><th>Or</th><th>Estrelles</th></tr></thead><tbody>'+rows.map(function(rw){var b=rw.b;var av=b.starsN?(b.starsSum/b.starsN).toFixed(1):'-';return '<tr><td><span class="st-dot" style="background:'+rw.color+'"></span>'+_esc(rw.name)+'</td><td>'+b.missions+'</td><td>'+_fmtH(b.hours)+'</td><td>'+b.xp.toLocaleString()+'</td><td>'+fmtGold(b.gold)+'</td><td>'+av+'</td></tr>';}).join('')+'</tbody></table></div>'):'<div class="stats-empty">Encara no hi ha activitat en aquest periode.</div>';
+  var prioNames={A:'Urgent',B:'Important',C:'Mitjana',D:'Baixa'};
+  var prioTotal=Object.keys(agg.byDiff).reduce(function(s,k){return s+agg.byDiff[k];},0);
+  var prioHtml=['A','B','C','D'].filter(function(k){return agg.byDiff[k];}).map(function(k){var v=agg.byDiff[k];var pct=prioTotal?Math.round(v/prioTotal*100):0;return '<div class="st-bar-row"><span class="st-bar-lbl">'+prioNames[k]+'</span><div class="st-bar"><div class="st-bar-fill" style="width:'+pct+'%"></div></div><span class="st-bar-n">'+v+'</span></div>';}).join('')||'<div class="stats-empty">-</div>';
+  var arcArr=Object.keys(agg.byArc).map(function(k){return [k,agg.byArc[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,6);
+  var arcMax=arcArr.length?arcArr[0][1]:1;
+  var arcHtml=arcArr.length?arcArr.map(function(a){var pct=Math.round(a[1]/arcMax*100);return '<div class="st-bar-row"><span class="st-bar-lbl">'+_esc(a[0])+'</span><div class="st-bar"><div class="st-bar-fill" style="width:'+pct+'%"></div></div><span class="st-bar-n">'+a[1]+'</span></div>';}).join(''):'<div class="stats-empty">-</div>';
+  var bk=_statsBuckets(statsPeriod,r.start,r.end,agg.byDay);
+  cont.innerHTML=
+    '<div class="stats-controls">'
+    +'<div class="stats-seg"><button class="'+(statsPeriod==='week'?'active':'')+'" onclick="setStatsPeriod(\'week\')">Setmana</button><button class="'+(statsPeriod==='month'?'active':'')+'" onclick="setStatsPeriod(\'month\')">Mes</button></div>'
+    +'<div class="stats-nav"><button onclick="statsNav(-1)" aria-label="Anterior">&#8249;</button><span class="stats-period-lbl">'+_esc(r.label)+'</span><button onclick="statsNav(1)" '+(statsOffset>=0?'disabled':'')+' aria-label="Seguent">&#8250;</button></div>'
+    +'</div>'
+    +'<div class="g4 stats-kpis">'+kpiHtml+'</div>'
+    +'<div class="stats-grid">'
+      +'<div class="card"><div class="stitle">'+(statsPeriod==='week'?'Hores per dia':'Hores per setmana')+'</div><div style="height:220px"><canvas id="stats-time"></canvas></div></div>'
+      +'<div class="card"><div class="stitle">Per prioritat</div>'+prioHtml+'</div>'
+    +'</div>'
+    +'<div class="stats-grid">'
+      +'<div class="card"><div class="stitle">Ranquing del periode</div>'+tbl+'</div>'
+      +'<div class="card"><div class="stitle">Per arc / categoria</div>'+arcHtml+'</div>'
+    +'</div>';
+  try{
+    if(typeof Chart!=='undefined'){
+      var cv=document.getElementById('stats-time');
+      if(cv){
+        if(cv._chart){try{cv._chart.destroy();}catch(e){}}
+        var css=getComputedStyle(document.body);var grid=(css.getPropertyValue('--border')||'#333').trim();var txt=(css.getPropertyValue('--muted')||'#888').trim();var acc=(css.getPropertyValue('--accent')||'#d9a441').trim();
+        cv._chart=new Chart(cv,{type:'bar',data:{labels:bk.labels,datasets:[{label:'Hores',data:bk.hours,backgroundColor:acc,borderRadius:5,maxBarThickness:40}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.parsed.y+' h - '+(bk.missions[c.dataIndex]||0)+' missions';}}}},scales:{x:{grid:{display:false},ticks:{color:txt}},y:{beginAtZero:true,grid:{color:grid},ticks:{color:txt,precision:0}}}}});
+      }
+    }
+  }catch(e){console.warn('stats chart',e);}
+}
+try{window.setStatsPeriod=setStatsPeriod;}catch(e){}
+try{window.statsNav=statsNav;}catch(e){}
+try{window.renderStats=renderStats;}catch(e){}
