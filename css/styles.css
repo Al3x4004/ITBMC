@@ -1387,3 +1387,14 @@ h1,h2,h3{font-family:var(--font-display);letter-spacing:-.02em;}
 
 /* Cita/insígnia del perfil amb accent daurat (com el bloc de "mindset") */
 .adm-rib{background:var(--accent-bg) !important;color:var(--accent) !important;border:0.5px solid var(--accent-border);}
+
+/* Iconos SVG de línea en la navegación (sustituyen a los emojis) */
+.nb-icon{width:20px !important;height:20px;display:inline-flex !important;align-items:center;justify-content:center;flex-shrink:0;}
+.nb-icon svg{width:18px;height:18px;display:block;}
+.nav .nb.active .nb-icon svg{stroke:var(--accent);}
+/* Botó de tema amb icones de línia */
+.theme-btn svg{width:17px;height:17px;display:block;}
+.theme-btn .ic-sun{display:none;}
+.theme-btn .ic-moon{display:block;}
+[data-theme="dark"] .theme-btn .ic-sun{display:block;}
+[data-theme="dark"] .theme-btn .ic-moon{display:none;}

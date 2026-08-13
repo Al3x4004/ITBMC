@@ -4364,7 +4364,6 @@ function toggleTheme(){
   const html=document.documentElement;
   const isDark=html.getAttribute('data-theme')==='dark';
   html.setAttribute('data-theme',isDark?'light':'dark');
-  const _tb=document.getElementById('theme-btn');if(_tb){_tb.querySelector?_tb.querySelector('span#theme-label')&&(_tb.querySelector('span#theme-label').textContent=isDark?'Mode clar':'Mode fosc'):null;_tb.childNodes[0].textContent=isDark?'☀️ ':'🌙 ';}
   localStorage.setItem('cg_theme',isDark?'light':'dark');
 }
 function initTheme(){

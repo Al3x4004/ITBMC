@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="https://i.imgur.com/Z1wFN0q.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ITBMC">
-<link rel="stylesheet" href="css/styles.css?v=54">
+<link rel="stylesheet" href="css/styles.css?v=55">
 </head>
 <body>
 <div id="boot-loader"><div class="boot-spinner"></div><div class="boot-text">Carregant ITBMC…</div></div>
@@ -179,23 +179,23 @@
         <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" title="Recollir menú" aria-label="Recollir menú">«</button>
       </div>
       <nav class="nav" role="navigation">
-        <button class="nb active" onclick="showPage('inicio',this)" id="nav-inicio"><span class="nb-icon">🏠</span>Inici</button>
-        <button class="nb" onclick="showPage('misiones',this)" id="nav-misiones"><span class="nb-icon">⚔️</span>Missions</button>
-        <button class="nb" onclick="showPage('heroe',this)" id="nav-heroe"><span class="nb-icon">🧙</span>Herois</button>
-        <button class="nb" onclick="showPage('arcos',this)" id="nav-arcos"><span class="nb-icon">🗺️</span>Arcs</button>
-        <button class="nb" onclick="showPage('ranking',this)" id="nav-ranking"><span class="nb-icon">🏆</span>Rànquing</button>
-        <button class="nb" onclick="showPage('gacha',this)" id="nav-gacha"><span class="nb-icon">✨</span>Gacha</button>
-        <button class="nb" onclick="showPage('tienda',this)" id="nav-tienda"><span class="nb-icon">🛒</span>Botiga</button>
-        <button class="nb" onclick="showPage('mercat',this)" id="nav-mercat"><span class="nb-icon">🕶️</span>Mercat negre</button>
-        <button class="nb" onclick="showPage('inventario',this)" id="nav-inventario"><span class="nb-icon">🎒</span>Inventari</button>
-        <button class="nb" onclick="showPage('calendario',this)" id="nav-calendario"><span class="nb-icon">📅</span>Calendari</button>
-        <button class="nb admin-only" onclick="showPage('planner',this)" id="nav-planner" style="display:none;"><span class="nb-icon">📋</span>Planner</button>
-        <button class="nb admin-only" onclick="showPage('items-admin',this)" id="nav-items-admin" style="display:none;"><span class="nb-icon">⚙️</span>Items</button>
-        <button class="nb admin-only" onclick="showPage('classes-admin',this)" id="nav-classes-admin" style="display:none;"><span class="nb-icon">🎭</span>Classes</button>
-        <button class="nb admin-only" onclick="showPage('widgets-admin',this)" id="nav-widgets-admin" style="display:none;"><span class="nb-icon">🧩</span>Widgets</button>
+        <button class="nb active" onclick="showPage('inicio',this)" id="nav-inicio"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Inici</button>
+        <button class="nb" onclick="showPage('misiones',this)" id="nav-misiones"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/><path d="m9 11 3 3 8-8"/></svg></span>Missions</button>
+        <button class="nb" onclick="showPage('heroe',this)" id="nav-heroe"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></span>Herois</button>
+        <button class="nb" onclick="showPage('arcos',this)" id="nav-arcos"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg></span>Arcs</button>
+        <button class="nb" onclick="showPage('ranking',this)" id="nav-ranking"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><rect x="5" y="11" width="3.5" height="7" rx="1"/><rect x="10.25" y="6" width="3.5" height="12" rx="1"/><rect x="15.5" y="14" width="3.5" height="4" rx="1"/></svg></span>Rànquing</button>
+        <button class="nb" onclick="showPage('gacha',this)" id="nav-gacha"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3 12.6 7.4 17 9l-4.4 1.6L11 15l-1.6-4.4L5 9l4.4-1.6L11 3Z"/><path d="m18 14 .8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14Z"/></svg></span>Gacha</button>
+        <button class="nb" onclick="showPage('tienda',this)" id="nav-tienda"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14l-1 13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg></span>Botiga</button>
+        <button class="nb" onclick="showPage('mercat',this)" id="nav-mercat"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></svg></span>Mercat negre</button>
+        <button class="nb" onclick="showPage('inventario',this)" id="nav-inventario"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/></svg></span>Inventari</button>
+        <button class="nb" onclick="showPage('calendario',this)" id="nav-calendario"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M3 9.5h18"/><path d="M8 2.5v4"/><path d="M16 2.5v4"/></svg></span>Calendari</button>
+        <button class="nb admin-only" onclick="showPage('planner',this)" id="nav-planner" style="display:none;"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9z"/><path d="M8.5 12h7"/><path d="M8.5 16h5"/></svg></span>Planner</button>
+        <button class="nb admin-only" onclick="showPage('items-admin',this)" id="nav-items-admin" style="display:none;"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 17h16"/><circle cx="9" cy="7" r="2.3"/><circle cx="15" cy="17" r="2.3"/></svg></span>Items</button>
+        <button class="nb admin-only" onclick="showPage('classes-admin',this)" id="nav-classes-admin" style="display:none;"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5 6-5s6 1.7 6 5"/><path d="M16.5 5.6a3.2 3.2 0 0 1 0 5.8"/><path d="M17 15.2c2.1.5 3.9 1.9 3.9 4.8"/></svg></span>Classes</button>
+        <button class="nb admin-only" onclick="showPage('widgets-admin',this)" id="nav-widgets-admin" style="display:none;"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></span>Widgets</button>
       </nav>
       <div class="topbar-right">
-        <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Canviar tema">☀️</button>
+        <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Canviar tema" aria-label="Canviar tema"><svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></button>
         <div class="uwrap">
           <div class="upill" onclick="toggleUMenu()" id="upill">
             <span id="sidebar-mini-avatar" style="display:none;"></span>
@@ -951,6 +951,6 @@
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="js/app.js?v=87"></script>
+<script src="js/app.js?v=88"></script>
 </body>
 </html>
