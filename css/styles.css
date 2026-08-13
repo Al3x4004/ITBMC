@@ -1334,3 +1334,56 @@ h1,h2,h3{font-family:var(--font-display);letter-spacing:-.02em;}
 
 /* Tabs de perfil actives amb accent */
 .ptab.active{color:var(--accent) !important;}
+
+/* ═══════════════════════════════════════════════════════
+   ESTÈTICA "COMMAND CENTER" — negre càlid + or/bronze, tipografia condensada
+   (capa superior; per revertir, esborrar aquest bloc i tornar el tema per defecte a light)
+   ═══════════════════════════════════════════════════════ */
+:root{
+  /* Accent daurat/bronze també en clar per coherència de marca */
+  --accent:#a9761d;--accent2:#7d560f;--accent-bg:rgba(169,118,29,.10);--accent-border:rgba(169,118,29,.30);
+  --font-display:'Oswald','Space Grotesk','Inter',sans-serif;
+}
+:root:not([data-theme="light"]),[data-theme="dark"]{
+  --bg:#0b0a09;--bg2:#151311;--bg3:#201d19;
+  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.11);--border3:rgba(217,164,65,.30);
+  --text:#f2eee7;--muted:#9d968b;--faint:#6a645b;
+  --accent:#d9a441;--accent2:#a9761d;--accent-bg:rgba(217,164,65,.12);--accent-border:rgba(217,164,65,.32);
+  --gold:#e4a428;--gold-bg:rgba(228,164,40,.12);--gold-border:rgba(228,164,40,.30);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.5);--shadow-md:0 4px 16px rgba(0,0,0,.5);--shadow-lg:0 14px 40px rgba(0,0,0,.6);
+}
+
+/* Etiquetes de secció: MAJÚSCULES amb tracking (com el mockup) */
+.stitle{font-family:var(--font-ui) !important;text-transform:uppercase !important;letter-spacing:.14em !important;font-size:11px !important;font-weight:600 !important;color:var(--muted) !important;opacity:1 !important;}
+
+/* Navegació: majúscules, tracking, actiu daurat */
+.nav .nb{text-transform:uppercase;letter-spacing:.11em;font-size:11.5px;font-weight:600;}
+.nav .nb.active{color:var(--accent) !important;background:var(--accent-bg) !important;}
+
+/* Nom del personatge: condensat, enorme, en majúscules (com "ALMO") */
+.pname{font-family:var(--font-display) !important;text-transform:uppercase;font-weight:700 !important;font-size:clamp(30px,4.4vw,52px) !important;line-height:.92 !important;letter-spacing:.01em;}
+.hero-hi{font-family:var(--font-display) !important;text-transform:uppercase;letter-spacing:.02em;font-weight:600;}
+
+/* Números grans amb display; etiquetes petites en majúscules i tracking */
+.smini .v,.lbstat-v{font-family:var(--font-display) !important;font-weight:600 !important;letter-spacing:.01em;}
+.smini{position:relative;overflow:hidden;}
+.smini .l{text-transform:uppercase;letter-spacing:.12em;font-size:9.5px !important;color:var(--faint) !important;font-weight:600;}
+/* Filet daurat inferior a les targetes d'estadística (detall "premium" del mockup) */
+.smini::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--accent),transparent);opacity:.7;}
+
+/* Targetes més fosques i netes en el tema fosc */
+[data-theme="dark"] .card{background:var(--bg2) !important;border:0.5px solid var(--border) !important;}
+[data-theme="dark"] .card::before{background:linear-gradient(90deg,transparent,rgba(217,164,65,.18),transparent);}
+
+/* Barra lateral una mica més fosca que el contingut */
+[data-theme="dark"] .topbar{background:#100e0c;}
+
+/* Botó primari: degradat or→bronze */
+.btn-p{background:linear-gradient(135deg,var(--accent),var(--accent2)) !important;color:#1a1508 !important;font-weight:600;}
+.btn-p:hover{filter:brightness(1.07);}
+
+/* Barres XP/estadístiques en to daurat */
+.xpf{background:linear-gradient(90deg,var(--accent),var(--accent2)) !important;}
+
+/* Cita/insígnia del perfil amb accent daurat (com el bloc de "mindset") */
+.adm-rib{background:var(--accent-bg) !important;color:var(--accent) !important;border:0.5px solid var(--accent-border);}

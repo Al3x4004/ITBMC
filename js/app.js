@@ -4368,7 +4368,7 @@ function toggleTheme(){
   localStorage.setItem('cg_theme',isDark?'light':'dark');
 }
 function initTheme(){
-  const saved=localStorage.getItem('cg_theme')||'light';
+  const saved=localStorage.getItem('cg_theme')||'dark';
   document.documentElement.setAttribute('data-theme',saved);
   const btn=document.getElementById('theme-btn');
   const _tbl=document.getElementById('theme-label');if(_tbl)_tbl.textContent=saved==='dark'?'Mode fosc':'Mode clar';
