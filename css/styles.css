@@ -1433,3 +1433,12 @@ body::after{display:none !important;}
 .st-bar-n{width:32px;text-align:right;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;}
 .stats-empty{padding:1.5rem;text-align:center;color:var(--muted);font-size:13px;}
 .stats-person{padding:7px 10px;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font:inherit;font-size:12px;max-width:200px;}
+
+/* El color del jugador ben visible a tot el seu perfil */
+#hprofile>.card{border-top:3px solid var(--accent) !important;}
+#hprofile .stitle{color:var(--accent) !important;opacity:.95;}
+#hprofile .phead::before{background:radial-gradient(circle at 50% 35%, color-mix(in srgb,var(--accent) 40%, transparent), transparent 70%) !important;height:240px !important;width:min(680px,96%) !important;filter:blur(16px);opacity:1;}
+#hprofile .phead-info .badge.b-purple{background:color-mix(in srgb,var(--accent) 26%, transparent) !important;border:1px solid var(--accent) !important;color:var(--accent) !important;font-weight:700;}
+#hprofile .phead-ava .pixel-avatar-lg,#hprofile .phead-ava>.ava-frame,#hprofile .phead-ava img{box-shadow:0 0 0 3px var(--accent), 0 10px 30px color-mix(in srgb,var(--accent) 45%, transparent) !important;}
+#hprofile .pname{text-shadow:0 2px 24px color-mix(in srgb,var(--accent) 35%, transparent);}
+#hprofile .adm-rib{background:var(--accent) !important;color:#12100a !important;border-color:transparent !important;}
