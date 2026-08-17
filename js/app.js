@@ -810,7 +810,7 @@ function enterApp(){
   if(sb)sb.style.display=session.isAdmin?'block':'none';
   const p=players.find(p=>p.id===session.playerId);
   if(p){const _idx=players.findIndex(function(pl){return pl.id===session.playerId;});if(_idx>=0)curHero=_idx;}
-  document.getElementById('ulabel').textContent=session.isAdmin?'Dios 👑':(p?p.name.split(' ')[0]:'—');
+  document.getElementById('ulabel').textContent=session.isAdmin?'Déu 👑':(p?p.name.split(' ')[0]:'—');
   updateSidebarAvatar();
   (function(){var _x=document.getElementById('umname');if(_x)_x.textContent=session.isAdmin?'👑 Déu':(p?p.name:'—');})();
   renderAll();
@@ -913,10 +913,10 @@ function renderInicio(){
   var hero=document.getElementById('inicio-hero');
   if(hero){
     var p=players.find(function(pl){return pl.id===session.playerId;});
-    var name=session.isAdmin?'Dios 👑':(p?p.name.split(' ')[0]:'—');
+    var name=session.isAdmin?'Déu 👑':(p?p.name.split(' ')[0]:'—');
     var sub=session.isAdmin
       ?'Tens el control absolut d\'ITBMC.'
-      :(p?('Nivell '+p.level+' · '+p.cls+' · <svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+fmtGold(p.gold)):'');
+      :(p?('Nivell '+p.level+' · '+p.cls+' · <span class="coin"></span> '+fmtGold(p.gold)):'');
     hero.innerHTML='<div class="card hero-card">'
       +'<div class="hero-hi">Hola, '+_esc(name)+' 👋</div>'
       +'<div class="hero-sub">'+sub+'</div>'
@@ -1202,7 +1202,7 @@ function renderMStats(){
     <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Pendents</div><div style="font-size:22px;font-weight:700;">${act}</div></div>
     <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Completades</div><div style="font-size:22px;font-weight:700;">${don}</div></div>
     <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Nivell de l'equip</div><div style="font-size:22px;font-weight:700;">${tlvl.toLocaleString()}</div></div>
-    <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> Or de l'equip</div><div style="font-size:22px;font-weight:700;">${tg.toLocaleString()}</div></div>`;
+    <div class="csm"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;"><span class="coin"></span> Or de l'equip</div><div style="font-size:22px;font-weight:700;">${tg.toLocaleString()}</div></div>`;
 }
 
 /* ── misiones ── */
@@ -1390,7 +1390,7 @@ function mCard(m){
     </div>
     <div class="mrews">
       <span class="rchip"><span>${m.xp}</span> XP</span>
-      <span class="rchip"><span><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> ${fmtGold(m.gold)}</span></span>
+      <span class="rchip"><span><span class="coin"></span> ${fmtGold(m.gold)}</span></span>
       ${prioBadge}
       ${statusBadge}
       ${assignBtn}
@@ -1640,7 +1640,7 @@ function showRewardPopup(m,p,assignees){
   var mFrag=m.frag||fragForDiff(m.diff);
   document.getElementById('rp-chips').innerHTML=`
     <span class="badge b-purple">+${m.xp} XP</span>
-    <span class="badge b-gold"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> +${fmtGold(m.gold)}</span>
+    <span class="badge b-gold"><span class="coin"></span> +${fmtGold(m.gold)}</span>
     ${mFrag?`<span class="badge b-purple" style="background:var(--accent-bg);">+${mFrag} ✨</span>`:''}
     ${m.attr?`<span class="badge b-teal">+${m.attrPts} ${m.attr}</span>`:''}`;
   document.getElementById('reward-pop').classList.add('show');
@@ -1649,11 +1649,13 @@ function closeReward(){document.getElementById('reward-pop').classList.remove('s
 
 /* ── héroes ── */
 function renderHeroTabs(){
-  let tabs=players.map((p,i)=>
-    `<div class="htab ${i===curHero&&curHero!=='admin'?'active':''}" onclick="selectHero(${i})"><span class="hdot" style="background:${p.color};"></span>${p.emblem} ${p.name.split(' ')[0]}</div>`
-  ).join('');
+  let tabs=players.map((p,i)=>{
+    var act=(i===curHero&&curHero!=='admin');
+    var _c=(/^#[0-9a-fA-F]{3,8}$/.test(p.color||''))?p.color:'var(--accent)';
+    return `<div class="htab ${act?'active':''}" onclick="selectHero(${i})" style="${act?('--accent:'+_c+';border-color:'+_c+';color:'+_c+';'):''}"><span class="hdot" style="background:${_c};"></span>${_esc(p.emblem)} ${_esc(p.name.split(' ')[0])}</div>`;
+  }).join('');
   if(session.isAdmin){
-    tabs+=`<div class="htab ${'admin'===curHero?'active':''}" onclick="selectHero('admin')" style="border-color:rgba(228,164,40,.3);"><span class="hdot" style="background:#e4a428;"></span>👑 Dios</div>`;
+    tabs+=`<div class="htab ${'admin'===curHero?'active':''}" onclick="selectHero('admin')" style="border-color:rgba(228,164,40,.3);"><span class="hdot" style="background:#e4a428;"></span>👑 Déu</div>`;
   }
   document.getElementById('htabs').innerHTML=tabs;
 }
@@ -1759,7 +1761,7 @@ function renderFramePicker(){
     var rankOpt=rank?('<button class="frame-opt'+(activeKey==='rank'?' active':'')+'" onclick="setPlayerFrame(\'rank\')" title="Banner exclusiu del Top '+rank+'">'
       +'<span class="frame-swatch" style="border-color:var(--gold);box-shadow:0 0 6px var(--gold);">🏆</span>'
       +'<span style="font-size:11px;margin-top:4px;">Top '+rank+'</span></button>'):'';
-    html='<div class="stitle" style="margin-top:16px;">🖼️ Banner del perfil</div>'+rankNote
+    html='<div class="stitle" style="margin-top:16px;">Banner del perfil</div>'+rankNote
       +'<div class="frame-grid">'+rankOpt+FRAME_TIERS.map(function(f){
         var unlocked=(p.level||1)>=f.min;
         var sw='<span class="frame-swatch"'+(f.color?' style="border-color:'+f.color+';box-shadow:0 0 6px '+f.color+';"':'')+'>'+(f.color?'':'∅')+'</span>';
@@ -1787,9 +1789,9 @@ function renderHeroProfile(i){
   document.getElementById('hprofile').innerHTML=`
     <div class="card" style="${colScope}">
       <div class="profile-tabs">
-        <div class="ptab active" onclick="switchPTab(this,'pinfo')">Ficha</div>
-        <div class="ptab" onclick="switchPTab(this,'pgallery')">Galería</div>
-        ${canEdit?`<div class="ptab" onclick="switchPTab(this,'pcustom');renderInlineAvatarEditor('${p.id}')">🎨 Personalització</div>`:''}
+        <div class="ptab active" onclick="switchPTab(this,'pinfo')"><svg class="uico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg>Fitxa</div>
+        <div class="ptab" onclick="switchPTab(this,'pgallery')"><svg class="uico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m4 18 5-5 4 4 3-3 4 4"/></svg>Galeria</div>
+        ${canEdit?`<div class="ptab" onclick="switchPTab(this,'pcustom');renderInlineAvatarEditor('${p.id}')"><svg class="uico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 1 0 0 20 2.5 2.5 0 0 0 2-4 2.5 2.5 0 0 1 2-4h1a3 3 0 0 0 3-3 8 8 0 0 0-8-9Z"/></svg>Personalització</div>`:''}
       </div>
       <div class="ptab-panel active" id="pinfo">
         <div class="pinfo-layout">
@@ -1798,7 +1800,7 @@ function renderHeroProfile(i){
           <div class="phead-ava">${frameWrap(p,renderAvatar(p,"pixel-avatar-lg"))}</div>
           <div class="phead-info">
             <span class="badge b-purple" style="margin-bottom:6px;display:inline-block;">Nivell ${lvl} · ${p.cls}</span>
-            <div class="pname">${p.name}${session.isAdmin?'<span class="adm-rib">DIOS</span>':`<span class="adm-rib" style="display:none"></span>`}</div>
+            <div class="pname">${p.name}${session.isAdmin?'<span class="adm-rib">DÉU</span>':`<span class="adm-rib" style="display:none"></span>`}</div>
             <div class="pclass">${p.role}</div>
             <div class="pquote">"${p.quote}"</div>
           </div>
@@ -1814,7 +1816,7 @@ function renderHeroProfile(i){
         </div>`;})()}
         <div class="g4" style="margin-bottom:1.25rem;">
           <div class="smini"><div class="v">${p.xp.toLocaleString()} ⭐</div><div class="l">XP total</div></div>
-          <div class="smini"><div class="v">${fmtGold(p.gold)} <svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg></div><div class="l">Or</div></div>
+          <div class="smini"><div class="v">${fmtGold(p.gold)} <span class="coin"></span></div><div class="l">Or</div></div>
           <div class="smini"><div class="v">${(p.fragments||0).toLocaleString()} ✨</div><div class="l">Fragments</div></div>
           <div class="smini"><div class="v">${p.missions} 🎯</div><div class="l">Missions</div></div>
         </div>
@@ -1822,7 +1824,7 @@ function renderHeroProfile(i){
           <div class="pinfo-main">
         <div class="pbody">
           <div>
-            <div class="stitle">📊 Atributs</div>
+            <div class="stitle">Atributs</div>
             ${(function(){
               function slotRow(sl){
                 var iid=p.equipped&&p.equipped[sl.key];
@@ -1834,7 +1836,7 @@ function renderHeroProfile(i){
                   +'</div>';
               }
               var eq=SLOT_DEFS.filter(function(s){return !s.cosmetic;});
-              var eqCol='<div class="pslots"><div class="pslot-group"><div class="pslot-h">⚔️ Equipament</div>'+eq.map(slotRow).join('')+'</div></div>';
+              var eqCol='<div class="pslots"><div class="pslot-group"><div class="pslot-h">Equipament</div>'+eq.map(slotRow).join('')+'</div></div>';
               var radar='<div class="pstats-radar">'+buildPentagon(getEffectiveAttrs(p),p.color)+'</div>';
               return '<div class="pstats-top pstats-top--noco">'+eqCol+radar+'</div>';
             })()}
@@ -1910,13 +1912,14 @@ function renderRanking(){
   document.getElementById('rank-list').innerHTML=sorted.map((p,i)=>{
     const rc=i===0?'gold':i===1?'silver':i===2?'bronze':'';
     const rs=i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`;
-    return `<div class="lbrow">
+    const _c=(/^#[0-9a-fA-F]{3,8}$/.test(p.color||''))?p.color:'var(--accent)';
+    return `<div class="lbrow" style="border-left:3px solid ${_c};">
       <span class="lbrnk ${rc}">${rs}</span>
-      <div class="av av-sm" style="background:${p.colorBg};border-color:${p.color};">${p.emblem}</div>
-      <div style="flex:1;"><div style="font-size:13px;font-weight:500;">${p.name}</div><div style="font-size:11px;color:var(--muted);">${p.cls}</div></div>
+      <div class="av av-sm" style="background:${p.colorBg};border-color:${_c};">${_esc(p.emblem)}</div>
+      <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:${_c};">${_esc(p.name)}</div><div style="font-size:11px;color:var(--muted);">${_esc(p.cls)}</div></div>
       <div class="lbstat"><div class="lbstat-v">${score(p).toLocaleString()}</div><div class="lbstat-l">punts</div></div>
       <div class="lbstat"><div class="lbstat-v">${p.level}</div><div class="lbstat-l">nivell</div></div>
-      <div class="lbstat"><div class="lbstat-v" style="color:var(--gold);"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> ${fmtGold(p.gold)}</div><div class="lbstat-l">or</div></div>
+      <div class="lbstat"><div class="lbstat-v" style="color:var(--gold);"><span class="coin"></span> ${fmtGold(p.gold)}</div><div class="lbstat-l">or</div></div>
     </div>`;
   }).join('');
 }
@@ -2178,7 +2181,7 @@ function renderMarketHistory(){
   host.innerHTML='<div style="display:flex;flex-direction:column;gap:6px;">'+marketHistory.map(function(h){
     var desc;
     if(h.type==='trade')desc='🔄 <b>'+pname(h.toId)+'</b> va donar <b>'+cname(h.wantCardId)+'</b> i va rebre <b>'+cname(h.cardId)+'</b> de <b>'+pname(h.fromId)+'</b>';
-    else desc='🛒 <b>'+pname(h.toId)+'</b> va comprar <b>'+cname(h.cardId)+'</b> a <b>'+pname(h.fromId)+'</b> per '+(h.mode==='gold'?('<svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+h.price):('✨ '+h.price));
+    else desc='🛒 <b>'+pname(h.toId)+'</b> va comprar <b>'+cname(h.cardId)+'</b> a <b>'+pname(h.fromId)+'</b> per '+(h.mode==='gold'?('<span class="coin"></span> '+h.price):('✨ '+h.price));
     return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;">'
       +'<span style="color:var(--text);">'+desc+'</span>'
       +'<span style="color:var(--muted);white-space:nowrap;font-size:11px;">'+when(h.ts)+'</span></div>';
@@ -2188,7 +2191,7 @@ function renderMarket(){
   renderCardPickers();renderQuickSell();renderMarketHistory();
   var p=players.find(function(pl){return pl.id===session.playerId;});
   var w=document.getElementById('mercat-wallet');
-  if(w)w.innerHTML=p?('El teu moneder: <svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+p.gold+' or · ✨ '+(p.fragments||0)+' fragments'):'Entra amb un personatge per operar al mercat.';
+  if(w)w.innerHTML=p?('El teu moneder: <span class="coin"></span> '+p.gold+' or · ✨ '+(p.fragments||0)+' fragments'):'Entra amb un personatge per operar al mercat.';
   var host=document.getElementById('mercat-list');if(!host)return;
   if(!market.length){host.innerHTML='<div style="font-size:13px;color:var(--muted);padding:1rem;">No hi ha res al mercat. Sigues el primer en publicar una carta!</div>';return;}
   var RARCOL={comun:'#9aa0a6',rara:'#4a90d9',epica:'#a855f7',legendaria:'#e4a428'};
@@ -2200,7 +2203,7 @@ function renderMarket(){
     var counts=galleryCounts(p);
     var imgUrl=c.imageUrl||(c.image?CFG.GITHUB_RAW+c.image:'');
     var priceLine='',wantBlock='';
-    if(l.mode==='gold')priceLine='<svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+l.price+' or';
+    if(l.mode==='gold')priceLine='<span class="coin"></span> '+l.price+' or';
     else if(l.mode==='frag')priceLine='✨ '+l.price+' fragments';
     else{
       var wc=mkCardById(l.wantCardId);
@@ -2488,10 +2491,10 @@ function renderShop(){
     // Botó de compra
     var btn='';
     if(soldOut)btn='<div class="soldout-lbl">Esgotat</div>';
-    else if(buyable)btn='<button class="btn btn-sm btn-gold" onclick="buyItem(\''+item.id+'\')">Comprar <svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+item.cost+'</button>';
+    else if(buyable)btn='<button class="btn btn-sm btn-gold" onclick="buyItem(\''+item.id+'\')">Comprar <span class="coin"></span> '+item.cost+'</button>';
     else if(perReached)btn='<div style="font-size:11px;color:var(--muted);">Límit assolit</div>';
     else if(!meetsR)btn='<div style="font-size:11px;color:var(--coral);">🔒 Requisits no complerts</div>';
-    else btn='<div style="font-size:11px;color:var(--coral);"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> Or insuficient</div>';
+    else btn='<div style="font-size:11px;color:var(--coral);"><span class="coin"></span> Or insuficient</div>';
     // Equipar/Desequipar si ja el té (només items amb slot d'equip real)
     var eqBtn='';
     if(equipped)eqBtn='<button class="btn btn-sm" onclick="unequipItem(\''+item.id+'\')">Desequipar</button>';
@@ -2800,7 +2803,7 @@ function renderCustomTraitsAdmin(){
       +(item.imageUrl?'<img src="'+item.imageUrl+'" style="width:40px;height:40px;object-fit:contain;background:var(--bg3);border-radius:var(--radius);flex-shrink:0;"/>':'<span style="font-size:24px;width:40px;text-align:center;">'+(item.icon||'📦')+'</span>')
       +'<div style="flex:1;min-width:0;">'
       +'<div style="font-size:13px;font-weight:500;">'+item.name+'</div>'
-      +'<div style="font-size:11px;color:var(--muted);">'+(sl?sl.icon+' '+sl.label:item.slot)+' · '+item.rareza+' · <svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+item.cost+' · '+viaLabel+'</div>'
+      +'<div style="font-size:11px;color:var(--muted);">'+(sl?sl.icon+' '+sl.label:item.slot)+' · '+item.rareza+' · <span class="coin"></span> '+item.cost+' · '+viaLabel+'</div>'
       +'</div>'
       +'<button class="btn btn-sm" onclick="openAdminEditItem(\''+item.id+'\')">✎</button>'
       +'<button class="btn btn-sm" style="color:var(--coral);border-color:var(--coral-border);" onclick="adminDeleteItemFull(\''+item.id+'\')">✕</button>'
@@ -2883,7 +2886,7 @@ function renderAdminCartasPage(){
   var rarityColor={comun:'var(--muted)',rara:'var(--teal)',epica:'var(--accent)',legendaria:'var(--gold)'};
   wrap.innerHTML=cartas.map(function(carta){
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);">'
-      +(carta.imageUrl?'<img src="'+carta.imageUrl+'" style="width:36px;height:50px;object-fit:cover;border-radius:var(--radius);flex-shrink:0;">':'<div style="width:36px;height:50px;background:var(--bg3);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:18px;">🃏</div>')
+      +(carta.imageUrl?'<img src="'+carta.imageUrl+'" style="width:36px;height:50px;object-fit:cover;border-radius:var(--radius);flex-shrink:0;">':'<div style="width:36px;height:50px;background:var(--bg3);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:18px;"></div>')
       +'<div style="flex:1;min-width:0;">'
         +'<div style="font-size:13px;font-weight:500;">'+carta.name+'</div>'
         +'<div style="font-size:11px;color:'+(rarityColor[carta.rarity]||'var(--muted)')+';">'+RARITY_LABEL[carta.rarity]+(carta.description?' · '+carta.description:'')+'</div>'
@@ -4217,7 +4220,7 @@ function showItemDetails(id){
     +'<div class="stitle">Bonus d\'atributs</div><div style="margin-bottom:1rem;">'+bonus+'</div>'
     +'<div class="stitle">Requisits</div><div style="margin-bottom:1rem;">'+reqs+'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
-      +'<div class="csm" style="text-align:center;"><div style="font-size:16px;font-weight:600;"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> '+(it.cost||0)+'</div><div style="font-size:10px;color:var(--muted);">Cost</div></div>'
+      +'<div class="csm" style="text-align:center;"><div style="font-size:16px;font-weight:600;"><span class="coin"></span> '+(it.cost||0)+'</div><div style="font-size:10px;color:var(--muted);">Cost</div></div>'
       +'<div class="csm" style="text-align:center;"><div style="font-size:16px;font-weight:600;">Nvl '+(it.minLevel||1)+'</div><div style="font-size:10px;color:var(--muted);">Nivell mínim</div></div>'
     +'</div>';
   document.getElementById('item-detail-modal').style.display='flex';
@@ -4301,7 +4304,7 @@ function openMissionModal(id){
   document.getElementById('mm-desc').textContent=m.desc||m.name;
   document.getElementById('mm-stats').innerHTML=
     `<div class="smini"><div class="v">${m.xp}</div><div class="l">XP</div></div>`
-    +`<div class="smini"><div class="v"><svg width="0.95em" height="0.95em" viewBox="0 0 24 24" style="vertical-align:-2px" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg> ${fmtGold(m.gold)}</div><div class="l">Or</div></div>`
+    +`<div class="smini"><div class="v"><span class="coin"></span> ${fmtGold(m.gold)}</div><div class="l">Or</div></div>`
     +`<div class="smini"><div class="v" style="font-size:.72em;">${_prio[0]}</div><div class="l">Prioritat</div></div>`
     +(m.durationH>0?`<div class="smini"><div class="v" style="font-size:.8em;">${Math.floor(m.durationH)}h ${Math.round((m.durationH%1)*60)}m</div><div class="l">Durada</div></div>`:'')
     +(m.stars>0?`<div class="smini"><div class="v" style="font-size:.8em;">${'⭐'.repeat(m.stars)}</div><div class="l">Estrelles</div></div>`:'');
@@ -4739,7 +4742,7 @@ function renderStats(){
   function delta(cur,old){if(!old&&!cur)return '';if(!old)return '<span class="st-up">&#9650;</span>';var dd=Math.round((cur-old)/old*100);if(dd===0)return '<span class="st-flat">&mdash;</span>';var cls=dd>0?'st-up':'st-down';return '<span class="'+cls+'">'+(dd>0?'&#9650;':'&#9660;')+' '+Math.abs(dd)+'%</span>';}
   var avgStars=agg.starsN?(agg.starsSum/agg.starsN):0,prevAvg=prev.starsN?(prev.starsSum/prev.starsN):0;
   var active=Object.keys(agg.byPid).length;
-  var coin='<svg width="0.9em" height="0.9em" viewBox="0 0 24 24" style="vertical-align:-2px"><circle cx="12" cy="12" r="10" fill="#ffcf40" stroke="#d4a017" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#d4a017" stroke-width="1.5"/></svg>';
+  var coin='<span class="coin"></span>';
   var kpis=[
     ['Missions',agg.missions,delta(agg.missions,prev.missions)],
     ['Hores',_fmtH(agg.hours),delta(agg.hours,prev.hours)],
