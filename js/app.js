@@ -1834,11 +1834,9 @@ function renderHeroProfile(i){
                   +'</div>';
               }
               var eq=SLOT_DEFS.filter(function(s){return !s.cosmetic;});
-              var cosm=SLOT_DEFS.filter(function(s){return s.cosmetic;});
               var eqCol='<div class="pslots"><div class="pslot-group"><div class="pslot-h">⚔️ Equipament</div>'+eq.map(slotRow).join('')+'</div></div>';
-              var cosmCol='<div class="pslots"><div class="pslot-group"><div class="pslot-h">✨ Cosmètics</div>'+cosm.map(slotRow).join('')+'</div></div>';
               var radar='<div class="pstats-radar">'+buildPentagon(getEffectiveAttrs(p),p.color)+'</div>';
-              return '<div class="pstats-top">'+eqCol+radar+cosmCol+'</div>';
+              return '<div class="pstats-top pstats-top--noco">'+eqCol+radar+'</div>';
             })()}
             <div class="attrs-grid">
             ${(function(){var eff=getEffectiveAttrs(p);return Object.entries(p.attrs).map(function(e){var k=e[0],v=e[1],ev=eff[k]||v,bonus=ev-v;var full=attrName(k),shortNm=full.split('(')[0].trim();return '<div class="attr-chip" title="'+full+'"><span class="attr-ic">'+attrIcon(k)+'</span><div class="attr-body"><div class="attr-top"><span class="attr-nm">'+shortNm+'</span><span class="attr-vl">'+v+(bonus>0?' <span style=\'color:var(--gold);font-size:10px;\'>+'+bonus+'</span>':'')+'</span></div><div class="strk"><div class="sfill" style="width:'+Math.round(Math.min(100,ev/99*100))+'%;background:'+AC[k]+';"></div></div></div></div>';}).join('');})()}
