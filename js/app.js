@@ -48,12 +48,12 @@ let CLASSES=[
   {name:'Pícaro',     icon:'🗡️',role:'Disseny / Creativitat',bonus:'+5 AGI · +3 CAR',attrs:{fue:1,int:3,agi:5,car:3,sab:1}},
   {name:'Bardo',      icon:'📯',role:'Marketing / Comms',   bonus:'+6 CAR · +3 SAB',attrs:{fue:1,int:2,agi:1,car:6,sab:3}},
 ];
+function _mkcol(hex){var h=hex.replace('#','');var r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);return {hex:hex,bg:'rgba('+r+','+g+','+b+',0.15)'};}
 const COLORS=[
-  {hex:'#7f77dd',bg:'rgba(127,119,221,0.15)'},{hex:'#1d9e75',bg:'rgba(29,158,117,0.15)'},
-  {hex:'#d85a30',bg:'rgba(216,90,48,0.15)'}, {hex:'#378add',bg:'rgba(55,138,221,0.15)'},
-  {hex:'#d4537e',bg:'rgba(212,83,126,0.15)'},{hex:'#e4a428',bg:'rgba(228,164,40,0.15)'},
-  {hex:'#888780',bg:'rgba(136,135,128,0.15)'},{hex:'#639922',bg:'rgba(99,153,34,0.15)'},
-];
+  '#7f77dd','#5b6ee0','#378add','#2bb6c9','#1d9e75','#3fae4a','#639922','#a5b520',
+  '#e4a428','#e8863b','#d85a30','#d63b3b','#d4537e','#c451b0','#9b59d6','#6b52c9',
+  '#e05c8a','#c98a12','#7a8a99','#5a7d7a','#888780','#455063','#b0894f','#2f9e8f'
+].map(_mkcol);
 const EMBLEMS=['⚔️','🗡️','🏹','🛡️','🔮','📯','🔥','❄️','⚡','🌙','☀️','🐉','🦅','🌿','💎','👁️'];
 // ══ SLOTS DE EQUIPAMIENTO (centralizados) ══
 var SLOT_DEFS=[
