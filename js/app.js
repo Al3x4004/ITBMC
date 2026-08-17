@@ -4104,15 +4104,28 @@ function renderInventario(){
   if(!p.equipped)p.equipped=emptyEquipped();
   // Qué slots son cosméticos: los que solo tienen items isCosmetic disponibles, o por convención (gafas,sombrero,capa,alas). Mejor: por tipo de item.
   var COSMETIC_SLOTS=SLOT_DEFS.filter(function(s){return s.cosmetic;}).map(function(s){return s.key;});
+  // Cosmètics que té el jugador (per activar/desactivar des de l'inventari)
+  var cosmOwned=(p.inventory||[]).filter(function(id){var it=shopItems.find(function(i){return i.id===id;});return it&&it.isCosmetic;});
   function slotCard(sl){
     var iid=p.equipped[sl.key];
     var item=shopItems.find(function(i){return i.id===iid;});
-    var html='<div class="inv-slot '+(item?'filled bg-rarity-'+(item.rareza||'comun'):'')+'" onclick="invFilterBySlot(\''+sl.key+'\','+(sl.cosmetic?'true':'false')+')" title="Filtrar la motxilla per aquest tipus">';
-    html+='<div class="inv-slot-icon">'+(item?(item.imageUrl?'<img class="inv-slot-img" src="'+item.imageUrl+'" alt="">':item.icon):sl.icon)+'</div>';
+    var html='<div class="inv-slot '+(item?'filled bg-rarity-'+(item.rareza||'comun'):'')+'"'+(sl.cosmetic?'':' onclick="invFilterBySlot(\''+sl.key+'\',false)" title="Filtrar la motxilla per aquest tipus"')+'>';
+    html+='<div class="inv-slot-icon">'+(item?(item.imageUrl?'<img class="inv-slot-img" src="'+_esc(item.imageUrl)+'" alt="">':item.icon):sl.icon)+'</div>';
     html+='<div class="inv-slot-name">'+_esc(item?item.name:'Buit')+'</div>';
     var _slbl=sl.cosmetic?(sl.label||'Cosmètic').replace(/\s*\d+\s*$/,''):sl.label;
     html+='<div class="inv-slot-label">'+_esc(_slbl)+'</div>';
-    if(item){
+    if(sl.cosmetic){
+      // Selector per activar/desactivar/canviar el cosmètic directament
+      if(cosmOwned.length){
+        html+='<select class="cosm-inv-sel" onclick="event.stopPropagation()" onchange="invEquipCosmetic(\''+sl.key+'\',this.value)">'
+          +'<option value="">— Desactivat —</option>'
+          +cosmOwned.map(function(id){var it=shopItems.find(function(i){return i.id===id;});return '<option value="'+id+'"'+(iid===id?' selected':'')+'>'+_esc((it.icon||'✨')+' '+it.name)+'</option>';}).join('')
+          +'</select>';
+      }else{
+        html+='<div style="font-size:10px;color:var(--muted);margin-top:6px;">Encara no tens cosmètics</div>';
+      }
+      if(item)html+='<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;margin-top:6px;" onclick="event.stopPropagation();showItemDetails(\''+iid+'\')">ℹ️ Detalls</button>';
+    }else if(item){
       html+='<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;margin-top:4px;" onclick="event.stopPropagation();unequipItem(\''+iid+'\');renderInventario();">✕ Treure</button>';
       html+='<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;margin-top:4px;" onclick="event.stopPropagation();showItemDetails(\''+iid+'\')">ℹ️ Detalls</button>';
     }
@@ -4176,6 +4189,14 @@ function renderInventario(){
 function invFilterBySlot(slot,isCosm){
   var sel=document.getElementById('inv-filter-slot');
   if(sel){sel.value=isCosm?'__cosm__':slot;}
+  renderInventario();
+}
+// Activar / desactivar / canviar un cosmètic des de l'inventari
+function invEquipCosmetic(slot,itemId){
+  var p=players.find(function(pl){return pl.id===session.playerId;});if(!p)return;
+  if(!p.equipped)p.equipped=emptyEquipped();
+  p.equipped[slot]=itemId||null;
+  if(CFG.MODE==='supabase')saveToSupabase();
   renderInventario();
 }
 var RARITY_LABEL_SAFE={comun:'Comú',rara:'Rara',epica:'Èpica',legendaria:'Llegendària'};
