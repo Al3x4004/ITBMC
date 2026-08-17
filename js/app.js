@@ -4109,8 +4109,9 @@ function renderInventario(){
     var item=shopItems.find(function(i){return i.id===iid;});
     var html='<div class="inv-slot '+(item?'filled bg-rarity-'+(item.rareza||'comun'):'')+'" onclick="invFilterBySlot(\''+sl.key+'\','+(sl.cosmetic?'true':'false')+')" title="Filtrar la motxilla per aquest tipus">';
     html+='<div class="inv-slot-icon">'+(item?(item.imageUrl?'<img class="inv-slot-img" src="'+item.imageUrl+'" alt="">':item.icon):sl.icon)+'</div>';
-    html+='<div class="inv-slot-name">'+(item?item.name:'Buit')+'</div>';
-    html+='<div class="inv-slot-label">'+sl.label+'</div>';
+    html+='<div class="inv-slot-name">'+_esc(item?item.name:'Buit')+'</div>';
+    var _slbl=sl.cosmetic?(sl.label||'Cosmètic').replace(/\s*\d+\s*$/,''):sl.label;
+    html+='<div class="inv-slot-label">'+_esc(_slbl)+'</div>';
     if(item){
       html+='<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;margin-top:4px;" onclick="event.stopPropagation();unequipItem(\''+iid+'\');renderInventario();">✕ Treure</button>';
       html+='<button class="btn btn-sm" style="font-size:10px;padding:2px 6px;margin-top:4px;" onclick="event.stopPropagation();showItemDetails(\''+iid+'\')">ℹ️ Detalls</button>';
