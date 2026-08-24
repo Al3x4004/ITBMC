@@ -992,6 +992,7 @@ function renderUserWidgets(){
     html+='<div id="wcard-'+wid+'" class="card widget-card widget-'+w.type+'" style="width:'+sz.w+'px;left:'+pos.x+'px;top:'+pos.y+'px;">'
       +'<div class="stitle widget-drag" onmousedown="startWidgetDrag(event,\''+wid+'\')" ontouchstart="startWidgetDrag(event,\''+wid+'\')" title="Arrossega per moure" style="margin:0 0 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:move;">⠿ '+(w.icon||'🧩')+' '+w.name+'</div>'
       +'<iframe id="wframe-'+wid+'" src="'+_esc(w.embedUrl)+'" width="100%" height="'+sz.h+'" frameborder="0" allowfullscreen="" sandbox="allow-scripts allow-same-origin allow-popups allow-presentation allow-forms" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style="border-radius:10px;display:block;height:'+sz.h+'px;"></iframe>'
+      +'<button class="widget-autofit" title="Auto-ajustar la mida (16:9)" onclick="autoFitWidget(\''+wid+'\')">⤢</button>'
       +'<div class="widget-resize" title="Arrossega per canviar la mida" onmousedown="startWidgetResize(event,\''+wid+'\')" ontouchstart="startWidgetResize(event,\''+wid+'\')">◢</div>'
       +'</div>';
   });
@@ -1056,6 +1057,21 @@ function normWidgetSize(v,w){
   if(typeof v==='number')return {w:dw,h:v};
   if(v&&typeof v==='object')return {w:v.w||dw,h:v.h||dh};
   return {w:dw,h:dh};
+}
+// Auto-ajustar una extensió: alçada a proporció 16:9 respecte l'amplada actual
+function autoFitWidget(wid){
+  var p=players.find(function(pl){return pl.id===session.playerId;});if(!p)return;
+  var card=document.getElementById('wcard-'+wid);
+  var fr=document.getElementById('wframe-'+wid);
+  if(!card||!fr)return;
+  var w=card.offsetWidth||340;
+  var h=Math.max(120,Math.min(800,Math.round(w*9/16)));
+  fr.style.height=h+'px';fr.height=h;
+  if(!p.widgetSizes)p.widgetSizes={};
+  p.widgetSizes[wid]={w:Math.round(w),h:h};
+  if(CFG.MODE==='supabase')saveToSupabase();
+  try{updateWidgetCanvasHeight();}catch(e){}
+  toast('Extensió ajustada');
 }
 var _wResize=null;
 function startWidgetResize(e,wid){
@@ -4795,7 +4811,7 @@ try{window.renderUserWidgets=renderUserWidgets;}catch(e){}
 try{window.renderInicio=renderInicio;}catch(e){}
 try{window.openWidgetPicker=openWidgetPicker;}catch(e){}
 try{window.toggleUserWidget=toggleUserWidget;}catch(e){}
-try{window.startWidgetResize=startWidgetResize;}catch(e){}
+try{window.startWidgetResize=startWidgetResize;}catch(e){}try{window.autoFitWidget=autoFitWidget;}catch(e){}
 try{window.closeWidgetPicker=closeWidgetPicker;}catch(e){}
 
 /* ══════════════ ESTADISTIQUES (setmanals / mensuals) ══════════════ */
