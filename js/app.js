@@ -975,7 +975,7 @@ function renderUserWidgets(){
   if(!cont)return;
   var p=players.find(function(pl){return pl.id===session.playerId;});
   // Botón de gestionar (siempre visible si hay catálogo o widgets)
-  var manageBtn=(widgetCatalog.length&&p)?'<div style="display:flex;justify-content:flex-end;margin-bottom:8px;"><button class="btn btn-sm" onclick="openWidgetPicker()">🧩 Gestionar widgets</button></div>':'';
+  var manageBtn=(widgetCatalog.length&&p)?'<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:8px;">'+((p.widgets&&p.widgets.length)?'<button class="btn btn-sm" onclick="arrangeWidgets()" title="Ordena totes les extensions sense solapaments">🧹 Organitzar</button>':'')+'<button class="btn btn-sm" onclick="openWidgetPicker()">🧩 Gestionar widgets</button></div>':'';
   if(!p||!p.widgets||!p.widgets.length){
     cont.innerHTML=manageBtn;
     return;
@@ -1012,6 +1012,53 @@ function updateWidgetCanvasHeight(){
   canvas.querySelectorAll('.widget-card').forEach(function(c){var b=c.offsetTop+c.offsetHeight;if(b>max)max=b;});
   canvas.style.minHeight=(max+24)+'px';
 }
+// Rectangles de tots els widgets (excepte un opcional)
+function _widgetRects(exceptWid){
+  var canvas=document.getElementById('widgets-canvas');if(!canvas)return [];
+  var rects=[];
+  canvas.querySelectorAll('.widget-card').forEach(function(c){
+    var wid=c.id.replace('wcard-','');
+    if(exceptWid&&wid===exceptWid)return;
+    rects.push({x:c.offsetLeft,y:c.offsetTop,w:c.offsetWidth,h:c.offsetHeight});
+  });
+  return rects;
+}
+function _rectsOverlap(a,b,gap){gap=gap||8;return !(a.x+a.w+gap<=b.x||b.x+b.w+gap<=a.x||a.y+a.h+gap<=b.y||b.y+b.h+gap<=a.y);}
+// Si la posició (x,y) del widget xoca amb un altre, l'empeny cap avall fins trobar lloc lliure
+function _resolveWidgetCollision(wid,x,y,w,h){
+  var others=_widgetRects(wid);
+  var rect={x:Math.max(0,x),y:Math.max(0,y),w:w,h:h};
+  var guard=0;
+  while(guard++<600){
+    var hit=null;
+    for(var i=0;i<others.length;i++){if(_rectsOverlap(rect,others[i])){hit=others[i];break;}}
+    if(!hit)break;
+    rect.y=hit.y+hit.h+16;
+  }
+  return {x:Math.round(rect.x),y:Math.round(rect.y)};
+}
+// Organitza totes les extensions en una graella ordenada (sense solapaments)
+function arrangeWidgets(){
+  var p=players.find(function(pl){return pl.id===session.playerId;});if(!p)return;
+  var canvas=document.getElementById('widgets-canvas');if(!canvas)return;
+  var cards=[].slice.call(canvas.querySelectorAll('.widget-card'));
+  if(!cards.length){toast('No tens extensions per organitzar.');return;}
+  var maxW=canvas.clientWidth||1000;var gap=16;
+  var x=0,y=0,rowH=0;
+  if(!p.widgetPos)p.widgetPos={};
+  cards.forEach(function(c){
+    var wid=c.id.replace('wcard-','');
+    var cardW=c.offsetWidth,cardH=c.offsetHeight;
+    if(x>0&&x+cardW>maxW+1){x=0;y+=rowH+gap;rowH=0;}
+    c.style.left=x+'px';c.style.top=y+'px';
+    p.widgetPos[wid]={x:Math.round(x),y:Math.round(y)};
+    x+=cardW+gap;
+    if(cardH>rowH)rowH=cardH;
+  });
+  updateWidgetCanvasHeight();
+  if(CFG.MODE==='supabase')saveToSupabase();
+  toast('Extensions organitzades');
+}
 /* ── Moure widgets lliurement (drag de la capçalera) ── */
 var _wDrag=null;
 function startWidgetDrag(e,wid){
@@ -1041,7 +1088,10 @@ function onWidgetDragMove(e){
 function endWidgetDrag(){
   if(!_wDrag)return;
   var p=players.find(function(pl){return pl.id===session.playerId;});
-  if(p){if(!p.widgetPos)p.widgetPos={};p.widgetPos[_wDrag.wid]={x:Math.round(_wDrag.card.offsetLeft),y:Math.round(_wDrag.card.offsetTop)};if(CFG.MODE==='supabase')saveToSupabase();}
+  // Evitar solapaments: si la posició xoca amb un altre widget, l'empenyem a un lloc lliure
+  var resolved=_resolveWidgetCollision(_wDrag.wid,_wDrag.card.offsetLeft,_wDrag.card.offsetTop,_wDrag.card.offsetWidth,_wDrag.card.offsetHeight);
+  _wDrag.card.style.left=resolved.x+'px';_wDrag.card.style.top=resolved.y+'px';
+  if(p){if(!p.widgetPos)p.widgetPos={};p.widgetPos[_wDrag.wid]={x:resolved.x,y:resolved.y};if(CFG.MODE==='supabase')saveToSupabase();}
   _wDrag.card.style.zIndex='';_wDrag.card.classList.remove('dragging');
   document.querySelectorAll('.widget-card iframe').forEach(function(f){f.style.pointerEvents='';});
   document.body.style.userSelect='';
@@ -4811,7 +4861,7 @@ try{window.renderUserWidgets=renderUserWidgets;}catch(e){}
 try{window.renderInicio=renderInicio;}catch(e){}
 try{window.openWidgetPicker=openWidgetPicker;}catch(e){}
 try{window.toggleUserWidget=toggleUserWidget;}catch(e){}
-try{window.startWidgetResize=startWidgetResize;}catch(e){}try{window.autoFitWidget=autoFitWidget;}catch(e){}
+try{window.startWidgetResize=startWidgetResize;}catch(e){}try{window.autoFitWidget=autoFitWidget;}catch(e){}try{window.arrangeWidgets=arrangeWidgets;}catch(e){}
 try{window.closeWidgetPicker=closeWidgetPicker;}catch(e){}
 
 /* ══════════════ ESTADISTIQUES (setmanals / mensuals) ══════════════ */
