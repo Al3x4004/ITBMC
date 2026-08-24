@@ -152,8 +152,39 @@ var rewardsPending={};/* {missionId:true} missions completades importades amb re
 var itemLimits={};/* {itemId:{per:Number|null, total:Number|null}} límits de compra (a game_data) */
 var itemPurchases={};/* {itemId:{total:Number, by:{playerId:Number}}} compres fetes (a game_data) */
 var itemConsumable={};/* {itemId:true} items consumibles: en usar-los desapareixen (a game_data) */
-var consumeHistory=[];/* [{itemId,name,icon,rareza,playerId,playerName,at}] historial de consum (a game_data) */
+var itemDuration={};/* {itemId:Number} durada en DIES (des que s'obté); caducat → desapareix (a game_data) */
+var consumeHistory=[];/* [{itemId,name,icon,rareza,playerId,playerName,at,expired?}] historial de consum/caducitat (a game_data) */
 function isConsumable(id){return !!itemConsumable[id];}
+function itemDur(id){var d=itemDuration[id];return (d!=null&&d!==''&&!isNaN(d)&&d>0)?Number(d):null;}
+// Comprova i retira els ítems caducats de tots els jugadors (durada des que s'obté). Retorna true si hi ha canvis.
+function checkItemExpiry(){
+  var now=Date.now();var changed=false;
+  players.forEach(function(p){
+    if(!p.inventory||!p.inventory.length)return;
+    if(!p.itemAcq)p.itemAcq={};
+    var uniq={};p.inventory.forEach(function(id){uniq[id]=true;});
+    Object.keys(uniq).forEach(function(id){
+      var days=itemDur(id);if(!days)return;
+      if(!p.itemAcq[id])p.itemAcq[id]=new Date().toISOString();
+      var acq=Date.parse(p.itemAcq[id]);if(isNaN(acq))return;
+      if(now-acq>=days*86400000){
+        var item=shopItems.find(function(i){return i.id===id;});
+        var count=p.inventory.filter(function(x){return x===id;}).length;
+        p.inventory=p.inventory.filter(function(x){return x!==id;});
+        if(p.equipped)Object.keys(p.equipped).forEach(function(k){if(p.equipped[k]===id)p.equipped[k]=null;});
+        delete p.itemAcq[id];
+        for(var c=0;c<count;c++){
+          consumeHistory.unshift({itemId:id,name:item?item.name:id,icon:item?(item.icon||'📦'):'📦',rareza:item?item.rareza:'comun',playerId:p.id,playerName:p.name,at:new Date().toISOString(),expired:true});
+        }
+        changed=true;
+      }
+    });
+  });
+  if(changed){if(consumeHistory.length>1000)consumeHistory=consumeHistory.slice(0,1000);if(CFG.MODE==='supabase')saveToSupabase();}
+  return changed;
+}
+// Marca el moment d'obtenció d'un ítem (per calcular-ne la caducitat)
+function markItemAcquired(p,itemId){if(!p)return;if(!p.itemAcq)p.itemAcq={};if(!p.itemAcq[itemId])p.itemAcq[itemId]=new Date().toISOString();}
 function itemLim(id){return itemLimits[id]||{};}
 function itemBoughtTotal(id){return (itemPurchases[id]&&itemPurchases[id].total)||0;}
 function itemBoughtBy(id,pid){return (itemPurchases[id]&&itemPurchases[id].by&&itemPurchases[id].by[pid])||0;}
@@ -339,7 +370,7 @@ async function saveClassToSupabase(cls,idx){
 }
 
 /* Config compartida (no és dada de compte). */
-function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market,market_history:marketHistory,weekly_templates:weeklyTemplates,mission_assignees:missionAssignees,rewards_pending:rewardsPending,item_limits:itemLimits,item_purchases:itemPurchases,item_consumable:itemConsumable,consume_history:consumeHistory,stats_log:statsLog};}
+function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market,market_history:marketHistory,weekly_templates:weeklyTemplates,mission_assignees:missionAssignees,rewards_pending:rewardsPending,item_limits:itemLimits,item_purchases:itemPurchases,item_consumable:itemConsumable,item_duration:itemDuration,consume_history:consumeHistory,stats_log:statsLog};}
 // Registra una activitat (finalització de missió) per a les estadístiques setmanals/mensuals
 function logActivity(pid,m,goldGiven){
   if(!pid||!m)return;
@@ -508,6 +539,7 @@ async function loadData(){
       if(d.item_limits&&typeof d.item_limits==='object')itemLimits=d.item_limits;
       if(d.item_purchases&&typeof d.item_purchases==='object')itemPurchases=d.item_purchases;
       if(d.item_consumable&&typeof d.item_consumable==='object')itemConsumable=d.item_consumable;
+      if(d.item_duration&&typeof d.item_duration==='object')itemDuration=d.item_duration;
       if(Array.isArray(d.consume_history))consumeHistory=d.consume_history;
       if(Array.isArray(d.stats_log))statsLog=d.stats_log;
       if(Array.isArray(d.attr_defs)&&d.attr_defs.length){
@@ -661,6 +693,7 @@ function restoreData(input){
       if(d.item_limits&&typeof d.item_limits==='object')itemLimits=d.item_limits;
       if(d.item_purchases&&typeof d.item_purchases==='object')itemPurchases=d.item_purchases;
       if(d.item_consumable&&typeof d.item_consumable==='object')itemConsumable=d.item_consumable;
+      if(d.item_duration&&typeof d.item_duration==='object')itemDuration=d.item_duration;
       if(Array.isArray(d.consume_history))consumeHistory=d.consume_history;
       if(Array.isArray(d.stats_log))statsLog=d.stats_log;
       if(Array.isArray(d.cal_events))calEvents=d.cal_events;
@@ -912,6 +945,7 @@ function saveNewChar(){
   });
   const np={id:'pj'+Date.now(),realName:rn,name:pn,cls:cpState.cls.name,role:cpState.cls.role,emblem:cpState.emblem,color:cpState.color.hex,colorBg:cpState.color.bg,level:1,xp:0,xpNext:100,gold:0,missions:0,lore:lore||'Història per escriure...',quote:quote||'...',pin,attrs:zeroAttrs(),baseAttrs:zeroAttrs(),gachaTokens:0,fragments:0,gallery:[],lastDaily:'',inventory:startItems,equipped:equipped,pendingAttrPts:0};
   players.push(np);
+  startItems.forEach(function(iid){markItemAcquired(np,iid);});
   checkDailyMissions();
   if(CFG.MODE==='supabase')saveToSupabase();
   session={loggedIn:true,isAdmin:false,playerId:np.id};localStorage.setItem('cg_pid',np.id);
@@ -2021,7 +2055,7 @@ function doPull(times){
     }else if(r.type==='item'){
       var haveItem=p.inventory.indexOf(r.data.id)>=0;
       if(haveItem){refund+=Math.floor(costPerPull/2);dupes++;r._dupe=true;}
-      else p.inventory.push(r.data.id);
+      else {p.inventory.push(r.data.id);markItemAcquired(p,r.data.id);}
     }
   });
   if(refund>0&&!session.isAdmin)p.fragments+=refund;
@@ -2357,7 +2391,7 @@ function consumeHistoryHTML(list){
     var dstr=d?(d.toLocaleDateString('ca-ES')+' · '+d.toLocaleTimeString('ca-ES',{hour:'2-digit',minute:'2-digit'})):'';
     return '<div class="ch-row bg-rarity-'+(h.rareza||'comun')+'">'
       +'<span class="ch-ico">'+(h.icon||'📦')+'</span>'
-      +'<div class="ch-info"><div class="ch-name">'+_esc(h.name||'')+'</div>'
+      +'<div class="ch-info"><div class="ch-name">'+_esc(h.name||'')+(h.expired?' <span class="badge b-gray" style="font-size:10px;">⏳ caducat</span>':'')+'</div>'
       +'<div class="ch-meta">'+_esc(h.playerName||'')+(dstr?(' · '+dstr):'')+'</div></div>'
       +'</div>';
   }).join('')+'</div>';
@@ -2495,6 +2529,7 @@ function meetsReqs(p,item){
   return Object.entries(item.minAttrs||{}).every(function(e){return (attrs[e[0]]||0)>=e[1];});
 }
 function renderShop(){
+  try{checkItemExpiry();}catch(e){}
   var p=players.find(function(pl){return pl.id===session.playerId;});
   var eqWrap=document.getElementById('my-equipped');
   if(eqWrap){
@@ -2551,6 +2586,7 @@ function renderShop(){
     var stockInfo='';
     if(hasTotal)stockInfo+='<div class="item-stock'+(soldOut?' out':'')+'">'+(soldOut?'Esgotat':('📦 Estoc: '+stockLeft+' / '+lim.total))+'</div>';
     if(hasPer&&p)stockInfo+='<div class="item-stock">👤 '+itemBoughtBy(item.id,p.id)+' / '+lim.per+' per persona</div>';
+    if(itemDur(item.id))stockInfo+='<div class="item-stock">⏳ Dura '+itemDur(item.id)+' dies des que l\'obtens</div>';
     // Botó de compra
     var btn='';
     if(soldOut)btn='<div class="soldout-lbl">Esgotat</div>';
@@ -2583,6 +2619,7 @@ function buyItem(itemId){
   p.gold-=item.cost;
   if(!p.inventory)p.inventory=[];
   p.inventory.push(itemId);
+  markItemAcquired(p,itemId);
   // Registrar compra (per persona i total)
   if(!itemPurchases[itemId])itemPurchases[itemId]={total:0,by:{}};
   itemPurchases[itemId].total=(itemPurchases[itemId].total||0)+1;
@@ -2635,8 +2672,11 @@ async function adminCreateItemFull(){
   if(perV!=null||totV!=null)itemLimits[newItem.id]={per:perV,total:totV};
   var _consEl=document.getElementById('ai-consumible');
   if(_consEl&&_consEl.checked)itemConsumable[newItem.id]=true;
+  var _durEl=document.getElementById('ai-duration');
+  var _durV=(_durEl&&_durEl.value.trim()!=='')?parseInt(_durEl.value)||0:null;
+  if(_durV&&_durV>0)itemDuration[newItem.id]=_durV;
   if(CFG.MODE==='supabase'){await saveItemToSupabase(newItem);saveToSupabase();}
-  ['ai-name','ai-icon','ai-imageurl','ai-desc','ai-cost','ai-lvl','ai-maxper','ai-maxtotal'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['ai-name','ai-icon','ai-imageurl','ai-desc','ai-cost','ai-lvl','ai-maxper','ai-maxtotal','ai-duration'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   if(_consEl)_consEl.checked=false;
   ['ai-rfue','ai-rint','ai-ragi','ai-rcar','ai-rsab','ai-bfue','ai-bint','ai-bagi','ai-bcar','ai-bsab'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='0';});
   renderAdminItemsPage();
@@ -2790,6 +2830,7 @@ function openAdminEditItem(itemId){
     +'</div>'
     +'<div style="font-size:11px;color:var(--muted);">Comprat fins ara: total '+itemBoughtTotal(item.id)+(itemLim(item.id).total?(' / '+itemLim(item.id).total):'')+'. <span style="color:var(--accent);cursor:pointer;" onclick="resetItemPurchases(\''+item.id+'\')">↺ Reiniciar comptador</span></div>'
     +'<div class="field" style="margin-top:10px;display:flex;align-items:center;gap:8px;"><label style="margin:0;cursor:pointer;"><input type="checkbox" id="aem-consumible"'+(isConsumable(item.id)?' checked':'')+' style="vertical-align:middle;margin-right:6px;"/>🍴 Consumible (desapareix en usar-lo)</label></div>'
+    +'<div class="field"><label>⏳ Durada en dies (buit = permanent · compta des que s\'obté)</label><input type="number" id="aem-duration" min="1" value="'+(itemDur(item.id)||'')+'"/></div>'
     +'<div class="stitle" style="margin-top:10px;">Requisits mínims per comprar (0 = sense requisit)</div>'
     +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">'
     +attrKeys().map(function(k){return '<div class="field" style="margin:0;"><label>'+k.toUpperCase()+'</label><input type="number" id="aem-r'+k+'" value="'+((item.minAttrs&&item.minAttrs[k])||0)+'" min="0"/></div>';}).join('')
@@ -2842,6 +2883,8 @@ async function saveAdminEdit(){
     else itemLimits[item.id]={per:perV,total:totV};
     var _consEl=document.getElementById('aem-consumible');
     if(_consEl){if(_consEl.checked)itemConsumable[item.id]=true;else delete itemConsumable[item.id];}
+    var _durEl=document.getElementById('aem-duration');
+    if(_durEl){var _dv=(_durEl.value.trim()!=='')?parseInt(_durEl.value)||0:0;if(_dv>0)itemDuration[item.id]=_dv;else delete itemDuration[item.id];}
     if(CFG.MODE==='supabase'){saveItemToSupabase(item);saveToSupabase();}
     renderAdminItemsPage();renderShop();
   }else if(_adminEditType==='carta'){
@@ -4180,6 +4223,7 @@ function renderInventario(){
   var cosmEl=document.getElementById('inv-slots-cosm');
   var gw=document.getElementById('inv-grid');
   if(!gw)return;
+  try{checkItemExpiry();}catch(e){}
   var goldBanner=document.getElementById('inv-gold-banner');
   if(goldBanner)goldBanner.innerHTML=p?('<span class="coin"></span> <b>'+(p.gold||0).toLocaleString()+'</b> or'):'';
   if(!p){if(eqEl)eqEl.innerHTML='<div style="color:var(--muted);font-size:13px;">Inicia sessió.</div>';if(cosmEl)cosmEl.innerHTML='';gw.innerHTML='';return;}
@@ -4257,6 +4301,13 @@ function renderInventario(){
     html+='<div style="font-size:12px;font-weight:500;">'+item.name+'</div>';
     var slLbl=(SLOT_DEFS.find(function(s){return s.key===item.slot;})||{}).label||item.slot;
     html+='<div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">'+slLbl+'</div>';
+    var _dd=itemDur(iid);
+    if(_dd){
+      var _acq=(p.itemAcq&&p.itemAcq[iid])?Date.parse(p.itemAcq[iid]):Date.now();
+      var _left=Math.ceil((_acq+_dd*86400000-Date.now())/86400000);
+      if(_left<0)_left=0;
+      html+='<div style="font-size:10px;font-weight:600;color:'+(_left<=1?'var(--coral)':'var(--gold)')+';">⏳ '+(_left<=0?'Caduca avui':('Caduca en '+_left+' d'+(_left===1?'ia':'ies')))+'</div>';
+    }
     if(bonusLines)html+='<div class="inv-bonus">'+bonusLines+'</div>';
     html+='<div style="margin-top:auto;padding-top:6px;">';
     if(isConsumable(iid)){
@@ -4295,7 +4346,7 @@ function showItemDetails(id){
   body.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;margin-bottom:1rem;">'
     +img
     +'<div style="font-size:18px;font-weight:600;margin-top:6px;">'+it.name+'</div>'
-    +'<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;"><span class="badge rarity-'+(it.rareza||'comun')+'" style="border:0.5px solid var(--border2);">'+rarLbl+'</span><span class="badge b-gray">'+slLbl+'</span>'+(it.isCosmetic?'<span class="badge b-purple">Cosmètic</span>':'')+(isConsumable(it.id)?'<span class="badge b-gold">🍴 Consumible</span>':'')+'</div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;"><span class="badge rarity-'+(it.rareza||'comun')+'" style="border:0.5px solid var(--border2);">'+rarLbl+'</span><span class="badge b-gray">'+slLbl+'</span>'+(it.isCosmetic?'<span class="badge b-purple">Cosmètic</span>':'')+(isConsumable(it.id)?'<span class="badge b-gold">🍴 Consumible</span>':'')+(itemDur(it.id)?'<span class="badge b-gray">⏳ '+itemDur(it.id)+' dies</span>':'')+'</div>'
     +'</div>'
     +(it.desc?'<div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:1rem;padding:.75rem;background:var(--bg3);border-radius:var(--radius);">'+it.desc+'</div>':'')
     +'<div class="stitle">Bonus d\'atributs</div><div style="margin-bottom:1rem;">'+bonus+'</div>'
