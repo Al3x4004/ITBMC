@@ -70,6 +70,7 @@ var SLOT_DEFS=[
 ];
 function slotDefaultPos(k){var s=SLOT_DEFS.find(function(x){return x.key===k;});return s?s.pos:{x:20,y:20,w:60,z:4};}
 function emptyEquipped(){var o={};SLOT_DEFS.forEach(function(s){o[s.key]=null;});return o;}
+function zeroAttrs(){var o={};attrKeys().forEach(function(k){o[k]=0;});return o;}
 cpState.color=COLORS[0];/* color por defecto */
 // ══ ATRIBUTOS DINÁMICOS ══
 // ATTRS: array ordenado de {key, name, color}. Se puede añadir/quitar.
@@ -310,9 +311,12 @@ function rowToClass(r){
   };
 }
 function computeClassBonus(attrs){
-  var abbr={fue:'FUE',int:'INT',agi:'AGI',car:'CAR',sab:'SAB'};
-  return Object.entries(attrs).sort(function(a,b){return b[1]-a[1];}).slice(0,2)
-    .map(function(e){return '+'+e[1]+' '+abbr[e[0]];}).join(' · ');
+  return Object.entries(attrs||{}).filter(function(e){return (e[1]||0)>0;}).sort(function(a,b){return b[1]-a[1];}).slice(0,2)
+    .map(function(e){
+      var nm=(typeof attrName==='function')?attrName(e[0]):e[0];
+      var ab=((nm||e[0])+'').replace(/[^\p{L}0-9]/gu,'').slice(0,3).toUpperCase()||(e[0]+'').toUpperCase();
+      return '+'+e[1]+' '+ab;
+    }).join(' · ');
 }
 async function loadClassesFromSupabase(){
   try{
@@ -843,22 +847,23 @@ function buildCreatorCls(){
     d.onclick=()=>{
       document.querySelectorAll('.copt').forEach(x=>x.classList.remove('selected'));d.classList.add('selected');
       cpState.cls=c;
-      try{buildAttrBars('cp-abars',c.attrs);}catch(e){console.error('buildAttrBars error',e);}
+      try{buildAttrBars('cp-abars',(classGrowthMap[c.name]||defaultGrowth(c)),true);}catch(e){console.error('buildAttrBars error',e);}
       try{var cs=document.getElementById('cp-cstats');if(cs)cs.style.display='block';}catch(e){}
       try{buildStartItemsPreview(c);}catch(e){console.error('buildStartItemsPreview error',e);}
     };
     g.appendChild(d);
   });
 }
-function buildAttrBars(cid,attrs){
+function buildAttrBars(cid,attrs,boost){
   var el=document.getElementById(cid);if(!el)return;
   attrs=attrs||{};
-  // Solo las 5 claves conocidas, en orden fijo
+  // Solo las claves conocidas, en orden fijo
   var keys=attrKeys();
+  var maxAll=keys.reduce(function(m,k){return Math.max(m,parseInt(attrs[k])||0);},0);
+  var maxv=Math.max(boost?3:6,maxAll);
   el.innerHTML=keys.map(function(k){
     var v=parseInt(attrs[k])||0;
-    var maxv=Math.max(6,v);
-    return '<div class="srow"><span class="slbl">'+attrIcon(k)+' '+(AN[k]||k)+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(v/maxv*100)+'%;background:'+(AC[k]||'#888')+';"></div></div><span class="snum">'+v+'</span></div>';
+    return '<div class="srow"><span class="slbl">'+attrIcon(k)+' '+(AN[k]||k)+'</span><div class="strk"><div class="sfill" style="width:'+Math.round(v/maxv*100)+'%;background:'+(AC[k]||'#888')+';"></div></div><span class="snum">'+(boost&&v>0?'+':'')+v+'</span></div>';
   }).join('');
 }
 function buildCreatorColors(cid){
@@ -905,7 +910,7 @@ function saveNewChar(){
     var item=shopItems.find(function(i){return i.id===iid;});
     if(item&&equipped.hasOwnProperty(item.slot)&&!equipped[item.slot])equipped[item.slot]=iid;
   });
-  const np={id:'pj'+Date.now(),realName:rn,name:pn,cls:cpState.cls.name,role:cpState.cls.role,emblem:cpState.emblem,color:cpState.color.hex,colorBg:cpState.color.bg,level:1,xp:0,xpNext:100,gold:0,missions:0,lore:lore||'Història per escriure...',quote:quote||'...',pin,attrs:{...cpState.cls.attrs},baseAttrs:{...cpState.cls.attrs},gachaTokens:0,fragments:0,gallery:[],lastDaily:'',inventory:startItems,equipped:equipped,pendingAttrPts:0};
+  const np={id:'pj'+Date.now(),realName:rn,name:pn,cls:cpState.cls.name,role:cpState.cls.role,emblem:cpState.emblem,color:cpState.color.hex,colorBg:cpState.color.bg,level:1,xp:0,xpNext:100,gold:0,missions:0,lore:lore||'Història per escriure...',quote:quote||'...',pin,attrs:zeroAttrs(),baseAttrs:zeroAttrs(),gachaTokens:0,fragments:0,gallery:[],lastDaily:'',inventory:startItems,equipped:equipped,pendingAttrPts:0};
   players.push(np);
   checkDailyMissions();
   if(CFG.MODE==='supabase')saveToSupabase();
