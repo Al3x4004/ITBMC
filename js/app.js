@@ -150,6 +150,9 @@ var missionAssignees={};/* {missionId:[playerId,...]} assignació múltiple (a g
 var rewardsPending={};/* {missionId:true} missions completades importades amb recompensa sense reclamar (a game_data) */
 var itemLimits={};/* {itemId:{per:Number|null, total:Number|null}} límits de compra (a game_data) */
 var itemPurchases={};/* {itemId:{total:Number, by:{playerId:Number}}} compres fetes (a game_data) */
+var itemConsumable={};/* {itemId:true} items consumibles: en usar-los desapareixen (a game_data) */
+var consumeHistory=[];/* [{itemId,name,icon,rareza,playerId,playerName,at}] historial de consum (a game_data) */
+function isConsumable(id){return !!itemConsumable[id];}
 function itemLim(id){return itemLimits[id]||{};}
 function itemBoughtTotal(id){return (itemPurchases[id]&&itemPurchases[id].total)||0;}
 function itemBoughtBy(id,pid){return (itemPurchases[id]&&itemPurchases[id].by&&itemPurchases[id].by[pid])||0;}
@@ -332,7 +335,7 @@ async function saveClassToSupabase(cls,idx){
 }
 
 /* Config compartida (no és dada de compte). */
-function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market,market_history:marketHistory,weekly_templates:weeklyTemplates,mission_assignees:missionAssignees,rewards_pending:rewardsPending,item_limits:itemLimits,item_purchases:itemPurchases,stats_log:statsLog};}
+function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market,market_history:marketHistory,weekly_templates:weeklyTemplates,mission_assignees:missionAssignees,rewards_pending:rewardsPending,item_limits:itemLimits,item_purchases:itemPurchases,item_consumable:itemConsumable,consume_history:consumeHistory,stats_log:statsLog};}
 // Registra una activitat (finalització de missió) per a les estadístiques setmanals/mensuals
 function logActivity(pid,m,goldGiven){
   if(!pid||!m)return;
@@ -500,6 +503,8 @@ async function loadData(){
       if(d.rewards_pending&&typeof d.rewards_pending==='object')rewardsPending=d.rewards_pending;
       if(d.item_limits&&typeof d.item_limits==='object')itemLimits=d.item_limits;
       if(d.item_purchases&&typeof d.item_purchases==='object')itemPurchases=d.item_purchases;
+      if(d.item_consumable&&typeof d.item_consumable==='object')itemConsumable=d.item_consumable;
+      if(Array.isArray(d.consume_history))consumeHistory=d.consume_history;
       if(Array.isArray(d.stats_log))statsLog=d.stats_log;
       if(Array.isArray(d.attr_defs)&&d.attr_defs.length){
         ATTRS=d.attr_defs.map(function(a){return {key:a.key,name:a.name,color:a.color||'#888',icon:a.icon||''};});
@@ -651,6 +656,8 @@ function restoreData(input){
       if(d.rewards_pending&&typeof d.rewards_pending==='object')rewardsPending=d.rewards_pending;
       if(d.item_limits&&typeof d.item_limits==='object')itemLimits=d.item_limits;
       if(d.item_purchases&&typeof d.item_purchases==='object')itemPurchases=d.item_purchases;
+      if(d.item_consumable&&typeof d.item_consumable==='object')itemConsumable=d.item_consumable;
+      if(Array.isArray(d.consume_history))consumeHistory=d.consume_history;
       if(Array.isArray(d.stats_log))statsLog=d.stats_log;
       if(Array.isArray(d.cal_events))calEvents=d.cal_events;
       if(Array.isArray(d.custom_traits))customTraits=d.custom_traits;
@@ -1551,6 +1558,18 @@ function _doCompleteMission(id){
   if(CFG.MODE==='supabase')saveToSupabase(assignees.map(function(a){return a.id;}));
   renderAll();
 }
+// Aplica la recompensa d'una missió a un jugador concret (sense popup). Reutilitzat per l'import del Planner.
+function awardMissionTo(p,m){
+  if(!p||!m)return;
+  var mFrag=m.frag||fragForDiff(m.diff);
+  p.xp=(p.xp||0)+(m.xp||0);
+  var _g=awardGold(p,m.gold);
+  p.fragments=(p.fragments||0)+mFrag;
+  p.missions=(p.missions||0)+1;
+  if(m.attrPts&&m.attr){var k=attrKeyFromName(m.attr);if(k)p.attrs[k]=(p.attrs[k]||0)+m.attrPts;}
+  logActivity(p.id,Object.assign({},m,{frag:mFrag}),_g);
+  checkLevelUp(p);
+}
 function claimMissionReward(id){
   var m=missions.find(function(x){return x.id===id;});if(!m||!rewardsPending[id])return;
   var assignees=getAssignees(m);
@@ -2309,7 +2328,7 @@ function tradeListing(id){
 }
 
 function showInvTab(name,btn){
-  ['equip','cosm','galeria'].forEach(function(t){var el=document.getElementById('inv-tab-'+t);if(el)el.style.display=(t===name)?'':'none';});
+  ['equip','cosm','galeria','historial'].forEach(function(t){var el=document.getElementById('inv-tab-'+t);if(el)el.style.display=(t===name)?'':'none';});
   var tabs=document.getElementById('inv-tabs');
   if(tabs)[].forEach.call(tabs.querySelectorAll('.htab'),function(b){b.classList.remove('active');});
   if(btn)btn.classList.add('active');
@@ -2323,6 +2342,45 @@ function showInvTab(name,btn){
     var g=document.getElementById('inv-my-gallery');
     if(g)g.innerHTML=p?renderGalleryCards(p.gallery||[]):'<div class="gallery-empty">Inicia sessió per veure la teva galeria.</div>';
   }
+  if(name==='historial')renderConsumeHistoryPlayer();
+}
+/* ══ HISTORIAL DE CONSUMIBLES ══ */
+function consumeHistoryHTML(list){
+  if(!list.length)return '<div class="empty-state"><div class="es-ico">📜</div><div class="es-txt">Encara no s\'ha consumit cap ítem.</div></div>';
+  return '<div class="ch-list">'+list.map(function(h){
+    var d=h.at?new Date(h.at):null;
+    var dstr=d?(d.toLocaleDateString('ca-ES')+' · '+d.toLocaleTimeString('ca-ES',{hour:'2-digit',minute:'2-digit'})):'';
+    return '<div class="ch-row bg-rarity-'+(h.rareza||'comun')+'">'
+      +'<span class="ch-ico">'+(h.icon||'📦')+'</span>'
+      +'<div class="ch-info"><div class="ch-name">'+_esc(h.name||'')+'</div>'
+      +'<div class="ch-meta">'+_esc(h.playerName||'')+(dstr?(' · '+dstr):'')+'</div></div>'
+      +'</div>';
+  }).join('')+'</div>';
+}
+function renderConsumeHistoryPlayer(){
+  var el=document.getElementById('inv-consume-history');if(!el)return;
+  var pid=session.playerId;
+  el.innerHTML=consumeHistoryHTML(consumeHistory.filter(function(h){return h.playerId===pid;}));
+}
+function renderConsumeHistoryAdmin(){
+  var el=document.getElementById('admin-consume-history');if(!el)return;
+  el.innerHTML=consumeHistoryHTML(consumeHistory);
+}
+function consumeItem(itemId){
+  var p=players.find(function(pl){return pl.id===session.playerId;});
+  var item=shopItems.find(function(i){return i.id===itemId;});
+  if(!p||!item)return;
+  var idx=(p.inventory||[]).indexOf(itemId);
+  if(idx<0){toast('No tens aquest ítem.');return;}
+  if(!confirm('Consumir «'+item.name+'»? Desapareixerà de la teva motxilla.'))return;
+  p.inventory.splice(idx,1);
+  if(p.equipped)Object.keys(p.equipped).forEach(function(k){if(p.equipped[k]===itemId)p.equipped[k]=null;});
+  consumeHistory.unshift({itemId:itemId,name:item.name,icon:item.icon||'📦',rareza:item.rareza||'comun',playerId:p.id,playerName:p.name,at:new Date().toISOString()});
+  if(consumeHistory.length>1000)consumeHistory=consumeHistory.slice(0,1000);
+  if(CFG.MODE==='supabase')saveToSupabase();
+  renderInventario();renderShop();
+  try{renderConsumeHistoryPlayer();}catch(e){}
+  toast('Has consumit: '+item.name);
 }
 function saveAvatarInline(){
   if(CFG.MODE==='supabase')saveToSupabase();
@@ -2497,7 +2555,9 @@ function renderShop(){
     else btn='<div style="font-size:11px;color:var(--coral);"><span class="coin"></span> Or insuficient</div>';
     // Equipar/Desequipar si ja el té (només items amb slot d'equip real)
     var eqBtn='';
-    if(equipped)eqBtn='<button class="btn btn-sm" onclick="unequipItem(\''+item.id+'\')">Desequipar</button>';
+    if(isConsumable(item.id)){
+      if(owned)eqBtn='<button class="btn btn-sm btn-gold" onclick="consumeItem(\''+item.id+'\')">🍴 Consumir</button>';
+    }else if(equipped)eqBtn='<button class="btn btn-sm" onclick="unequipItem(\''+item.id+'\')">Desequipar</button>';
     else if(owned)eqBtn='<button class="btn btn-sm btn-p" onclick="equipItem(\''+item.id+'\')">Equipar</button>';
     return '<div class="shop-item bg-rarity-'+(item.rareza||'comun')+' '+cls+'">'
       +'<button class="info-btn" title="Veure info" onclick="event.stopPropagation();showItemDetails(\''+item.id+'\')">i</button>'
@@ -2568,8 +2628,11 @@ async function adminCreateItemFull(){
   var perV=(_mp&&_mp.value.trim()!=='')?parseInt(_mp.value)||0:null;
   var totV=(_mt&&_mt.value.trim()!=='')?parseInt(_mt.value)||0:null;
   if(perV!=null||totV!=null)itemLimits[newItem.id]={per:perV,total:totV};
+  var _consEl=document.getElementById('ai-consumible');
+  if(_consEl&&_consEl.checked)itemConsumable[newItem.id]=true;
   if(CFG.MODE==='supabase'){await saveItemToSupabase(newItem);saveToSupabase();}
   ['ai-name','ai-icon','ai-imageurl','ai-desc','ai-cost','ai-lvl','ai-maxper','ai-maxtotal'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  if(_consEl)_consEl.checked=false;
   ['ai-rfue','ai-rint','ai-ragi','ai-rcar','ai-rsab','ai-bfue','ai-bint','ai-bagi','ai-bcar','ai-bsab'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='0';});
   renderAdminItemsPage();
   renderShop();
@@ -2721,6 +2784,7 @@ function openAdminEditItem(itemId){
     +'<div class="field"><label>Stock total</label><input type="number" id="aem-maxtotal" min="1" value="'+((itemLim(item.id).total!=null&&itemLim(item.id).total!=='')?itemLim(item.id).total:'')+'"/></div>'
     +'</div>'
     +'<div style="font-size:11px;color:var(--muted);">Comprat fins ara: total '+itemBoughtTotal(item.id)+(itemLim(item.id).total?(' / '+itemLim(item.id).total):'')+'. <span style="color:var(--accent);cursor:pointer;" onclick="resetItemPurchases(\''+item.id+'\')">↺ Reiniciar comptador</span></div>'
+    +'<div class="field" style="margin-top:10px;display:flex;align-items:center;gap:8px;"><label style="margin:0;cursor:pointer;"><input type="checkbox" id="aem-consumible"'+(isConsumable(item.id)?' checked':'')+' style="vertical-align:middle;margin-right:6px;"/>🍴 Consumible (desapareix en usar-lo)</label></div>'
     +'<div class="stitle" style="margin-top:10px;">Requisits mínims per comprar (0 = sense requisit)</div>'
     +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">'
     +attrKeys().map(function(k){return '<div class="field" style="margin:0;"><label>'+k.toUpperCase()+'</label><input type="number" id="aem-r'+k+'" value="'+((item.minAttrs&&item.minAttrs[k])||0)+'" min="0"/></div>';}).join('')
@@ -2771,6 +2835,8 @@ async function saveAdminEdit(){
     var totV=(_mt&&_mt.value.trim()!=='')?parseInt(_mt.value)||0:null;
     if(perV==null&&totV==null)delete itemLimits[item.id];
     else itemLimits[item.id]={per:perV,total:totV};
+    var _consEl=document.getElementById('aem-consumible');
+    if(_consEl){if(_consEl.checked)itemConsumable[item.id]=true;else delete itemConsumable[item.id];}
     if(CFG.MODE==='supabase'){saveItemToSupabase(item);saveToSupabase();}
     renderAdminItemsPage();renderShop();
   }else if(_adminEditType==='carta'){
@@ -2842,12 +2908,13 @@ async function createCosmetic(){
 function switchAdminTab(btn, tabId){
   document.querySelectorAll('#page-items-admin .ptab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
-  ['tab-items','tab-cartas','tab-custom'].forEach(function(id){
+  ['tab-items','tab-cartas','tab-custom','tab-consum'].forEach(function(id){
     var el=document.getElementById(id);
     if(el)el.style.display=id===tabId?'block':'none';
   });
   if(tabId==='tab-cartas')renderAdminCartasPage();
   if(tabId==='tab-custom')renderCustomTraitsAdmin();
+  if(tabId==='tab-consum')renderConsumeHistoryAdmin();
 }
 async function adminCreateCarta(){
   var name=document.getElementById('ac-name').value.trim();
@@ -3216,6 +3283,7 @@ function confirmPlannerImport(){
 
   var DEFAULT_DIFF='C';
   var imported=0;
+  var autoClaimed=0;
 
   plannerRows.forEach(function(row){
     var title=(row[titleCol]||'').trim();
@@ -3274,8 +3342,12 @@ function confirmPlannerImport(){
       plannerTags:tags
     };
     missions.push(newM);
-    // Si ja està feta, entra com a completada però amb la recompensa SENSE reclamar
-    if(status==='done')rewardsPending[newM.id]=true;
+    // Si ja està feta: recompensa reclamada AUTOMÀTICAMENT al jugador assignat.
+    // Si no hi ha ningú assignat (no s'ha pogut emparellar "Creado por"), queda pendent de reclamar.
+    if(status==='done'){
+      if(assignedPlayer){awardMissionTo(assignedPlayer,newM);autoClaimed++;}
+      else{rewardsPending[newM.id]=true;}
+    }
     imported++;
   });
 
@@ -3284,7 +3356,7 @@ function confirmPlannerImport(){
   renderAll();
   renderPlannerImported();
   document.getElementById('planner-imported').style.display='block';
-  toast(imported+' missions importades');
+  toast(imported+' missions importades'+(autoClaimed?(' · '+autoClaimed+' recompenses reclamades automàticament'):''));
 }
 
 function clearPlannerImport(){
@@ -4103,6 +4175,8 @@ function renderInventario(){
   var cosmEl=document.getElementById('inv-slots-cosm');
   var gw=document.getElementById('inv-grid');
   if(!gw)return;
+  var goldBanner=document.getElementById('inv-gold-banner');
+  if(goldBanner)goldBanner.innerHTML=p?('<span class="coin"></span> <b>'+(p.gold||0).toLocaleString()+'</b> or'):'';
   if(!p){if(eqEl)eqEl.innerHTML='<div style="color:var(--muted);font-size:13px;">Inicia sessió.</div>';if(cosmEl)cosmEl.innerHTML='';gw.innerHTML='';return;}
   if(!p.equipped)p.equipped=emptyEquipped();
   // Qué slots son cosméticos: los que solo tienen items isCosmetic disponibles, o por convención (gafas,sombrero,capa,alas). Mejor: por tipo de item.
@@ -4180,7 +4254,9 @@ function renderInventario(){
     html+='<div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">'+slLbl+'</div>';
     if(bonusLines)html+='<div class="inv-bonus">'+bonusLines+'</div>';
     html+='<div style="margin-top:auto;padding-top:6px;">';
-    if(eq){
+    if(isConsumable(iid)){
+      html+='<button class="btn btn-sm btn-gold" style="width:100%;" onclick="consumeItem(\''+iid+'\')">🍴 Consumir</button>';
+    }else if(eq){
       html+='<button class="btn btn-sm" style="width:100%;" onclick="unequipItem(\''+iid+'\');renderInventario();">Treure</button>';
     }else{
       html+='<button class="btn btn-sm btn-p" style="width:100%;" onclick="equipItem(\''+iid+'\');renderInventario();">Equipar</button>';
@@ -4214,7 +4290,7 @@ function showItemDetails(id){
   body.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;margin-bottom:1rem;">'
     +img
     +'<div style="font-size:18px;font-weight:600;margin-top:6px;">'+it.name+'</div>'
-    +'<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;"><span class="badge rarity-'+(it.rareza||'comun')+'" style="border:0.5px solid var(--border2);">'+rarLbl+'</span><span class="badge b-gray">'+slLbl+'</span>'+(it.isCosmetic?'<span class="badge b-purple">Cosmètic</span>':'')+'</div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;"><span class="badge rarity-'+(it.rareza||'comun')+'" style="border:0.5px solid var(--border2);">'+rarLbl+'</span><span class="badge b-gray">'+slLbl+'</span>'+(it.isCosmetic?'<span class="badge b-purple">Cosmètic</span>':'')+(isConsumable(it.id)?'<span class="badge b-gold">🍴 Consumible</span>':'')+'</div>'
     +'</div>'
     +(it.desc?'<div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:1rem;padding:.75rem;background:var(--bg3);border-radius:var(--radius);">'+it.desc+'</div>':'')
     +'<div class="stitle">Bonus d\'atributs</div><div style="margin-bottom:1rem;">'+bonus+'</div>'
@@ -4620,7 +4696,7 @@ window.addEventListener('dicebear-ready',function(){
 
 /* ══ EXPONER FUNCIONES EN WINDOW (para onclick del HTML) ══ */
 // Necesario al tener el JS en archivo externo: garantiza que los onclick="fn()" encuentren las funciones.
-try{window.applyMenuNames=applyMenuNames;}catch(e){}try{window.assignMission=assignMission;}catch(e){}try{window.buildAttrBars=buildAttrBars;}catch(e){}try{window.buildAvatarUrl=buildAvatarUrl;}catch(e){}try{window.buildCreatorCls=buildCreatorCls;}catch(e){}try{window.buildCreatorColors=buildCreatorColors;}catch(e){}try{window.buildCreatorEmblems=buildCreatorEmblems;}catch(e){}try{window.buildPentagon=buildPentagon;}catch(e){}try{window.buildStartItemsPreview=buildStartItemsPreview;}catch(e){}try{window.buyItem=buyItem;}catch(e){}try{window.cGoTo=cGoTo;}catch(e){}try{window.cNext=cNext;}catch(e){}try{window.calNav=calNav;}catch(e){}try{window.canBuyItem=canBuyItem;}catch(e){}try{window.checkDailyMissions=checkDailyMissions;}catch(e){}try{window.checkLevelUp=checkLevelUp;}catch(e){}try{window.classToRow=classToRow;}catch(e){}try{window.cleanOldCompleted=cleanOldCompleted;}catch(e){}try{window.clearPlannerImport=clearPlannerImport;}catch(e){}try{window.closeAdminEditModal=closeAdminEditModal;}catch(e){}try{window.closeAvatarEditor=closeAvatarEditor;}catch(e){}try{window.closeEdit=closeEdit;}catch(e){}try{window.closeEventModal=closeEventModal;}catch(e){}try{window.closeMissionModal=closeMissionModal;}catch(e){}try{window.closeReward=closeReward;}catch(e){}try{window.completeMission=completeMission;}catch(e){}try{window.computeClassBonus=computeClassBonus;}catch(e){}try{window.confirmLevelUp=confirmLevelUp;}catch(e){}try{window.confirmPlannerImport=confirmPlannerImport;}catch(e){}try{window.createArc=createArc;}catch(e){}try{window.createMission=createMission;}catch(e){}try{window.deleteArc=deleteArc;}catch(e){}try{window.deleteEvent=deleteEvent;}catch(e){}try{window.deleteMission=deleteMission;}catch(e){}try{window.deletePlayer=deletePlayer;}catch(e){}try{window.doAdminLogin=doAdminLogin;}catch(e){}try{window.doLogout=doLogout;}catch(e){}try{window.doPull=doPull;}catch(e){}try{window.enterApp=enterApp;}catch(e){}try{window.equipItem=equipItem;}catch(e){}try{window.eventItemHTML=eventItemHTML;}catch(e){}try{window.exportJSON=exportJSON;}catch(e){}try{window.backupData=backupData;}catch(e){}try{window.restoreData=restoreData;}catch(e){}try{window.formatDate=formatDate;}catch(e){}try{window.getAdminProfile=getAdminProfile;}catch(e){}try{window.getEffectiveAttrs=getEffectiveAttrs;}catch(e){}try{window.getFilteredEvents=getFilteredEvents;}catch(e){}try{window.getPlayerAvatar=getPlayerAvatar;}catch(e){}try{window.getRarityByChance=getRarityByChance;}catch(e){}try{window.goToMyProfile=goToMyProfile;}catch(e){}try{window.initCalFilterBtns=initCalFilterBtns;}catch(e){}try{window.initTheme=initTheme;}catch(e){}try{window.invEquipSlot=invEquipSlot;}catch(e){}try{window.loadMenuNames=loadMenuNames;}catch(e){}try{window.mCard=mCard;}catch(e){}try{window.meetsReqs=meetsReqs;}catch(e){}try{window.missionToRow=missionToRow;}catch(e){}try{window.openAdminEditCarta=openAdminEditCarta;}catch(e){}try{window.openAdminEditItem=openAdminEditItem;}catch(e){}try{window.openAvatarEditor=openAvatarEditor;}catch(e){}try{window.openEditModal=openEditModal;}catch(e){}try{window.openEventModal=openEventModal;}catch(e){}try{window.openMissionModal=openMissionModal;}catch(e){}try{window.openShowcaseSelector=openShowcaseSelector;}catch(e){}try{window.parsePlannerCSV=parsePlannerCSV;}catch(e){}try{window.parsePlannerExcel=parsePlannerExcel;}catch(e){}try{window.parsePlannerFile=parsePlannerFile;}catch(e){}try{window.plannerDragOver=plannerDragOver;}catch(e){}try{window.plannerDrop=plannerDrop;}catch(e){}try{window.plannerFileSelected=plannerFileSelected;}catch(e){}try{window.populateArcSelect=populateArcSelect;}catch(e){}try{window.promptRenameMenu=promptRenameMenu;}catch(e){}try{window.pullCard=pullCard;}catch(e){}try{window.pullResult=pullResult;}catch(e){}try{window.renderAdminCartasPage=renderAdminCartasPage;}catch(e){}try{window.renderAdminItemsPage=renderAdminItemsPage;}catch(e){}try{window.renderAll=renderAll;}catch(e){}try{window.renderArcs=renderArcs;}catch(e){}try{window.renderAvatar=renderAvatar;}catch(e){}try{window.renderAvatarEditor=renderAvatarEditor;}catch(e){}try{window.renderCalendar=renderCalendar;}catch(e){}try{window.renderClassesAdmin=renderClassesAdmin;}catch(e){}try{window.renderDayEvents=renderDayEvents;}catch(e){}try{window.renderGachaGold=renderGachaGold;}catch(e){}try{window.renderGalleryCards=renderGalleryCards;}catch(e){}try{window.renderGalleryTabs=renderGalleryTabs;}catch(e){}try{window.renderHeroProfile=renderHeroProfile;}catch(e){}try{window.renderHeroTabs=renderHeroTabs;}catch(e){}try{window.renderInventario=renderInventario;}catch(e){}try{window.renderMStats=renderMStats;}catch(e){}try{window.renderMissions=renderMissions;}catch(e){}try{window.renderMyGallery=renderMyGallery;}catch(e){}try{window.renderPlannerImported=renderPlannerImported;}catch(e){}try{window.renderRanking=renderRanking;}catch(e){}try{window.renderShop=renderShop;}catch(e){}try{window.renderUpcoming=renderUpcoming;}catch(e){}try{window.rowToClass=rowToClass;}catch(e){}try{window.rowToMission=rowToMission;}catch(e){}try{window.saveAvatar=saveAvatar;}catch(e){}try{window.saveEdit=saveEdit;}catch(e){}try{window.saveEvent=saveEvent;}catch(e){}try{window.saveNewChar=saveNewChar;}catch(e){}try{window.selectCalDay=selectCalDay;}catch(e){}try{window.selectGalleryHero=selectGalleryHero;}catch(e){}try{window.showInvTab=showInvTab;}catch(e){}try{window.toggleGalleryOwned=toggleGalleryOwned;}catch(e){}try{window.toggleGalleryDup=toggleGalleryDup;}catch(e){}
+try{window.applyMenuNames=applyMenuNames;}catch(e){}try{window.assignMission=assignMission;}catch(e){}try{window.buildAttrBars=buildAttrBars;}catch(e){}try{window.buildAvatarUrl=buildAvatarUrl;}catch(e){}try{window.buildCreatorCls=buildCreatorCls;}catch(e){}try{window.buildCreatorColors=buildCreatorColors;}catch(e){}try{window.buildCreatorEmblems=buildCreatorEmblems;}catch(e){}try{window.buildPentagon=buildPentagon;}catch(e){}try{window.buildStartItemsPreview=buildStartItemsPreview;}catch(e){}try{window.consumeItem=consumeItem;}catch(e){}try{window.buyItem=buyItem;}catch(e){}try{window.cGoTo=cGoTo;}catch(e){}try{window.cNext=cNext;}catch(e){}try{window.calNav=calNav;}catch(e){}try{window.canBuyItem=canBuyItem;}catch(e){}try{window.checkDailyMissions=checkDailyMissions;}catch(e){}try{window.checkLevelUp=checkLevelUp;}catch(e){}try{window.classToRow=classToRow;}catch(e){}try{window.cleanOldCompleted=cleanOldCompleted;}catch(e){}try{window.clearPlannerImport=clearPlannerImport;}catch(e){}try{window.closeAdminEditModal=closeAdminEditModal;}catch(e){}try{window.closeAvatarEditor=closeAvatarEditor;}catch(e){}try{window.closeEdit=closeEdit;}catch(e){}try{window.closeEventModal=closeEventModal;}catch(e){}try{window.closeMissionModal=closeMissionModal;}catch(e){}try{window.closeReward=closeReward;}catch(e){}try{window.completeMission=completeMission;}catch(e){}try{window.computeClassBonus=computeClassBonus;}catch(e){}try{window.confirmLevelUp=confirmLevelUp;}catch(e){}try{window.confirmPlannerImport=confirmPlannerImport;}catch(e){}try{window.createArc=createArc;}catch(e){}try{window.createMission=createMission;}catch(e){}try{window.deleteArc=deleteArc;}catch(e){}try{window.deleteEvent=deleteEvent;}catch(e){}try{window.deleteMission=deleteMission;}catch(e){}try{window.deletePlayer=deletePlayer;}catch(e){}try{window.doAdminLogin=doAdminLogin;}catch(e){}try{window.doLogout=doLogout;}catch(e){}try{window.doPull=doPull;}catch(e){}try{window.enterApp=enterApp;}catch(e){}try{window.equipItem=equipItem;}catch(e){}try{window.eventItemHTML=eventItemHTML;}catch(e){}try{window.exportJSON=exportJSON;}catch(e){}try{window.backupData=backupData;}catch(e){}try{window.restoreData=restoreData;}catch(e){}try{window.formatDate=formatDate;}catch(e){}try{window.getAdminProfile=getAdminProfile;}catch(e){}try{window.getEffectiveAttrs=getEffectiveAttrs;}catch(e){}try{window.getFilteredEvents=getFilteredEvents;}catch(e){}try{window.getPlayerAvatar=getPlayerAvatar;}catch(e){}try{window.getRarityByChance=getRarityByChance;}catch(e){}try{window.goToMyProfile=goToMyProfile;}catch(e){}try{window.initCalFilterBtns=initCalFilterBtns;}catch(e){}try{window.initTheme=initTheme;}catch(e){}try{window.invEquipSlot=invEquipSlot;}catch(e){}try{window.loadMenuNames=loadMenuNames;}catch(e){}try{window.mCard=mCard;}catch(e){}try{window.meetsReqs=meetsReqs;}catch(e){}try{window.missionToRow=missionToRow;}catch(e){}try{window.openAdminEditCarta=openAdminEditCarta;}catch(e){}try{window.openAdminEditItem=openAdminEditItem;}catch(e){}try{window.openAvatarEditor=openAvatarEditor;}catch(e){}try{window.openEditModal=openEditModal;}catch(e){}try{window.openEventModal=openEventModal;}catch(e){}try{window.openMissionModal=openMissionModal;}catch(e){}try{window.openShowcaseSelector=openShowcaseSelector;}catch(e){}try{window.parsePlannerCSV=parsePlannerCSV;}catch(e){}try{window.parsePlannerExcel=parsePlannerExcel;}catch(e){}try{window.parsePlannerFile=parsePlannerFile;}catch(e){}try{window.plannerDragOver=plannerDragOver;}catch(e){}try{window.plannerDrop=plannerDrop;}catch(e){}try{window.plannerFileSelected=plannerFileSelected;}catch(e){}try{window.populateArcSelect=populateArcSelect;}catch(e){}try{window.promptRenameMenu=promptRenameMenu;}catch(e){}try{window.pullCard=pullCard;}catch(e){}try{window.pullResult=pullResult;}catch(e){}try{window.renderAdminCartasPage=renderAdminCartasPage;}catch(e){}try{window.renderAdminItemsPage=renderAdminItemsPage;}catch(e){}try{window.renderAll=renderAll;}catch(e){}try{window.renderArcs=renderArcs;}catch(e){}try{window.renderAvatar=renderAvatar;}catch(e){}try{window.renderAvatarEditor=renderAvatarEditor;}catch(e){}try{window.renderCalendar=renderCalendar;}catch(e){}try{window.renderClassesAdmin=renderClassesAdmin;}catch(e){}try{window.renderDayEvents=renderDayEvents;}catch(e){}try{window.renderGachaGold=renderGachaGold;}catch(e){}try{window.renderGalleryCards=renderGalleryCards;}catch(e){}try{window.renderGalleryTabs=renderGalleryTabs;}catch(e){}try{window.renderHeroProfile=renderHeroProfile;}catch(e){}try{window.renderHeroTabs=renderHeroTabs;}catch(e){}try{window.renderInventario=renderInventario;}catch(e){}try{window.renderMStats=renderMStats;}catch(e){}try{window.renderMissions=renderMissions;}catch(e){}try{window.renderMyGallery=renderMyGallery;}catch(e){}try{window.renderPlannerImported=renderPlannerImported;}catch(e){}try{window.renderRanking=renderRanking;}catch(e){}try{window.renderShop=renderShop;}catch(e){}try{window.renderUpcoming=renderUpcoming;}catch(e){}try{window.rowToClass=rowToClass;}catch(e){}try{window.rowToMission=rowToMission;}catch(e){}try{window.saveAvatar=saveAvatar;}catch(e){}try{window.saveEdit=saveEdit;}catch(e){}try{window.saveEvent=saveEvent;}catch(e){}try{window.saveNewChar=saveNewChar;}catch(e){}try{window.selectCalDay=selectCalDay;}catch(e){}try{window.selectGalleryHero=selectGalleryHero;}catch(e){}try{window.showInvTab=showInvTab;}catch(e){}try{window.toggleGalleryOwned=toggleGalleryOwned;}catch(e){}try{window.toggleGalleryDup=toggleGalleryDup;}catch(e){}
 try{window.renderMarket=renderMarket;}catch(e){}try{window.createListing=createListing;}catch(e){}try{window.cancelListing=cancelListing;}catch(e){}try{window.buyListing=buyListing;}catch(e){}try{window.tradeListing=tradeListing;}catch(e){}try{window.onListingModeChange=onListingModeChange;}catch(e){}try{window.quickSellCard=quickSellCard;}catch(e){}try{window.selectSellCard=selectSellCard;}catch(e){}try{window.selectWantCard=selectWantCard;}catch(e){}try{window.renderQuickSell=renderQuickSell;}catch(e){}try{window.renderCardPickers=renderCardPickers;}catch(e){}try{window.saveAvatarInline=saveAvatarInline;}catch(e){}try{window.avaOptLabel=avaOptLabel;}catch(e){}try{window.setPlayerFrame=setPlayerFrame;}catch(e){}try{window.renderFramePicker=renderFramePicker;}catch(e){}try{window.selectHero=selectHero;}catch(e){}try{window.setAvatarOpt=setAvatarOpt;}catch(e){}try{window.setCalFilter=setCalFilter;}catch(e){}try{window.showLevelUpPopup=showLevelUpPopup;}catch(e){}try{window.showPage=showPage;}catch(e){}try{window.showPage_planner=showPage_planner;}catch(e){}try{window.showPlannerPreview=showPlannerPreview;}catch(e){}try{window.showRewardPopup=showRewardPopup;}catch(e){}try{window.showScreen=showScreen;}catch(e){}try{window.switchAdminTab=switchAdminTab;}catch(e){}try{window.switchPTab=switchPTab;}catch(e){}try{window.toast=toast;}catch(e){}try{window.toggleDailyFields=toggleDailyFields;}catch(e){}try{window.toggleTheme=toggleTheme;}catch(e){}try{window.toggleUMenu=toggleUMenu;}catch(e){}try{window.unequipItem=unequipItem;}catch(e){}try{window.updateArcCounts=updateArcCounts;}catch(e){}try{window.updateSidebarAvatar=updateSidebarAvatar;}catch(e){}
 try{window.adminChangeVia=adminChangeVia;}catch(e){}try{window.adminCreateCarta=adminCreateCarta;}catch(e){}try{window.adminCreateItemFull=adminCreateItemFull;}catch(e){}try{window.adminDeleteCarta=adminDeleteCarta;}catch(e){}try{window.adminDeleteItemFull=adminDeleteItemFull;}catch(e){}try{window.deleteCartaFromSupabase=deleteCartaFromSupabase;}catch(e){}try{window.deleteItemFromSupabase=deleteItemFromSupabase;}catch(e){}try{window.deleteMissionFromSupabase=deleteMissionFromSupabase;}catch(e){}try{window.doLogin=doLogin;}catch(e){}try{window.loadClassesFromSupabase=loadClassesFromSupabase;}catch(e){}try{window.loadData=loadData;}catch(e){}try{window.loadFromSupabase=loadFromSupabase;}catch(e){}try{window.loadMissionsFromSupabase=loadMissionsFromSupabase;}catch(e){}try{window.saveAdminEdit=saveAdminEdit;}catch(e){}try{window.saveAllMissionsToSupabase=saveAllMissionsToSupabase;}catch(e){}try{window.saveCartaToSupabase=saveCartaToSupabase;}catch(e){}try{window.saveClassEdit=saveClassEdit;}catch(e){}try{window.saveClassToSupabase=saveClassToSupabase;}catch(e){}try{window.saveItemToSupabase=saveItemToSupabase;}catch(e){}try{window.saveMissionToSupabase=saveMissionToSupabase;}catch(e){}try{window.saveToSupabase=saveToSupabase;}catch(e){}
 try{window.saveAttrNames=saveAttrNames;}catch(e){}

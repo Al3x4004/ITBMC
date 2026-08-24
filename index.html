@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="https://i.imgur.com/Z1wFN0q.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ITBMC">
-<link rel="stylesheet" href="css/styles.css?v=63">
+<link rel="stylesheet" href="css/styles.css?v=64">
 </head>
 <body>
 <div id="boot-loader"><div class="boot-spinner"></div><div class="boot-text">Carregant ITBMC…</div></div>
@@ -310,14 +310,18 @@
 
     <!-- INVENTARIO -->
     <div id="page-inventario" class="page">
-      <div style="margin-bottom:1.25rem;">
-        <div style="font-size:18px;font-weight:500;margin-bottom:4px;">Inventari</div>
-        <div style="font-size:13px;color:var(--muted);">Equipa els ítems que has aconseguit i mira la teva col·lecció.</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:1.25rem;">
+        <div>
+          <div style="font-size:18px;font-weight:500;margin-bottom:4px;">Inventari</div>
+          <div style="font-size:13px;color:var(--muted);">Equipa els ítems que has aconseguit i mira la teva col·lecció.</div>
+        </div>
+        <div id="inv-gold-banner" class="inv-gold-banner"></div>
       </div>
       <div class="htabs" id="inv-tabs">
         <div class="htab active" onclick="showInvTab('equip',this)"><svg class="uico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="m3 8 9 5 9-5"/></svg>Equip</div>
         <div class="htab" onclick="showInvTab('cosm',this)"><svg class="uico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/></svg>Cosmètics</div>
         <div class="htab" onclick="showInvTab('galeria',this)"><svg class="uico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m4 18 5-5 4 4 3-3 4 4"/></svg>Galeria</div>
+        <div class="htab" onclick="showInvTab('historial',this)"><svg class="uico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l3 3"/></svg>Historial</div>
       </div>
 
       <!-- Pestaña: Equipo -->
@@ -375,6 +379,13 @@
       <div id="inv-tab-galeria" class="inv-tab-panel" style="display:none;">
         <div class="stitle">La meva galeria</div>
         <div id="inv-my-gallery"></div>
+      </div>
+
+      <!-- Pestaña: Historial de consumibles -->
+      <div id="inv-tab-historial" class="inv-tab-panel" style="display:none;">
+        <div class="stitle">Historial de consumibles</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Ítems consumibles que has fet servir.</div>
+        <div id="inv-consume-history"></div>
       </div>
     </div>
 
@@ -549,6 +560,7 @@
         <div class="ptab active" onclick="switchAdminTab(this,'tab-items')" id="admin-tab-items">Ítems</div>
         <div class="ptab" onclick="switchAdminTab(this,'tab-cartas')" id="admin-tab-cartas">Cartes Gacha</div>
         <div class="ptab" onclick="switchAdminTab(this,'tab-custom')" id="admin-tab-custom">Customitzables</div>
+        <div class="ptab" onclick="switchAdminTab(this,'tab-consum')" id="admin-tab-consum">Consum</div>
       </div>
       <div id="tab-items">
       <!-- Gestor de categories (slots d'equipament) -->
@@ -597,7 +609,7 @@
               <option value="solo_tienda">Només Botiga</option>
             </select>
           </div>
-          <div class="field"></div>
+          <div class="field" style="display:flex;align-items:center;gap:8px;"><label style="margin:0;cursor:pointer;"><input type="checkbox" id="ai-consumible" style="vertical-align:middle;margin-right:6px;"/>🍴 Consumible (desapareix en usar-lo)</label></div>
           <div style="grid-column:1/-1;">
             <div class="stitle">Requisits d'atributs (0 = sense requisit)</div>
             <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
@@ -719,6 +731,14 @@
           <div id="cu-list"></div>
         </div>
       </div><!-- end tab-custom -->
+
+      <div id="tab-consum" style="display:none;">
+        <div class="card">
+          <div class="stitle">Historial de consumibles</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Tots els ítems consumibles que els jugadors han fet servir, del més recent al més antic.</div>
+          <div id="admin-consume-history"></div>
+        </div>
+      </div>
 
     </div>
 
@@ -962,6 +982,6 @@
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="js/app.js?v=96"></script>
+<script src="js/app.js?v=97"></script>
 </body>
 </html>

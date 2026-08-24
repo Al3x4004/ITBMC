@@ -1463,3 +1463,15 @@ body::after{display:none !important;}
 .htab .uico,.ptab .uico{display:inline-block;}
 /* Moneda d'or unificada (abans SVG inline repetit) */
 .coin{display:inline-block;width:.95em;height:.95em;vertical-align:-2px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23ffcf40' stroke='%23d4a017' stroke-width='2'/%3E%3Ccircle cx='12' cy='12' r='5.5' fill='none' stroke='%23d4a017' stroke-width='1.5'/%3E%3C/svg%3E") center/contain no-repeat;}
+
+/* ── Banner d'or a l'inventari ── */
+.inv-gold-banner{display:inline-flex;align-items:center;gap:6px;font-size:15px;font-weight:600;color:var(--gold);background:var(--gold-bg);border:0.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 14px;white-space:nowrap;}
+.inv-gold-banner b{font-weight:800;}
+
+/* ── Historial de consumibles ── */
+.ch-list{display:flex;flex-direction:column;gap:8px;}
+.ch-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border:0.5px solid var(--border);border-radius:var(--radius);background:var(--bg2);}
+.ch-ico{font-size:24px;flex-shrink:0;width:34px;text-align:center;}
+.ch-info{min-width:0;}
+.ch-name{font-size:14px;font-weight:600;color:var(--text);}
+.ch-meta{font-size:12px;color:var(--muted);margin-top:2px;}
