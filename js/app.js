@@ -992,8 +992,8 @@ function renderUserWidgets(){
     html+='<div id="wcard-'+wid+'" class="card widget-card widget-'+w.type+'" style="width:'+sz.w+'px;left:'+pos.x+'px;top:'+pos.y+'px;">'
       +'<div class="stitle widget-drag" onmousedown="startWidgetDrag(event,\''+wid+'\')" ontouchstart="startWidgetDrag(event,\''+wid+'\')" title="Arrossega per moure" style="margin:0 0 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:move;">⠿ '+(w.icon||'🧩')+' '+w.name+'</div>'
       +'<iframe id="wframe-'+wid+'" src="'+_esc(w.embedUrl)+'" width="100%" height="'+sz.h+'" frameborder="0" allowfullscreen="" sandbox="allow-scripts allow-same-origin allow-popups allow-presentation allow-forms" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style="border-radius:10px;display:block;height:'+sz.h+'px;"></iframe>'
-      +'<button class="widget-autofit" title="Auto-ajustar la mida (16:9)" onclick="autoFitWidget(\''+wid+'\')">⤢</button>'
-      +'<div class="widget-resize" title="Arrossega per canviar la mida" onmousedown="startWidgetResize(event,\''+wid+'\')" ontouchstart="startWidgetResize(event,\''+wid+'\')">◢</div>'
+      +'<div class="widget-resize widget-resize-tr" title="Arrossega per canviar la mida" onmousedown="startWidgetResize(event,\''+wid+'\',\'tr\')" ontouchstart="startWidgetResize(event,\''+wid+'\',\'tr\')">◹</div>'
+      +'<div class="widget-resize" title="Arrossega per canviar la mida" onmousedown="startWidgetResize(event,\''+wid+'\',\'br\')" ontouchstart="startWidgetResize(event,\''+wid+'\',\'br\')">◢</div>'
       +'</div>';
   });
   html+='</div>';
@@ -1124,13 +1124,14 @@ function autoFitWidget(wid){
   toast('Extensió ajustada');
 }
 var _wResize=null;
-function startWidgetResize(e,wid){
+function startWidgetResize(e,wid,corner){
   var fr=document.getElementById('wframe-'+wid);
   var card=document.getElementById('wcard-'+wid);
   if(!fr||!card)return;
   if(e.cancelable)e.preventDefault();
+  if(e.stopPropagation)e.stopPropagation();
   var pt=e.touches?e.touches[0]:e;
-  _wResize={wid:wid,fr:fr,card:card,startX:pt.clientX,startY:pt.clientY,startW:card.offsetWidth,startH:fr.offsetHeight};
+  _wResize={wid:wid,fr:fr,card:card,corner:corner||'br',startX:pt.clientX,startY:pt.clientY,startW:card.offsetWidth,startH:fr.offsetHeight,startTop:card.offsetTop};
   document.querySelectorAll('.widget-card iframe').forEach(function(f){f.style.pointerEvents='none';});
   document.body.style.userSelect='none';
   document.addEventListener('mousemove',onWidgetResizeMove);
@@ -1142,15 +1143,29 @@ function onWidgetResizeMove(e){
   if(!_wResize)return;
   if(e.cancelable)e.preventDefault();
   var pt=e.touches?e.touches[0]:e;
-  var w=Math.max(240,Math.min(1200,_wResize.startW+(pt.clientX-_wResize.startX)));
-  var h=Math.max(80,Math.min(800,_wResize.startH+(pt.clientY-_wResize.startY)));
+  var dx=pt.clientX-_wResize.startX, dy=pt.clientY-_wResize.startY;
+  var w=Math.max(240,Math.min(1200,_wResize.startW+dx));
+  var h;
+  if(_wResize.corner==='tr'){
+    // Cantonada superior dreta: amplada creix cap a la dreta, alçada creix cap amunt (part de baix fixa)
+    h=Math.max(80,Math.min(800,_wResize.startH-dy));
+    var newTop=_wResize.startTop+(_wResize.startH-h);
+    if(newTop<0){h=_wResize.startH+_wResize.startTop;newTop=0;}
+    _wResize.card.style.top=newTop+'px';
+  }else{
+    h=Math.max(80,Math.min(800,_wResize.startH+dy));
+  }
   _wResize.card.style.width=w+'px';
   _wResize.fr.style.height=h+'px';_wResize.fr.height=h;
 }
 function endWidgetResize(){
   if(!_wResize)return;
   var p=players.find(function(pl){return pl.id===session.playerId;});
-  if(p){if(!p.widgetSizes)p.widgetSizes={};p.widgetSizes[_wResize.wid]={w:Math.round(_wResize.card.offsetWidth),h:Math.round(_wResize.fr.offsetHeight)};if(CFG.MODE==='supabase')saveToSupabase();}
+  if(p){
+    if(!p.widgetSizes)p.widgetSizes={};p.widgetSizes[_wResize.wid]={w:Math.round(_wResize.card.offsetWidth),h:Math.round(_wResize.fr.offsetHeight)};
+    if(_wResize.corner==='tr'){if(!p.widgetPos)p.widgetPos={};p.widgetPos[_wResize.wid]={x:Math.round(_wResize.card.offsetLeft),y:Math.round(_wResize.card.offsetTop)};}
+    if(CFG.MODE==='supabase')saveToSupabase();
+  }
   document.querySelectorAll('.widget-card iframe').forEach(function(f){f.style.pointerEvents='';});
   document.body.style.userSelect='';
   document.removeEventListener('mousemove',onWidgetResizeMove);
