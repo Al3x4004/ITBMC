@@ -1480,3 +1480,14 @@ body::after{display:none !important;}
 .ch-info{min-width:0;}
 .ch-name{font-size:14px;font-weight:600;color:var(--text);}
 .ch-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+
+/* Equip: slots petits que caben tots en una sola fila (es reparteixen l'ample) */
+#inv-slots-equip{display:flex !important;flex-wrap:nowrap !important;gap:8px !important;overflow-x:auto;grid-template-columns:none !important;justify-content:flex-start !important;}
+#inv-slots-equip .inv-slot{flex:1 1 0 !important;min-width:64px !important;width:auto !important;min-height:auto !important;padding:.55rem .35rem !important;gap:4px !important;}
+#inv-slots-equip .inv-slot-icon{font-size:22px !important;line-height:1 !important;}
+#inv-slots-equip .inv-slot-img{width:38px !important;height:38px !important;}
+#inv-slots-equip .inv-slot-name{font-size:10px !important;white-space:nowrap !important;}
+#inv-slots-equip .inv-slot-label{font-size:9px !important;}
+
+/* Inici: contenidor més ample (més zona lateral per col·locar/ampliar widgets) */
+body.on-inicio .app{max-width:min(1720px,97vw);}

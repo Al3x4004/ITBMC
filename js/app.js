@@ -1304,6 +1304,8 @@ function showPage(name,btn){
   document.getElementById('page-'+name).classList.add('active');
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
+  // L'inici usa un contenidor més ample (més zona lateral per als widgets)
+  document.body.classList.toggle('on-inicio',name==='inicio');
   if(name==='heroe')renderHeroProfile(curHero);
   if(name==='gacha'){renderGachaGold();renderMyGallery();renderGalleryTabs();}
   if(name==='tienda')renderShop();
