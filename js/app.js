@@ -2535,6 +2535,7 @@ function openEditModal(pid){
   const p=players.find(p=>p.id===pid);if(!p)return;
   editPid=pid;
   document.getElementById('e-name').value=p.name;
+  var _ern=document.getElementById('e-rn');if(_ern)_ern.value=p.realName||'';
   document.getElementById('e-lore').value=p.lore;
   document.getElementById('e-quote').value=p.quote;
   const ec=document.getElementById('e-colors');ec.innerHTML='';
@@ -2583,6 +2584,7 @@ function deletePlayer(){
 function saveEdit(){
   const p=players.find(p=>p.id===editPid);if(!p)return;
   p.name=document.getElementById('e-name').value.trim()||p.name;
+  var _ern=document.getElementById('e-rn');if(_ern)p.realName=_ern.value.trim();
   p.lore=document.getElementById('e-lore').value.trim();
   p.quote=document.getElementById('e-quote').value.trim();
   if(session.isAdmin){

@@ -1490,4 +1490,5 @@ body::after{display:none !important;}
 #inv-slots-equip .inv-slot-label{font-size:9px !important;}
 
 /* Inici: contenidor més ample (més zona lateral per col·locar/ampliar widgets) */
-body.on-inicio .app{max-width:min(1720px,97vw);}
+/* Inici: contenidor ample amb marges laterals simètrics i petits (màxima zona per als widgets) */
+body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;padding-right:1.5rem !important;}

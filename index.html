@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="https://i.imgur.com/Z1wFN0q.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ITBMC">
-<link rel="stylesheet" href="css/styles.css?v=69">
+<link rel="stylesheet" href="css/styles.css?v=70">
 </head>
 <body>
 <div id="boot-loader"><div class="boot-spinner"></div><div class="boot-text">Carregant ITBMC…</div></div>
@@ -98,8 +98,8 @@
   <div class="lbox">
     <h2>Benvingut de nou</h2>
     <p>Introdueix el teu nom de personatge i la contrasenya.</p>
-    <div class="field"><label>Nom del personatge</label><input type="text" id="ln" placeholder="Ex: Aldric l'Arcà"/></div>
-    <div class="field"><label>Contrasenya</label><input type="password" id="lp" placeholder="La teva contrasenya"/><div class="errmsg" id="lerr">Nom o contrasenya incorrectes.</div></div>
+    <div class="field"><label>Nom del personatge</label><input type="text" id="ln" placeholder="Ex: Aldric l'Arcà" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+    <div class="field"><label>Contrasenya</label><input type="password" id="lp" placeholder="La teva contrasenya" onkeydown="if(event.key==='Enter')doLogin()"/><div class="errmsg" id="lerr">Nom o contrasenya incorrectes.</div></div>
     <div style="display:flex;gap:8px;"><button class="btn" onclick="showScreen('screen-welcome')">← Enrere</button><button class="btn btn-p" style="flex:1" onclick="doLogin()">Entrar</button></div>
   </div>
 </div>
@@ -109,7 +109,7 @@
   <div class="lbox">
     <h2>Accés admin 👑</h2>
     <p>Introdueix la contrasenya d'administrador.</p>
-    <div class="field"><label>Contrasenya admin</label><input type="password" id="ap" placeholder="Contrasenya"/><div class="errmsg" id="aerr">Contrasenya incorrecta.</div></div>
+    <div class="field"><label>Contrasenya admin</label><input type="password" id="ap" placeholder="Contrasenya" onkeydown="if(event.key==='Enter')doAdminLogin()"/><div class="errmsg" id="aerr">Contrasenya incorrecta.</div></div>
     <div style="display:flex;gap:8px;"><button class="btn" onclick="showScreen('screen-welcome')">← Enrere</button><button class="btn btn-p" style="flex:1" onclick="doAdminLogin()">Entrar</button></div>
   </div>
 </div>
@@ -876,6 +876,7 @@
       <button class="btn btn-sm" onclick="closeEdit()">✕</button>
     </div>
     <div class="field"><label>Nom del personatge</label><input type="text" id="e-name"/></div>
+    <div class="field"><label>Nom real</label><input type="text" id="e-rn" placeholder="Ex: Pol Figuerola"/></div>
     <div class="field"><label>Color</label><div class="crow" id="e-colors"></div></div>
     <div class="field"><label>Emblema</label><div id="e-emblems" style="display:flex;gap:8px;flex-wrap:wrap;"></div></div>
     <div class="field"><label>Lore</label><textarea id="e-lore"></textarea></div>
@@ -995,6 +996,6 @@
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="js/app.js?v=104"></script>
+<script src="js/app.js?v=105"></script>
 </body>
 </html>
