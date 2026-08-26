@@ -375,7 +375,8 @@ function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:c
 function logActivity(pid,m,goldGiven){
   if(!pid||!m)return;
   var tags=(m.plannerTags&&m.plannerTags.indexOf('weekly:')!==0)?m.plannerTags.split(';').map(function(t){return t.trim();}).filter(Boolean):[];
-  statsLog.push({t:new Date().toISOString(),pid:pid,xp:m.xp||0,gold:goldGiven||0,frag:m.frag||0,hours:m.durationH||0,stars:m.stars||0,diff:m.diff||'C',arc:m.arc||'General',tags:tags});
+  var _ak=m.attr?(attrKeyFromName(m.attr)||''):'';
+  statsLog.push({t:new Date().toISOString(),pid:pid,xp:m.xp||0,gold:goldGiven||0,frag:m.frag||0,hours:m.durationH||0,stars:m.stars||0,diff:m.diff||'C',arc:m.arc||'General',tags:tags,attr:_ak,attrPts:(_ak?(m.attrPts||0):0)});
   // Poda: conservar ~13 mesos i màxim 4000 entrades
   var lim=new Date();lim.setMonth(lim.getMonth()-13);var limS=lim.toISOString();
   statsLog=statsLog.filter(function(e){return e.t>=limS;});
@@ -1316,6 +1317,7 @@ function showPage(name,btn){
   if(name==='misiones')populateArcSelect();
   if(name==='calendario'){if(!calState.selectedDate)calState.selectedDate=new Date().toISOString().slice(0,10);renderCalendar();}
   if(name==='inicio'){try{renderInicio();}catch(e){}}
+  if(name==='panoramica'){try{renderPanoramica();}catch(e){console.error('panoramica',e);}}
   if(name==='estadistiques'){try{renderStats();}catch(e){}}
   if(name==='planner'){renderPlannerImported();}
   if(name==='items-admin'){renderAdminItemsPage();renderAdminCartasPage();}
@@ -4854,9 +4856,148 @@ window.addEventListener('dicebear-ready',function(){
   }catch(e){}
 });
 
+/* ══ PANORÀMICA (dashboard setmanal de l'equip) ══ */
+var panoOffset=0;
+function panoNav(d){panoOffset+=d;if(panoOffset>0)panoOffset=0;renderPanoramica();}
+function _panoWeek(offset){
+  var r=_statsRange('week',offset);
+  var names=['Dl','Dt','Dc','Dj','Dv'];var days=[];
+  for(var i=0;i<5;i++){var dd=new Date(r.start);dd.setDate(r.start.getDate()+i);days.push({key:dd.toISOString().slice(0,10),label:names[i]});}
+  return {start:r.start,end:r.end,label:r.label,days:days};
+}
+// Agregació setmanal de TOT l'equip (ignora el filtre de persona de les Analítiques)
+function _panoAgg(start,end){
+  var s=start.toISOString(),e=end.toISOString();
+  var A={missions:0,hours:0,gold:0,xp:0,starsSum:0,starsN:0,byPid:{},byTag:{},byArc:{}};
+  statsLog.forEach(function(x){
+    if(!(x.t>=s&&x.t<e))return;
+    A.missions++;A.hours+=x.hours||0;A.gold+=x.gold||0;A.xp+=x.xp||0;
+    if(x.stars>0){A.starsSum+=x.stars;A.starsN++;}
+    var b=A.byPid[x.pid]=A.byPid[x.pid]||{hours:0,gold:0,xp:0,missions:0,byDay:{},attrs:{}};
+    b.hours+=x.hours||0;b.gold+=x.gold||0;b.xp+=x.xp||0;b.missions++;
+    var day=x.t.slice(0,10);b.byDay[day]=b.byDay[day]||{hours:0,gold:0};b.byDay[day].hours+=x.hours||0;b.byDay[day].gold+=x.gold||0;
+    (x.tags||[]).forEach(function(tg){A.byTag[tg]=(A.byTag[tg]||0)+1;});
+    A.byArc[x.arc||'General']=(A.byArc[x.arc||'General']||0)+1;
+    if(x.attr&&x.attrPts){b.attrs[x.attr]=(b.attrs[x.attr]||0)+x.attrPts;}
+  });
+  return A;
+}
+function _panoDonut(segs,centerLbl){
+  var total=segs.reduce(function(s,x){return s+(x.value||0);},0);
+  var r=54,c=2*Math.PI*r,off=0;
+  var arcs=segs.filter(function(s){return s.value>0;}).map(function(s){
+    var len=(total?s.value/total:0)*c;
+    var el='<circle cx="70" cy="70" r="'+r+'" fill="none" stroke="'+s.color+'" stroke-width="16" stroke-linecap="butt" stroke-dasharray="'+len.toFixed(2)+' '+(c-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 70 70)"/>';
+    off+=len;return el;
+  }).join('');
+  return '<svg viewBox="0 0 140 140" class="pano-donut"><circle cx="70" cy="70" r="'+r+'" fill="none" stroke="var(--bg3)" stroke-width="16"/>'+arcs
+    +'<text x="70" y="68" text-anchor="middle" class="pano-donut-num">'+total+'</text>'
+    +'<text x="70" y="86" text-anchor="middle" class="pano-donut-lbl">'+(centerLbl||'TOTAL')+'</text></svg>';
+}
+function _panoStack(week,persons,valFn,fmtFn){
+  var dayTot=week.days.map(function(d){return persons.reduce(function(s,p){return s+(valFn(p.id,d.key)||0);},0);});
+  var maxD=Math.max.apply(null,dayTot.concat([1]));var H=150;
+  return '<div class="pano-bars">'+week.days.map(function(d,di){
+    var segs=persons.map(function(p){var v=valFn(p.id,d.key)||0;if(v<=0)return '';var h=(v/maxD)*H;return '<div class="pano-seg" style="height:'+h.toFixed(1)+'px;background:'+p.color+';" title="'+_esc(p.name)+': '+fmtFn(v)+'"></div>';}).join('');
+    var tot=dayTot[di];
+    return '<div class="pano-col"><div class="pano-coltot">'+(tot>0?fmtFn(tot):'')+'</div><div class="pano-bar" style="height:'+H+'px;">'+segs+'</div><div class="pano-collbl">'+d.label+'</div></div>';
+  }).join('')+'</div>';
+}
+function _panoPersonList(persons,valFn,fmtFn){
+  var arr=persons.map(function(p){return {p:p,v:valFn(p.id)};}).sort(function(a,b){return b.v-a.v;});
+  return '<div class="pano-plist">'+arr.map(function(x){
+    return '<div class="pano-prow"><span class="pano-pdot" style="background:'+x.p.color+';"></span><span class="pano-pemb">'+(x.p.emblem||'')+'</span><span class="pano-pname">'+_esc((x.p.name||'').split(' ')[0])+'</span><span class="pano-pval">'+fmtFn(x.v)+'</span></div>';
+  }).join('')+'</div>';
+}
+function renderPanoramica(){
+  var host=document.getElementById('pano-body');if(!host)return;
+  var week=_panoWeek(panoOffset);
+  var A=_panoAgg(week.start,week.end);
+  var prev=_panoWeek(panoOffset-1);var Ap=_panoAgg(prev.start,prev.end);
+  var persons=players.filter(function(p){return p&&p.id;});
+  var coin='<span class="coin"></span>';
+  // Banner: jugador de la sessió (o genèric si admin)
+  var me=players.find(function(p){return p.id===session.playerId;});
+  var avatarHtml='<div style="font-size:88px;">👑</div>';
+  if(me){try{getPlayerAvatar(me);avatarHtml=frameWrap(me,renderAvatar(me,'pixel-avatar-lg'));}catch(e){avatarHtml='<div style="font-size:88px;">'+(me.emblem||'🦸')+'</div>';}}
+  var bReal=me?(me.realName||''):'Quarter General';
+  var bName=me?me.name:'DÉU';
+  var bClass=me?me.cls:'Administrador';
+  var bQuote=me?(me.quote||''):'Tens el control absolut del Quarter General.';
+  var bColor=me?me.color:'#e4a428';
+  var now=new Date();
+  var dateStr=now.toLocaleDateString('ca-ES',{day:'numeric',month:'long',year:'numeric'}).toUpperCase();
+  var dow=now.toLocaleDateString('ca-ES',{weekday:'long'}).toUpperCase();
+  var banner='<div class="pano-banner" style="--pc:'+bColor+';">'
+    +'<div class="pano-banner-text">'
+      +(bReal?'<div class="pano-realname">'+_esc(bReal)+'</div>':'')
+      +'<div class="pano-charname">'+_esc(bName)+'</div>'
+      +'<div class="pano-class">'+_esc(bClass)+' —</div>'
+      +(bQuote?'<div class="pano-quote">"'+_esc(bQuote)+'"</div>':'')
+    +'</div>'
+    +'<div class="pano-banner-date">'+dateStr+'<br><span>'+dow+'</span></div>'
+    +'<div class="pano-banner-avatar">'+avatarHtml+'</div>'
+  +'</div>';
+  // Navegació setmanal
+  var nav='<div class="pano-nav"><button onclick="panoNav(-1)" aria-label="Anterior">‹</button><span>'+_esc(week.label)+'</span><button onclick="panoNav(1)" '+(panoOffset>=0?'disabled':'')+' aria-label="Següent">›</button></div>';
+  // KPIs
+  var avg=A.starsN?(A.starsSum/A.starsN):0;
+  var objH=35;var hPct=Math.min(100,Math.round(A.hours/objH*100));
+  function kpi(icon,label,value,sub,bar){return '<div class="pano-kpi"><div class="pano-kpi-ico">'+icon+'</div><div class="pano-kpi-lbl">'+label+'</div><div class="pano-kpi-val">'+value+'</div>'+(bar!=null?'<div class="pano-kpi-bar"><div style="width:'+bar+'%;"></div></div>':'')+(sub?'<div class="pano-kpi-sub">'+sub+'</div>':'')+'</div>';}
+  var kpis='<div class="pano-kpis">'
+    +kpi('⏱️','HORES COMPUTADES',_fmtH(A.hours),'Objectiu setmanal: '+objH+'h',hPct)
+    +kpi('📄','ASSISTÈNCIES RESOLTES',A.missions,'Setmana passada: '+Ap.missions,null)
+    +kpi('🔔','PROJECTES ACTUALITZATS','—','(sense dades encara)',null)
+    +kpi('🎯','SATISFACCIÓ',(avg?Math.round(avg/5*100)+'%':'—'),(avg?'★'.repeat(Math.round(avg))+'☆'.repeat(5-Math.round(avg)):'sense valoracions'),null)
+  +'</div>';
+  // Hores per persona (Dl-Dv)
+  var hoursCard='<div class="card pano-card"><div class="pano-cardhead"><div class="stitle">Hores computades</div></div>'
+    +'<div class="pano-chartrow">'+_panoStack(week,persons,function(pid,day){var b=A.byPid[pid];return b&&b.byDay[day]?b.byDay[day].hours:0;},function(v){return _fmtH(v);})
+    +_panoPersonList(persons,function(pid){var b=A.byPid[pid];return b?b.hours:0;},function(v){return _fmtH(v);})+'</div></div>';
+  // Or per persona (Dl-Dv)
+  var goldCard='<div class="card pano-card"><div class="pano-cardhead"><div class="stitle">Or aconseguit</div><div class="pano-total">'+coin+' '+fmtGold(A.gold)+'</div></div>'
+    +'<div class="pano-chartrow">'+_panoStack(week,persons,function(pid,day){var b=A.byPid[pid];return b&&b.byDay[day]?b.byDay[day].gold:0;},function(v){return fmtGold(v);})
+    +_panoPersonList(persons,function(pid){var b=A.byPid[pid];return b?b.gold:0;},function(v){return fmtGold(v);})+'</div></div>';
+  // Donut estat de tasques (missions actuals)
+  var realM=missions.filter(function(m){return !m.isDaily_instance;});
+  var doneN=realM.filter(function(m){return m.status==='done';}).length;
+  var pendN=realM.filter(function(m){return m.status!=='done';}).length;
+  var statusSegs=[{value:pendN,color:'#e4a428',label:'En curs'},{value:doneN,color:'#1d9e75',label:'Completades'}];
+  var statusLegend=statusSegs.map(function(s){return '<div class="pano-leg"><span class="pano-legdot" style="background:'+s.color+';"></span><span class="pano-leglbl">'+s.label+'</span><span class="pano-legn">'+s.value+'</span></div>';}).join('');
+  var statusCard='<div class="card pano-card"><div class="stitle">Estat de les tasques</div><div class="pano-donutrow">'+_panoDonut(statusSegs,'TOTAL')+'<div class="pano-legs">'+statusLegend+'</div></div></div>';
+  // Donut categories (per etiqueta; si no n'hi ha, per arc)
+  var catObj=Object.keys(A.byTag).length?A.byTag:A.byArc;
+  var CATCOL=['#e4a428','#7f77dd','#1d9e75','#378add','#d85a30','#c065b0','#5bc0be'];
+  var catEntries=Object.keys(catObj).map(function(k){return [k,catObj[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,7);
+  var catSegs=catEntries.map(function(e,i){return {value:e[1],color:CATCOL[i%CATCOL.length],label:e[0]};});
+  var catLegend=catSegs.length?catSegs.map(function(s){return '<div class="pano-leg"><span class="pano-legdot" style="background:'+s.color+';"></span><span class="pano-leglbl">'+_esc(s.label)+'</span><span class="pano-legn">'+s.value+'</span></div>';}).join(''):'<div class="pano-empty">Sense categories aquesta setmana.</div>';
+  var catCard='<div class="card pano-card"><div class="stitle">Categories reiteratives</div><div class="pano-donutrow">'+_panoDonut(catSegs,'TOTAL')+'<div class="pano-legs">'+catLegend+'</div></div></div>';
+  // Atributs guanyats per persona
+  var attrRows=attrKeys().map(function(k){
+    var cells=persons.map(function(p){var v=(A.byPid[p.id]&&A.byPid[p.id].attrs[k])||0;return '<span class="pano-attr-chip" style="border-color:'+p.color+';color:'+(v>0?p.color:'var(--muted)')+';" title="'+_esc(p.name)+'">'+(v>0?'+'+v:'0')+'</span>';}).join('');
+    var tot=persons.reduce(function(s,p){return s+((A.byPid[p.id]&&A.byPid[p.id].attrs[k])||0);},0);
+    return '<div class="pano-attr-row"><span class="pano-attr-name">'+attrIcon(k)+' '+_esc(attrName(k))+'</span><span class="pano-attr-cells">'+cells+'</span><span class="pano-attr-tot">+'+tot+'</span></div>';
+  }).join('');
+  var attrCard='<div class="card pano-card"><div class="stitle">Atributs guanyats</div><div class="pano-attr-grid">'+attrRows+'</div></div>';
+  // Nivell i XP guanyada per persona
+  var xpMax=Math.max.apply(null,persons.map(function(p){return (A.byPid[p.id]&&A.byPid[p.id].xp)||0;}).concat([1]));
+  var lvlRows=persons.map(function(p){
+    var xpw=(A.byPid[p.id]&&A.byPid[p.id].xp)||0;var pct=Math.round(xpw/xpMax*100);
+    return '<div class="pano-lvl-row"><span class="pano-pdot" style="background:'+p.color+';"></span><span class="pano-lvl-name">'+(p.emblem||'')+' '+_esc((p.name||'').split(' ')[0])+'</span>'
+      +'<div class="pano-lvl-bar"><div style="width:'+pct+'%;background:'+p.color+';"></div></div>'
+      +'<span class="pano-lvl-xp">+'+xpw.toLocaleString()+' XP</span><span class="pano-lvl-badge">Nvl '+(p.level||1)+'</span></div>';
+  }).join('');
+  var lvlCard='<div class="card pano-card"><div class="stitle">Nivell i XP guanyada</div><div class="pano-lvl-list">'+lvlRows+'</div></div>';
+
+  host.innerHTML=banner+nav+kpis
+    +'<div class="pano-grid2">'+hoursCard+statusCard+'</div>'
+    +'<div class="pano-grid2">'+goldCard+catCard+'</div>'
+    +'<div class="pano-grid2">'+attrCard+lvlCard+'</div>';
+}
+
 /* ══ EXPONER FUNCIONES EN WINDOW (para onclick del HTML) ══ */
 // Necesario al tener el JS en archivo externo: garantiza que los onclick="fn()" encuentren las funciones.
-try{window.applyMenuNames=applyMenuNames;}catch(e){}try{window.assignMission=assignMission;}catch(e){}try{window.buildAttrBars=buildAttrBars;}catch(e){}try{window.buildAvatarUrl=buildAvatarUrl;}catch(e){}try{window.buildCreatorCls=buildCreatorCls;}catch(e){}try{window.buildCreatorColors=buildCreatorColors;}catch(e){}try{window.buildCreatorEmblems=buildCreatorEmblems;}catch(e){}try{window.buildPentagon=buildPentagon;}catch(e){}try{window.buildStartItemsPreview=buildStartItemsPreview;}catch(e){}try{window.consumeItem=consumeItem;}catch(e){}try{window.buyItem=buyItem;}catch(e){}try{window.cGoTo=cGoTo;}catch(e){}try{window.cNext=cNext;}catch(e){}try{window.calNav=calNav;}catch(e){}try{window.canBuyItem=canBuyItem;}catch(e){}try{window.checkDailyMissions=checkDailyMissions;}catch(e){}try{window.checkLevelUp=checkLevelUp;}catch(e){}try{window.classToRow=classToRow;}catch(e){}try{window.cleanOldCompleted=cleanOldCompleted;}catch(e){}try{window.clearPlannerImport=clearPlannerImport;}catch(e){}try{window.closeAdminEditModal=closeAdminEditModal;}catch(e){}try{window.closeAvatarEditor=closeAvatarEditor;}catch(e){}try{window.closeEdit=closeEdit;}catch(e){}try{window.closeEventModal=closeEventModal;}catch(e){}try{window.closeMissionModal=closeMissionModal;}catch(e){}try{window.closeReward=closeReward;}catch(e){}try{window.completeMission=completeMission;}catch(e){}try{window.computeClassBonus=computeClassBonus;}catch(e){}try{window.confirmLevelUp=confirmLevelUp;}catch(e){}try{window.confirmPlannerImport=confirmPlannerImport;}catch(e){}try{window.createArc=createArc;}catch(e){}try{window.createMission=createMission;}catch(e){}try{window.deleteArc=deleteArc;}catch(e){}try{window.deleteEvent=deleteEvent;}catch(e){}try{window.deleteMission=deleteMission;}catch(e){}try{window.deletePlayer=deletePlayer;}catch(e){}try{window.doAdminLogin=doAdminLogin;}catch(e){}try{window.doLogout=doLogout;}catch(e){}try{window.doPull=doPull;}catch(e){}try{window.enterApp=enterApp;}catch(e){}try{window.equipItem=equipItem;}catch(e){}try{window.eventItemHTML=eventItemHTML;}catch(e){}try{window.exportJSON=exportJSON;}catch(e){}try{window.backupData=backupData;}catch(e){}try{window.restoreData=restoreData;}catch(e){}try{window.formatDate=formatDate;}catch(e){}try{window.getAdminProfile=getAdminProfile;}catch(e){}try{window.getEffectiveAttrs=getEffectiveAttrs;}catch(e){}try{window.getFilteredEvents=getFilteredEvents;}catch(e){}try{window.getPlayerAvatar=getPlayerAvatar;}catch(e){}try{window.getRarityByChance=getRarityByChance;}catch(e){}try{window.goToInventory=goToInventory;}catch(e){}try{window.goToMyProfile=goToMyProfile;}catch(e){}try{window.initCalFilterBtns=initCalFilterBtns;}catch(e){}try{window.initTheme=initTheme;}catch(e){}try{window.invEquipSlot=invEquipSlot;}catch(e){}try{window.loadMenuNames=loadMenuNames;}catch(e){}try{window.mCard=mCard;}catch(e){}try{window.meetsReqs=meetsReqs;}catch(e){}try{window.missionToRow=missionToRow;}catch(e){}try{window.openAdminEditCarta=openAdminEditCarta;}catch(e){}try{window.openAdminEditItem=openAdminEditItem;}catch(e){}try{window.openAvatarEditor=openAvatarEditor;}catch(e){}try{window.openEditModal=openEditModal;}catch(e){}try{window.openEventModal=openEventModal;}catch(e){}try{window.openMissionModal=openMissionModal;}catch(e){}try{window.openShowcaseSelector=openShowcaseSelector;}catch(e){}try{window.parsePlannerCSV=parsePlannerCSV;}catch(e){}try{window.parsePlannerExcel=parsePlannerExcel;}catch(e){}try{window.parsePlannerFile=parsePlannerFile;}catch(e){}try{window.plannerDragOver=plannerDragOver;}catch(e){}try{window.plannerDrop=plannerDrop;}catch(e){}try{window.plannerFileSelected=plannerFileSelected;}catch(e){}try{window.populateArcSelect=populateArcSelect;}catch(e){}try{window.promptRenameMenu=promptRenameMenu;}catch(e){}try{window.pullCard=pullCard;}catch(e){}try{window.pullResult=pullResult;}catch(e){}try{window.renderAdminCartasPage=renderAdminCartasPage;}catch(e){}try{window.renderAdminItemsPage=renderAdminItemsPage;}catch(e){}try{window.renderAll=renderAll;}catch(e){}try{window.renderArcs=renderArcs;}catch(e){}try{window.renderAvatar=renderAvatar;}catch(e){}try{window.renderAvatarEditor=renderAvatarEditor;}catch(e){}try{window.renderCalendar=renderCalendar;}catch(e){}try{window.renderClassesAdmin=renderClassesAdmin;}catch(e){}try{window.renderDayEvents=renderDayEvents;}catch(e){}try{window.renderGachaGold=renderGachaGold;}catch(e){}try{window.renderGalleryCards=renderGalleryCards;}catch(e){}try{window.renderGalleryTabs=renderGalleryTabs;}catch(e){}try{window.renderHeroProfile=renderHeroProfile;}catch(e){}try{window.renderHeroTabs=renderHeroTabs;}catch(e){}try{window.renderInventario=renderInventario;}catch(e){}try{window.renderMStats=renderMStats;}catch(e){}try{window.renderMissions=renderMissions;}catch(e){}try{window.renderMyGallery=renderMyGallery;}catch(e){}try{window.renderPlannerImported=renderPlannerImported;}catch(e){}try{window.renderRanking=renderRanking;}catch(e){}try{window.renderShop=renderShop;}catch(e){}try{window.renderUpcoming=renderUpcoming;}catch(e){}try{window.rowToClass=rowToClass;}catch(e){}try{window.rowToMission=rowToMission;}catch(e){}try{window.saveAvatar=saveAvatar;}catch(e){}try{window.saveEdit=saveEdit;}catch(e){}try{window.saveEvent=saveEvent;}catch(e){}try{window.saveNewChar=saveNewChar;}catch(e){}try{window.selectCalDay=selectCalDay;}catch(e){}try{window.selectGalleryHero=selectGalleryHero;}catch(e){}try{window.showSubTab=showSubTab;}catch(e){}try{window.showInvTab=showInvTab;}catch(e){}try{window.toggleGalleryOwned=toggleGalleryOwned;}catch(e){}try{window.toggleGalleryDup=toggleGalleryDup;}catch(e){}
+try{window.applyMenuNames=applyMenuNames;}catch(e){}try{window.assignMission=assignMission;}catch(e){}try{window.buildAttrBars=buildAttrBars;}catch(e){}try{window.buildAvatarUrl=buildAvatarUrl;}catch(e){}try{window.buildCreatorCls=buildCreatorCls;}catch(e){}try{window.buildCreatorColors=buildCreatorColors;}catch(e){}try{window.buildCreatorEmblems=buildCreatorEmblems;}catch(e){}try{window.buildPentagon=buildPentagon;}catch(e){}try{window.buildStartItemsPreview=buildStartItemsPreview;}catch(e){}try{window.consumeItem=consumeItem;}catch(e){}try{window.buyItem=buyItem;}catch(e){}try{window.cGoTo=cGoTo;}catch(e){}try{window.cNext=cNext;}catch(e){}try{window.calNav=calNav;}catch(e){}try{window.canBuyItem=canBuyItem;}catch(e){}try{window.checkDailyMissions=checkDailyMissions;}catch(e){}try{window.checkLevelUp=checkLevelUp;}catch(e){}try{window.classToRow=classToRow;}catch(e){}try{window.cleanOldCompleted=cleanOldCompleted;}catch(e){}try{window.clearPlannerImport=clearPlannerImport;}catch(e){}try{window.closeAdminEditModal=closeAdminEditModal;}catch(e){}try{window.closeAvatarEditor=closeAvatarEditor;}catch(e){}try{window.closeEdit=closeEdit;}catch(e){}try{window.closeEventModal=closeEventModal;}catch(e){}try{window.closeMissionModal=closeMissionModal;}catch(e){}try{window.closeReward=closeReward;}catch(e){}try{window.completeMission=completeMission;}catch(e){}try{window.computeClassBonus=computeClassBonus;}catch(e){}try{window.confirmLevelUp=confirmLevelUp;}catch(e){}try{window.confirmPlannerImport=confirmPlannerImport;}catch(e){}try{window.createArc=createArc;}catch(e){}try{window.createMission=createMission;}catch(e){}try{window.deleteArc=deleteArc;}catch(e){}try{window.deleteEvent=deleteEvent;}catch(e){}try{window.deleteMission=deleteMission;}catch(e){}try{window.deletePlayer=deletePlayer;}catch(e){}try{window.doAdminLogin=doAdminLogin;}catch(e){}try{window.doLogout=doLogout;}catch(e){}try{window.doPull=doPull;}catch(e){}try{window.enterApp=enterApp;}catch(e){}try{window.equipItem=equipItem;}catch(e){}try{window.eventItemHTML=eventItemHTML;}catch(e){}try{window.exportJSON=exportJSON;}catch(e){}try{window.backupData=backupData;}catch(e){}try{window.restoreData=restoreData;}catch(e){}try{window.formatDate=formatDate;}catch(e){}try{window.getAdminProfile=getAdminProfile;}catch(e){}try{window.getEffectiveAttrs=getEffectiveAttrs;}catch(e){}try{window.getFilteredEvents=getFilteredEvents;}catch(e){}try{window.getPlayerAvatar=getPlayerAvatar;}catch(e){}try{window.getRarityByChance=getRarityByChance;}catch(e){}try{window.goToInventory=goToInventory;}catch(e){}try{window.goToMyProfile=goToMyProfile;}catch(e){}try{window.initCalFilterBtns=initCalFilterBtns;}catch(e){}try{window.initTheme=initTheme;}catch(e){}try{window.invEquipSlot=invEquipSlot;}catch(e){}try{window.loadMenuNames=loadMenuNames;}catch(e){}try{window.mCard=mCard;}catch(e){}try{window.meetsReqs=meetsReqs;}catch(e){}try{window.missionToRow=missionToRow;}catch(e){}try{window.openAdminEditCarta=openAdminEditCarta;}catch(e){}try{window.openAdminEditItem=openAdminEditItem;}catch(e){}try{window.openAvatarEditor=openAvatarEditor;}catch(e){}try{window.openEditModal=openEditModal;}catch(e){}try{window.openEventModal=openEventModal;}catch(e){}try{window.openMissionModal=openMissionModal;}catch(e){}try{window.openShowcaseSelector=openShowcaseSelector;}catch(e){}try{window.parsePlannerCSV=parsePlannerCSV;}catch(e){}try{window.parsePlannerExcel=parsePlannerExcel;}catch(e){}try{window.parsePlannerFile=parsePlannerFile;}catch(e){}try{window.plannerDragOver=plannerDragOver;}catch(e){}try{window.plannerDrop=plannerDrop;}catch(e){}try{window.plannerFileSelected=plannerFileSelected;}catch(e){}try{window.populateArcSelect=populateArcSelect;}catch(e){}try{window.promptRenameMenu=promptRenameMenu;}catch(e){}try{window.pullCard=pullCard;}catch(e){}try{window.pullResult=pullResult;}catch(e){}try{window.renderAdminCartasPage=renderAdminCartasPage;}catch(e){}try{window.renderAdminItemsPage=renderAdminItemsPage;}catch(e){}try{window.renderAll=renderAll;}catch(e){}try{window.renderArcs=renderArcs;}catch(e){}try{window.renderAvatar=renderAvatar;}catch(e){}try{window.renderAvatarEditor=renderAvatarEditor;}catch(e){}try{window.renderCalendar=renderCalendar;}catch(e){}try{window.renderClassesAdmin=renderClassesAdmin;}catch(e){}try{window.renderDayEvents=renderDayEvents;}catch(e){}try{window.renderGachaGold=renderGachaGold;}catch(e){}try{window.renderGalleryCards=renderGalleryCards;}catch(e){}try{window.renderGalleryTabs=renderGalleryTabs;}catch(e){}try{window.renderHeroProfile=renderHeroProfile;}catch(e){}try{window.renderHeroTabs=renderHeroTabs;}catch(e){}try{window.renderInventario=renderInventario;}catch(e){}try{window.renderMStats=renderMStats;}catch(e){}try{window.renderMissions=renderMissions;}catch(e){}try{window.renderMyGallery=renderMyGallery;}catch(e){}try{window.renderPlannerImported=renderPlannerImported;}catch(e){}try{window.renderRanking=renderRanking;}catch(e){}try{window.renderShop=renderShop;}catch(e){}try{window.renderUpcoming=renderUpcoming;}catch(e){}try{window.rowToClass=rowToClass;}catch(e){}try{window.rowToMission=rowToMission;}catch(e){}try{window.saveAvatar=saveAvatar;}catch(e){}try{window.saveEdit=saveEdit;}catch(e){}try{window.saveEvent=saveEvent;}catch(e){}try{window.saveNewChar=saveNewChar;}catch(e){}try{window.selectCalDay=selectCalDay;}catch(e){}try{window.selectGalleryHero=selectGalleryHero;}catch(e){}try{window.showSubTab=showSubTab;}catch(e){}try{window.renderPanoramica=renderPanoramica;}catch(e){}try{window.panoNav=panoNav;}catch(e){}try{window.showInvTab=showInvTab;}catch(e){}try{window.toggleGalleryOwned=toggleGalleryOwned;}catch(e){}try{window.toggleGalleryDup=toggleGalleryDup;}catch(e){}
 try{window.renderMarket=renderMarket;}catch(e){}try{window.createListing=createListing;}catch(e){}try{window.cancelListing=cancelListing;}catch(e){}try{window.buyListing=buyListing;}catch(e){}try{window.tradeListing=tradeListing;}catch(e){}try{window.onListingModeChange=onListingModeChange;}catch(e){}try{window.quickSellCard=quickSellCard;}catch(e){}try{window.selectSellCard=selectSellCard;}catch(e){}try{window.selectWantCard=selectWantCard;}catch(e){}try{window.renderQuickSell=renderQuickSell;}catch(e){}try{window.renderCardPickers=renderCardPickers;}catch(e){}try{window.saveAvatarInline=saveAvatarInline;}catch(e){}try{window.avaOptLabel=avaOptLabel;}catch(e){}try{window.setPlayerFrame=setPlayerFrame;}catch(e){}try{window.renderFramePicker=renderFramePicker;}catch(e){}try{window.selectHero=selectHero;}catch(e){}try{window.setAvatarOpt=setAvatarOpt;}catch(e){}try{window.setCalFilter=setCalFilter;}catch(e){}try{window.showLevelUpPopup=showLevelUpPopup;}catch(e){}try{window.showPage=showPage;}catch(e){}try{window.showPage_planner=showPage_planner;}catch(e){}try{window.showPlannerPreview=showPlannerPreview;}catch(e){}try{window.showRewardPopup=showRewardPopup;}catch(e){}try{window.showScreen=showScreen;}catch(e){}try{window.switchAdminTab=switchAdminTab;}catch(e){}try{window.switchPTab=switchPTab;}catch(e){}try{window.toast=toast;}catch(e){}try{window.toggleDailyFields=toggleDailyFields;}catch(e){}try{window.toggleTheme=toggleTheme;}catch(e){}try{window.toggleUMenu=toggleUMenu;}catch(e){}try{window.unequipItem=unequipItem;}catch(e){}try{window.updateArcCounts=updateArcCounts;}catch(e){}try{window.updateSidebarAvatar=updateSidebarAvatar;}catch(e){}
 try{window.adminChangeVia=adminChangeVia;}catch(e){}try{window.adminCreateCarta=adminCreateCarta;}catch(e){}try{window.adminCreateItemFull=adminCreateItemFull;}catch(e){}try{window.adminDeleteCarta=adminDeleteCarta;}catch(e){}try{window.adminDeleteItemFull=adminDeleteItemFull;}catch(e){}try{window.deleteCartaFromSupabase=deleteCartaFromSupabase;}catch(e){}try{window.deleteItemFromSupabase=deleteItemFromSupabase;}catch(e){}try{window.deleteMissionFromSupabase=deleteMissionFromSupabase;}catch(e){}try{window.doLogin=doLogin;}catch(e){}try{window.loadClassesFromSupabase=loadClassesFromSupabase;}catch(e){}try{window.loadData=loadData;}catch(e){}try{window.loadFromSupabase=loadFromSupabase;}catch(e){}try{window.loadMissionsFromSupabase=loadMissionsFromSupabase;}catch(e){}try{window.saveAdminEdit=saveAdminEdit;}catch(e){}try{window.saveAllMissionsToSupabase=saveAllMissionsToSupabase;}catch(e){}try{window.saveCartaToSupabase=saveCartaToSupabase;}catch(e){}try{window.saveClassEdit=saveClassEdit;}catch(e){}try{window.saveClassToSupabase=saveClassToSupabase;}catch(e){}try{window.saveItemToSupabase=saveItemToSupabase;}catch(e){}try{window.saveMissionToSupabase=saveMissionToSupabase;}catch(e){}try{window.saveToSupabase=saveToSupabase;}catch(e){}
 try{window.saveAttrNames=saveAttrNames;}catch(e){}

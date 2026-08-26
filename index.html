@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="https://i.imgur.com/Z1wFN0q.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ITBMC">
-<link rel="stylesheet" href="css/styles.css?v=70">
+<link rel="stylesheet" href="css/styles.css?v=71">
 </head>
 <body>
 <div id="boot-loader"><div class="boot-spinner"></div><div class="boot-text">Carregant ITBMC…</div></div>
@@ -181,6 +181,7 @@
       </div>
       <nav class="nav" role="navigation">
         <button class="nb active" onclick="showPage('inicio',this)" id="nav-inicio"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Inici</button>
+        <button class="nb" onclick="showPage('panoramica',this)" id="nav-panoramica"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>Panoràmica</button>
         <button class="nb" onclick="showPage('misiones',this)" id="nav-misiones"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/><path d="m9 11 3 3 8-8"/></svg></span>Missions</button>
         <button class="nb" onclick="showPage('heroe',this)" id="nav-heroe"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></span>Herois</button>
         <button class="nb" onclick="showPage('arcos',this)" id="nav-arcos"><span class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg></span>Arcs</button>
@@ -221,6 +222,11 @@
       <div id="inicio-hero" style="margin-bottom:1.5rem;"></div>
       <!-- Widgets del usuario (se rellenan dinámicamente desde el catálogo del admin) -->
       <div id="user-widgets"></div>
+    </div>
+
+    <!-- PANORÀMICA (dashboard setmanal de l'equip) -->
+    <div id="page-panoramica" class="page">
+      <div id="pano-body"></div>
     </div>
 
     <!-- MISIONES -->
@@ -996,6 +1002,6 @@
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="js/app.js?v=105"></script>
+<script src="js/app.js?v=106"></script>
 </body>
 </html>
