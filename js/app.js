@@ -4944,11 +4944,16 @@ function renderPanoramica(){
   var avg=A.starsN?(A.starsSum/A.starsN):0;
   var objH=35;var hPct=Math.min(100,Math.round(A.hours/objH*100));
   function kpi(icon,label,value,sub,bar){return '<div class="pano-kpi"><div class="pano-kpi-ico">'+icon+'</div><div class="pano-kpi-lbl">'+label+'</div><div class="pano-kpi-val">'+value+'</div>'+(bar!=null?'<div class="pano-kpi-bar"><div style="width:'+bar+'%;"></div></div>':'')+(sub?'<div class="pano-kpi-sub">'+sub+'</div>':'')+'</div>';}
+  var _ic=function(paths){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+paths+'</svg>';};
+  var icClock=_ic('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>');
+  var icDoc=_ic('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/><path d="m9 14 2 2 4-4"/>');
+  var icRefresh=_ic('<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/>');
+  var icTarget=_ic('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>');
   var kpis='<div class="pano-kpis">'
-    +kpi('⏱️','HORES COMPUTADES',_fmtH(A.hours),'Objectiu setmanal: '+objH+'h',hPct)
-    +kpi('📄','ASSISTÈNCIES RESOLTES',A.missions,'Setmana passada: '+Ap.missions,null)
-    +kpi('🔔','PROJECTES ACTUALITZATS','—','(sense dades encara)',null)
-    +kpi('🎯','SATISFACCIÓ',(avg?Math.round(avg/5*100)+'%':'—'),(avg?'★'.repeat(Math.round(avg))+'☆'.repeat(5-Math.round(avg)):'sense valoracions'),null)
+    +kpi(icClock,'HORES COMPUTADES',_fmtH(A.hours),'Objectiu setmanal: '+objH+'h',hPct)
+    +kpi(icDoc,'ASSISTÈNCIES RESOLTES',A.missions,'Setmana passada: '+Ap.missions,null)
+    +kpi(icRefresh,'PROJECTES ACTUALITZATS','—','(sense dades encara)',null)
+    +kpi(icTarget,'SATISFACCIÓ',(avg?Math.round(avg/5*100)+'%':'—'),(avg?'★'.repeat(Math.round(avg))+'☆'.repeat(5-Math.round(avg)):'sense valoracions'),null)
   +'</div>';
   // Llista de persones: SEMPRE mostra l'or total sota el nom; el badge de la dreta canvia (hores o or setmanal)
   function _panoList(badgeFn,badgeFmt){

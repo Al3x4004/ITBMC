@@ -1515,7 +1515,8 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 .pano-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1rem;}
 @media(max-width:900px){.pano-kpis{grid-template-columns:repeat(2,1fr);}}
 .pano-kpi{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.1rem;text-align:center;}
-.pano-kpi-ico{font-size:20px;margin-bottom:4px;}
+.pano-kpi-ico{font-size:20px;margin-bottom:6px;color:var(--muted);}
+.pano-kpi-ico svg{width:22px;height:22px;}
 .pano-kpi-lbl{font-size:11px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
 .pano-kpi-val{font-size:30px;font-weight:800;line-height:1;}
 .pano-kpi-bar{height:6px;border-radius:3px;background:var(--bg3);overflow:hidden;margin:8px 0 4px;}
