@@ -1653,3 +1653,11 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 /* Satisfacció: estrelles més grans */
 .pano-stars{font-size:17px;letter-spacing:2px;color:var(--gold);}
 .pano-stars .off{color:var(--border3);}
+/* Personalitzar banner */
+.pano-banner-edit{position:absolute;top:1.1rem;right:1.1rem;z-index:4;width:30px;height:30px;border-radius:8px;border:0.5px solid var(--border2);background:color-mix(in srgb,var(--bg) 55%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.pano-banner-edit:hover{color:var(--text);background:var(--bg2);}
+.pano-banner-edit svg{width:15px;height:15px;}
+.pano-banner.has-img .pano-realname{color:#d9d6e6;}
+.pano-banner.has-img .pano-charname{color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.7);}
+.pano-banner.has-img .pano-quote{color:#cfccdd;}
+.pano-banner-avatar img{max-height:190px;width:auto;border-radius:10px;object-fit:contain;}

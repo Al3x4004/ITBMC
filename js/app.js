@@ -4839,7 +4839,7 @@ document.addEventListener('keydown',function(e){
     if(el&&getComputedStyle(el).display!=='none'){el.style.display='none';}
   });
   // Modals que s'obren/tanquen per classe .show
-  ['reward-pop','levelup-pop','cal-event-modal','star-ask'].forEach(function(id){
+  ['reward-pop','levelup-pop','cal-event-modal','star-ask','banner-editor'].forEach(function(id){
     var el=document.getElementById(id);if(el)el.classList.remove('show');
   });
   var um=document.getElementById('umenu-inline');if(um)um.style.display='none';
@@ -4859,6 +4859,42 @@ window.addEventListener('dicebear-ready',function(){
 /* ══ PANORÀMICA (dashboard setmanal de l'equip) ══ */
 var panoOffset=0;
 function panoNav(d){panoOffset+=d;if(panoOffset>0)panoOffset=0;renderPanoramica();}
+// ── Personalitzar el banner (cada jugador el seu) ──
+function openBannerEditor(){
+  var p=players.find(function(x){return x.id===session.playerId;});if(!p)return;
+  var ov=document.getElementById('banner-editor');
+  if(!ov){ov=document.createElement('div');ov.id='banner-editor';ov.className='reward-pop';document.body.appendChild(ov);}
+  ov.className='reward-pop show';ov.style.zIndex=500;
+  ov.innerHTML='<div class="reward-box" style="max-width:420px;text-align:left;" onclick="event.stopPropagation()">'
+    +'<div style="font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:14px;">Personalitzar banner</div>'
+    +'<div class="field"><label>Frase / lema</label><input type="text" id="be-quote" maxlength="140" value="'+_esc(p.quote||'')+'" placeholder="El teu lema..."/></div>'
+    +'<div class="field"><label>Color del banner</label><input type="color" id="be-color" value="'+(/^#[0-9a-fA-F]{6}$/.test(p.bannerColor||p.color||'')?(p.bannerColor||p.color):'#7f77dd')+'" style="height:40px;padding:3px;"/></div>'
+    +'<div class="field"><label>Imatge de fons (URL, opcional)</label><input type="text" id="be-img" value="'+_esc(p.bannerImg||'')+'" placeholder="https://..."/></div>'
+    +'<div class="field"><label>Retrat (URL, opcional — substitueix l\'avatar)</label><input type="text" id="be-portrait" value="'+_esc(p.bannerPortrait||'')+'" placeholder="https://..."/></div>'
+    +'<div style="display:flex;gap:8px;justify-content:space-between;margin-top:16px;">'
+      +'<button class="btn btn-sm" onclick="resetBanner()">↺ Restablir</button>'
+      +'<div style="display:flex;gap:8px;"><button class="btn btn-sm" onclick="closeBannerEditor()">Cancel·lar</button><button class="btn btn-sm btn-p" onclick="saveBanner()">Desar</button></div>'
+    +'</div>'
+  +'</div>';
+  ov.onclick=function(){closeBannerEditor();};
+}
+function closeBannerEditor(){var ov=document.getElementById('banner-editor');if(ov)ov.className='reward-pop';}
+function saveBanner(){
+  var p=players.find(function(x){return x.id===session.playerId;});if(!p)return;
+  var q=document.getElementById('be-quote');if(q)p.quote=q.value.trim();
+  var c=document.getElementById('be-color');if(c)p.bannerColor=c.value;
+  var im=document.getElementById('be-img');if(im)p.bannerImg=im.value.trim();
+  var po=document.getElementById('be-portrait');if(po)p.bannerPortrait=po.value.trim();
+  if(CFG.MODE==='supabase')saveToSupabase();
+  closeBannerEditor();renderPanoramica();
+}
+function resetBanner(){
+  var p=players.find(function(x){return x.id===session.playerId;});if(!p)return;
+  delete p.bannerColor;delete p.bannerImg;delete p.bannerPortrait;
+  if(CFG.MODE==='supabase')saveToSupabase();
+  closeBannerEditor();renderPanoramica();
+}
+try{window.openBannerEditor=openBannerEditor;window.closeBannerEditor=closeBannerEditor;window.saveBanner=saveBanner;window.resetBanner=resetBanner;}catch(e){}
 function _panoWeek(offset){
   var r=_statsRange('week',offset);
   var names=['Dl','Dt','Dc','Dj','Dv'];var days=[];
@@ -4924,11 +4960,20 @@ function renderPanoramica(){
   var bName=me?me.name:'DÉU';
   var bClass=me?me.cls:'Administrador';
   var bQuote=me?(me.quote||''):'Tens el control absolut del Quarter General.';
-  var bColor=me?me.color:'#e4a428';
+  var bColor=me?(me.bannerColor||me.color):'#e4a428';
+  var bImg=me?(me.bannerImg||''):'';
+  var bPortrait=me?(me.bannerPortrait||''):'';
   var now=new Date();
   var dateStr=now.toLocaleDateString('ca-ES',{day:'numeric',month:'long',year:'numeric'}).toUpperCase();
   var dow=now.toLocaleDateString('ca-ES',{weekday:'long'}).toUpperCase();
-  var banner='<div class="pano-banner" style="--pc:'+bColor+';">'
+  // Retrat personalitzat (imatge) o avatar per defecte
+  if(bPortrait)avatarHtml='<img src="'+_esc(bPortrait)+'" alt="" onerror="this.style.display=\'none\'"/>';
+  // Fons del banner: imatge personalitzada o degradat del color
+  var bnStyle='--pc:'+bColor+';';
+  if(bImg)bnStyle+="background-image:linear-gradient(90deg,var(--bg2) 4%,color-mix(in srgb,var(--bg2) 55%,transparent) 42%,transparent 78%),url('"+encodeURI(bImg).replace(/'/g,'%27')+"');background-size:cover;background-position:center;";
+  var editBtn=me?'<button class="pano-banner-edit" onclick="openBannerEditor()" title="Personalitzar banner" aria-label="Personalitzar banner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>':'';
+  var banner='<div class="pano-banner'+(bImg?' has-img':'')+'" style="'+bnStyle+'">'
+    +editBtn
     +'<div class="pano-banner-text">'
       +(bReal?'<div class="pano-realname">'+_esc(bReal)+'</div>':'')
       +'<div class="pano-charname">'+_esc(bName)+'</div>'
