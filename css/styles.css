@@ -1664,3 +1664,7 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 .be-seg{display:inline-flex;border:0.5px solid var(--border2);border-radius:9px;overflow:hidden;}
 .be-seg button{background:transparent;border:none;color:var(--muted);font:inherit;font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;}
 .be-seg button.active{background:var(--accent);color:#1a1508;}
+/* Chip de data mes petit i compacte */
+.pano-banner-date{padding:6px 10px !important;font-size:10.5px !important;gap:7px !important;}
+.pano-banner-date svg{width:16px !important;height:16px !important;}
+.pano-banner-date .pbd-dow{font-size:9px !important;letter-spacing:.12em !important;}

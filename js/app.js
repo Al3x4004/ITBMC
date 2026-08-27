@@ -5010,7 +5010,8 @@ function renderPanoramica(){
   var bImg=me?(me.bannerImg||''):'';
   var bPortrait=(me&&me.bannerPortraitMode==='photo')?(me.bannerPortrait||''):'';
   var now=new Date();
-  var dateStr=now.toLocaleDateString('ca-ES',{day:'numeric',month:'long',year:'numeric'}).toUpperCase();
+  var _mAbbr=['GEN','FEBR','MARÇ','ABR','MAIG','JUNY','JUL','AG','SET','OCT','NOV','DES'];
+  var dateStr=now.getDate()+' '+_mAbbr[now.getMonth()]+' '+now.getFullYear();
   var dow=now.toLocaleDateString('ca-ES',{weekday:'long'}).toUpperCase();
   // Retrat personalitzat (imatge) o avatar per defecte
   if(bPortrait)avatarHtml='<img src="'+_esc(bPortrait)+'" alt="" onerror="this.style.display=\'none\'"/>';
