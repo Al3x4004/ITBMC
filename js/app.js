@@ -4950,20 +4950,24 @@ function renderPanoramica(){
     +kpi('🔔','PROJECTES ACTUALITZATS','—','(sense dades encara)',null)
     +kpi('🎯','SATISFACCIÓ',(avg?Math.round(avg/5*100)+'%':'—'),(avg?'★'.repeat(Math.round(avg))+'☆'.repeat(5-Math.round(avg)):'sense valoracions'),null)
   +'</div>';
-  // Hores per persona (Dl-Dv)
+  // Llista de persones: SEMPRE mostra l'or total sota el nom; el badge de la dreta canvia (hores o or setmanal)
+  function _panoList(badgeFn,badgeFmt){
+    return '<div class="pano-plist2">'+persons.map(function(p){
+      var bv=badgeFn(p.id)||0;
+      return '<div class="pano-prow2"><span class="pano-pdot" style="background:'+p.color+';"></span><span class="pano-pemb">'+(p.emblem||'')+'</span>'
+        +'<div class="pano-pmain"><div class="pano-pname" style="color:'+p.color+';">'+_esc((p.name||'').split(' ')[0])+'</div><div class="pano-psub"><span class="coin"></span> '+fmtGold(p.gold||0)+'</div></div>'
+        +'<span class="pano-pbadge'+(bv>0?' up':'')+'">'+(bv>0?'+'+badgeFmt(bv):'—')+'</span></div>';
+    }).join('')+'</div>';
+  }
+  // Hores computades: barres d'hores + llista (badge = hores setmanals)
   var hoursCard='<div class="card pano-card"><div class="pano-cardhead"><div class="stitle">Hores computades</div></div>'
     +'<div class="pano-chartrow">'+_panoStack(week,persons,function(pid,day){var b=A.byPid[pid];return b&&b.byDay[day]?b.byDay[day].hours:0;},function(v){return _fmtH(v);})
-    +_panoPersonList(persons,function(pid){var b=A.byPid[pid];return b?b.hours:0;},function(v){return _fmtH(v);})+'</div></div>';
-  // Or per persona: total sota el nom + guany setmanal a la dreta (com el mockup)
-  var goldList='<div class="pano-plist2">'+persons.map(function(p){
-    var wk=(A.byPid[p.id]&&A.byPid[p.id].gold)||0;
-    return '<div class="pano-prow2"><span class="pano-pdot" style="background:'+p.color+';"></span><span class="pano-pemb">'+(p.emblem||'')+'</span>'
-      +'<div class="pano-pmain"><div class="pano-pname" style="color:'+p.color+';">'+_esc((p.name||'').split(' ')[0])+'</div><div class="pano-psub">'+coin+' '+fmtGold(p.gold||0)+'</div></div>'
-      +'<span class="pano-pbadge'+(wk>0?' up':'')+'">'+(wk>0?'+'+fmtGold(wk):'—')+'</span></div>';
-  }).join('')+'</div>';
+    +_panoList(function(pid){var b=A.byPid[pid];return b?b.hours:0;},function(v){return _fmtH(v);})+'</div>'
+    +'<div class="pano-cardfoot">⏱️ Total setmanal <b>'+_fmtH(A.hours)+'</b></div></div>';
+  // Or aconseguit: barres d'or + llista (badge = or setmanal)
   var goldCard='<div class="card pano-card"><div class="pano-cardhead"><div class="stitle">Or aconseguit</div></div>'
     +'<div class="pano-chartrow">'+_panoStack(week,persons,function(pid,day){var b=A.byPid[pid];return b&&b.byDay[day]?b.byDay[day].gold:0;},function(v){return fmtGold(v);})
-    +goldList+'</div>'
+    +_panoList(function(pid){var b=A.byPid[pid];return b?b.gold:0;},function(v){return fmtGold(v);})+'</div>'
     +'<div class="pano-cardfoot">'+coin+' Total setmanal <b>+'+fmtGold(A.gold)+' or</b></div></div>';
   // Donut estat de tasques (missions actuals)
   var realM=missions.filter(function(m){return !m.isDaily_instance;});
