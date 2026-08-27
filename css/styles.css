@@ -1500,11 +1500,12 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 .pano-charname{font-family:var(--font-display,inherit);font-size:56px;line-height:.95;font-weight:800;letter-spacing:.02em;color:var(--text);margin:2px 0;text-transform:uppercase;}
 .pano-class{font-size:18px;font-weight:600;letter-spacing:.28em;color:var(--pc,var(--gold));text-transform:uppercase;}
 .pano-quote{margin-top:.6rem;font-style:italic;color:var(--muted);font-size:14px;}
-.pano-banner-date{position:absolute;top:1.25rem;right:1.5rem;z-index:2;text-align:right;font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--muted);}
-.pano-banner-date span{color:var(--pc,var(--gold));}
+.pano-banner-date{position:absolute;top:1.25rem;right:210px;z-index:3;display:inline-flex;align-items:center;gap:9px;padding:8px 12px;border-radius:12px;background:color-mix(in srgb,var(--bg) 55%,transparent);border:0.5px solid var(--border2);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--text);text-align:left;}
+.pano-banner-date svg{width:20px;height:20px;color:var(--pc,var(--gold));flex-shrink:0;}
+.pano-banner-date .pbd-dow{color:var(--muted);font-weight:600;font-size:11px;letter-spacing:.14em;}
 .pano-banner-avatar{position:absolute;right:1.5rem;bottom:0;z-index:1;height:200px;display:flex;align-items:flex-end;opacity:.96;pointer-events:none;}
 .pano-banner-avatar .pixel-avatar-lg,.pano-banner-avatar img{max-height:190px;width:auto;}
-@media(max-width:720px){.pano-banner-text{max-width:100%;}.pano-charname{font-size:40px;}.pano-banner-avatar{opacity:.25;}}
+@media(max-width:720px){.pano-banner-text{max-width:100%;}.pano-charname{font-size:40px;}.pano-banner-avatar{opacity:.25;}.pano-banner-date{right:1rem;}}
 
 .pano-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:1rem;}
 .pano-nav button{width:30px;height:30px;border-radius:50%;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);cursor:pointer;font-size:16px;}
