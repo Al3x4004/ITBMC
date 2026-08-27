@@ -4972,13 +4972,13 @@ function renderPanoramica(){
   var catSegs=catEntries.map(function(e,i){return {value:e[1],color:CATCOL[i%CATCOL.length],label:e[0]};});
   var catLegend=catSegs.length?catSegs.map(function(s){return '<div class="pano-leg"><span class="pano-legdot" style="background:'+s.color+';"></span><span class="pano-leglbl">'+_esc(s.label)+'</span><span class="pano-legn">'+s.value+'</span></div>';}).join(''):'<div class="pano-empty">Sense categories aquesta setmana.</div>';
   var catCard='<div class="card pano-card"><div class="stitle">Categories reiteratives</div><div class="pano-donutrow">'+_panoDonut(catSegs,'TOTAL')+'<div class="pano-legs">'+catLegend+'</div></div></div>';
-  // Atributs guanyats per persona
-  var attrRows=attrKeys().map(function(k){
-    var cells=persons.map(function(p){var v=(A.byPid[p.id]&&A.byPid[p.id].attrs[k])||0;return '<span class="pano-attr-chip" style="border-color:'+p.color+';color:'+(v>0?p.color:'var(--muted)')+';" title="'+_esc(p.name)+'">'+(v>0?'+'+v:'0')+'</span>';}).join('');
+  // Atributs guanyats per persona — nom a dalt, quadrats a sota (compacte, en graella)
+  var attrItems=attrKeys().map(function(k){
+    var cells=persons.map(function(p){var v=(A.byPid[p.id]&&A.byPid[p.id].attrs[k])||0;var cls=v>0?'pos':(v<0?'neg':'zero');return '<span class="pano-attr-box '+cls+'" style="'+(v>0?'border-color:'+p.color+';color:'+p.color+';':'')+'" title="'+_esc(p.name)+'">'+(v>0?'+'+v:(v<0?v:'0'))+'</span>';}).join('');
     var tot=persons.reduce(function(s,p){return s+((A.byPid[p.id]&&A.byPid[p.id].attrs[k])||0);},0);
-    return '<div class="pano-attr-row"><span class="pano-attr-name">'+attrIcon(k)+' '+_esc(attrName(k))+'</span><span class="pano-attr-cells">'+cells+'</span><span class="pano-attr-tot">+'+tot+'</span></div>';
+    return '<div class="pano-attr-item"><div class="pano-attr-name">'+attrIcon(k)+' '+_esc(attrName(k))+' <b>+'+tot+'</b></div><div class="pano-attr-boxes">'+cells+'</div></div>';
   }).join('');
-  var attrCard='<div class="card pano-card"><div class="stitle">Atributs guanyats</div><div class="pano-attr-grid">'+attrRows+'</div></div>';
+  var attrCard='<div class="card pano-card"><div class="stitle">Atributs guanyats</div><div class="pano-attr-wrap">'+attrItems+'</div></div>';
   // Nivell i XP guanyada per persona
   var xpMax=Math.max.apply(null,persons.map(function(p){return (A.byPid[p.id]&&A.byPid[p.id].xp)||0;}).concat([1]));
   var lvlRows=persons.map(function(p){
@@ -4990,9 +4990,8 @@ function renderPanoramica(){
   var lvlCard='<div class="card pano-card"><div class="stitle">Nivell i XP guanyada</div><div class="pano-lvl-list">'+lvlRows+'</div></div>';
 
   host.innerHTML=banner+nav+kpis
-    +'<div class="pano-grid2">'+hoursCard+statusCard+'</div>'
-    +'<div class="pano-grid2">'+goldCard+catCard+'</div>'
-    +'<div class="pano-grid2">'+attrCard+lvlCard+'</div>';
+    +'<div class="pano-grid3">'+hoursCard+catCard+statusCard+'</div>'
+    +'<div class="pano-grid3">'+goldCard+attrCard+lvlCard+'</div>';
 }
 
 /* ══ EXPONER FUNCIONES EN WINDOW (para onclick del HTML) ══ */

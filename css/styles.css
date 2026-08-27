@@ -1524,6 +1524,10 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 
 .pano-grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin-bottom:12px;}
 @media(max-width:960px){.pano-grid2{grid-template-columns:1fr;}}
+/* Disposició de 3 columnes (com el mockup) */
+.pano-grid3{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+@media(max-width:1200px){.pano-grid3{grid-template-columns:1fr 1fr;}}
+@media(max-width:820px){.pano-grid3{grid-template-columns:1fr;}}
 .pano-card{padding:1.1rem 1.25rem;}
 .pano-cardhead{display:flex;justify-content:space-between;align-items:center;}
 .pano-total{font-weight:700;color:var(--gold);}
@@ -1552,13 +1556,15 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 .pano-legn{font-weight:700;}
 .pano-empty{font-size:12px;color:var(--muted);}
 
-.pano-attr-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;}
-@media(max-width:640px){.pano-attr-grid{grid-template-columns:1fr;}}
-.pano-attr-row{display:flex;align-items:center;gap:8px;}
-.pano-attr-name{flex:1;font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.pano-attr-cells{display:flex;gap:3px;}
-.pano-attr-chip{min-width:26px;text-align:center;font-size:11px;font-weight:700;border:1px solid var(--border2);border-radius:5px;padding:1px 4px;}
-.pano-attr-tot{font-weight:800;font-size:13px;min-width:34px;text-align:right;color:var(--gold);}
+/* Atributs guanyats: nom a dalt, quadrats a sota (compacte i en graella) */
+.pano-attr-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px 16px;}
+.pano-attr-item{min-width:0;}
+.pano-attr-name{font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px;}
+.pano-attr-name b{color:var(--gold);margin-left:2px;}
+.pano-attr-boxes{display:flex;gap:4px;flex-wrap:wrap;}
+.pano-attr-box{min-width:26px;text-align:center;font-size:11px;font-weight:700;border:1px solid var(--border2);border-radius:6px;padding:2px 4px;}
+.pano-attr-box.zero{color:var(--faint);}
+.pano-attr-box.neg{color:var(--coral);border-color:var(--coral-border);}
 
 .pano-lvl-list{display:flex;flex-direction:column;gap:9px;}
 .pano-lvl-row{display:flex;align-items:center;gap:9px;}
