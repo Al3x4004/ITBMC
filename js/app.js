@@ -370,7 +370,8 @@ async function saveClassToSupabase(cls,idx){
 }
 
 /* Config compartida (no és dada de compte). */
-function _sharedGameData(){return {arcs:arcs,gacha_cards:gachaCards,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market,market_history:marketHistory,weekly_templates:weeklyTemplates,mission_assignees:missionAssignees,rewards_pending:rewardsPending,item_limits:itemLimits,item_purchases:itemPurchases,item_consumable:itemConsumable,item_duration:itemDuration,consume_history:consumeHistory,stats_log:statsLog};}
+/* gacha_cards NO s'hi desa: les cartes viuen a la taula "cartas" (aquí seria un duplicat mort) */
+function _sharedGameData(){return {arcs:arcs,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market,market_history:marketHistory,weekly_templates:weeklyTemplates,mission_assignees:missionAssignees,rewards_pending:rewardsPending,item_limits:itemLimits,item_purchases:itemPurchases,item_consumable:itemConsumable,item_duration:itemDuration,consume_history:consumeHistory,stats_log:statsLog};}
 // Registra una activitat (finalització de missió) per a les estadístiques setmanals/mensuals
 function logActivity(pid,m,goldGiven){
   if(!pid||!m)return;
