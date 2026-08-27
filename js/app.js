@@ -4976,7 +4976,7 @@ function renderPanoramica(){
   var attrItems=attrKeys().map(function(k){
     var cells=persons.map(function(p){var v=(A.byPid[p.id]&&A.byPid[p.id].attrs[k])||0;var cls=v>0?'pos':(v<0?'neg':'zero');return '<span class="pano-attr-box '+cls+'" style="'+(v>0?'border-color:'+p.color+';color:'+p.color+';':'')+'" title="'+_esc(p.name)+'">'+(v>0?'+'+v:(v<0?v:'0'))+'</span>';}).join('');
     var tot=persons.reduce(function(s,p){return s+((A.byPid[p.id]&&A.byPid[p.id].attrs[k])||0);},0);
-    return '<div class="pano-attr-item"><div class="pano-attr-name">'+attrIcon(k)+' '+_esc(attrName(k))+' <b>+'+tot+'</b></div><div class="pano-attr-boxes">'+cells+'</div></div>';
+    return '<div class="pano-attr-item"><div class="pano-attr-name">'+attrIcon(k)+' '+_esc(attrName(k).split('(')[0].trim())+' <b>+'+tot+'</b></div><div class="pano-attr-boxes">'+cells+'</div></div>';
   }).join('');
   var attrCard='<div class="card pano-card"><div class="stitle">Atributs guanyats</div><div class="pano-attr-wrap">'+attrItems+'</div></div>';
   // Nivell i XP guanyada per persona

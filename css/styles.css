@@ -1545,11 +1545,12 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 .pano-pval{font-weight:700;}
 .pano-pemb{font-size:12px;}
 
-.pano-donutrow{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
-.pano-donut{width:140px;height:140px;flex-shrink:0;}
+.pano-card:has(.pano-donutrow){display:flex;flex-direction:column;}
+.pano-donutrow{display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap;flex:1;}
+.pano-donut{width:150px;height:150px;flex-shrink:0;}
 .pano-donut-num{font-size:26px;font-weight:800;fill:var(--text);}
 .pano-donut-lbl{font-size:9px;letter-spacing:.12em;fill:var(--muted);}
-.pano-legs{flex:1;min-width:140px;display:flex;flex-direction:column;gap:7px;}
+.pano-legs{flex:0 1 auto;min-width:120px;display:flex;flex-direction:column;gap:7px;}
 .pano-leg{display:flex;align-items:center;gap:8px;font-size:13px;}
 .pano-legdot{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
 .pano-leglbl{flex:1;color:var(--text);}
