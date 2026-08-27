@@ -4896,11 +4896,11 @@ function _panoDonut(segs,centerLbl){
 }
 function _panoStack(week,persons,valFn,fmtFn){
   var dayTot=week.days.map(function(d){return persons.reduce(function(s,p){return s+(valFn(p.id,d.key)||0);},0);});
-  var maxD=Math.max.apply(null,dayTot.concat([1]));var H=150;
+  var maxD=Math.max.apply(null,dayTot.concat([1]));
   return '<div class="pano-bars">'+week.days.map(function(d,di){
-    var segs=persons.map(function(p){var v=valFn(p.id,d.key)||0;if(v<=0)return '';var h=(v/maxD)*H;return '<div class="pano-seg" style="height:'+h.toFixed(1)+'px;background:'+p.color+';" title="'+_esc(p.name)+': '+fmtFn(v)+'"></div>';}).join('');
+    var segs=persons.map(function(p){var v=valFn(p.id,d.key)||0;if(v<=0)return '';var h=(v/maxD)*100;return '<div class="pano-seg" style="height:'+h.toFixed(1)+'%;background:'+p.color+';" title="'+_esc(p.name)+': '+fmtFn(v)+'"></div>';}).join('');
     var tot=dayTot[di];
-    return '<div class="pano-col"><div class="pano-coltot">'+(tot>0?fmtFn(tot):'')+'</div><div class="pano-bar" style="height:'+H+'px;">'+segs+'</div><div class="pano-collbl">'+d.label+'</div></div>';
+    return '<div class="pano-col"><div class="pano-coltot">'+(tot>0?fmtFn(tot):'')+'</div><div class="pano-bar">'+segs+'</div><div class="pano-collbl">'+d.label+'</div></div>';
   }).join('')+'</div>';
 }
 function _panoPersonList(persons,valFn,fmtFn){

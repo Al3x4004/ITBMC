@@ -1626,3 +1626,12 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 .pano-hp-wk span{font-size:9px;font-weight:600;margin-left:2px;}
 .pano-hp-wk.up{color:#3fb984;}
 .pano-hp-lvl{font-size:12px;font-weight:800;color:var(--gold);min-width:48px;text-align:right;flex-shrink:0;}
+
+/* Gràfic de barres: àrea d'alçada fixa perquè els dos gràfics siguin idèntics */
+.pano-chartrow{align-items:stretch !important;}
+.pano-bars{height:180px;align-items:stretch !important;padding-top:0 !important;}
+.pano-col{height:100%;justify-content:flex-end;}
+.pano-bar{flex:1;max-width:34px;min-height:0;}
+.pano-coltot{order:-1;}
+/* Les llistes de persones omplen la mateixa alçada (repartides) */
+.pano-plist2{justify-content:space-between;}
