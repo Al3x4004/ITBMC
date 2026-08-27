@@ -1574,3 +1574,31 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 .pano-lvl-bar>div{height:100%;border-radius:4px;}
 .pano-lvl-xp{font-size:12px;font-weight:700;min-width:70px;text-align:right;}
 .pano-lvl-badge{font-size:11px;font-weight:700;color:var(--gold);min-width:44px;text-align:right;}
+
+/* ── Panoràmica: llista d'or (total + guany setmanal) ── */
+.pano-plist2{display:flex;flex-direction:column;gap:8px;min-width:150px;justify-content:center;}
+.pano-prow2{display:flex;align-items:center;gap:8px;background:var(--bg3);border:0.5px solid var(--border);border-radius:10px;padding:7px 10px;}
+.pano-prow2 .pano-pdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.pano-prow2 .pano-pemb{font-size:14px;}
+.pano-pmain{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.15;}
+.pano-pmain .pano-pname{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pano-psub{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;}
+.pano-pbadge{font-size:12px;font-weight:800;color:var(--muted);background:var(--bg2);border:0.5px solid var(--border2);border-radius:8px;padding:3px 8px;min-width:40px;text-align:center;}
+.pano-pbadge.up{color:#3fb984;border-color:color-mix(in srgb,#3fb984 40%,transparent);}
+.pano-cardfoot{margin-top:12px;padding-top:10px;border-top:0.5px solid var(--border);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;}
+.pano-cardfoot b{color:var(--gold);font-size:13px;}
+
+/* ── Panoràmica: XP i nivell (menys compacte, com el mockup) ── */
+.pano-xplist{display:flex;flex-direction:column;gap:14px;}
+.pano-xprow{background:var(--bg3);border:0.5px solid var(--border);border-radius:12px;padding:11px 13px;}
+.pano-xphead{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.pano-xphead .pano-pdot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.pano-xphead .pano-pemb{font-size:15px;}
+.pano-xpname{font-size:14px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pano-xpbadge{font-size:11px;font-weight:700;color:var(--muted);background:var(--bg2);border:0.5px solid var(--border2);border-radius:7px;padding:2px 8px;}
+.pano-xpwk{font-size:12px;font-weight:800;color:var(--muted);}
+.pano-xpwk.up{color:#3fb984;}
+.pano-xpbar{height:9px;border-radius:999px;background:var(--bg2);overflow:hidden;margin-bottom:7px;}
+.pano-xpbar>div{height:100%;border-radius:999px;}
+.pano-xpfoot{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);}
+.pano-xpfoot b{color:var(--gold);}

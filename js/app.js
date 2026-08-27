@@ -4954,10 +4954,17 @@ function renderPanoramica(){
   var hoursCard='<div class="card pano-card"><div class="pano-cardhead"><div class="stitle">Hores computades</div></div>'
     +'<div class="pano-chartrow">'+_panoStack(week,persons,function(pid,day){var b=A.byPid[pid];return b&&b.byDay[day]?b.byDay[day].hours:0;},function(v){return _fmtH(v);})
     +_panoPersonList(persons,function(pid){var b=A.byPid[pid];return b?b.hours:0;},function(v){return _fmtH(v);})+'</div></div>';
-  // Or per persona (Dl-Dv)
-  var goldCard='<div class="card pano-card"><div class="pano-cardhead"><div class="stitle">Or aconseguit</div><div class="pano-total">'+coin+' '+fmtGold(A.gold)+'</div></div>'
+  // Or per persona: total sota el nom + guany setmanal a la dreta (com el mockup)
+  var goldList='<div class="pano-plist2">'+persons.map(function(p){
+    var wk=(A.byPid[p.id]&&A.byPid[p.id].gold)||0;
+    return '<div class="pano-prow2"><span class="pano-pdot" style="background:'+p.color+';"></span><span class="pano-pemb">'+(p.emblem||'')+'</span>'
+      +'<div class="pano-pmain"><div class="pano-pname" style="color:'+p.color+';">'+_esc((p.name||'').split(' ')[0])+'</div><div class="pano-psub">'+coin+' '+fmtGold(p.gold||0)+'</div></div>'
+      +'<span class="pano-pbadge'+(wk>0?' up':'')+'">'+(wk>0?'+'+fmtGold(wk):'—')+'</span></div>';
+  }).join('')+'</div>';
+  var goldCard='<div class="card pano-card"><div class="pano-cardhead"><div class="stitle">Or aconseguit</div></div>'
     +'<div class="pano-chartrow">'+_panoStack(week,persons,function(pid,day){var b=A.byPid[pid];return b&&b.byDay[day]?b.byDay[day].gold:0;},function(v){return fmtGold(v);})
-    +_panoPersonList(persons,function(pid){var b=A.byPid[pid];return b?b.gold:0;},function(v){return fmtGold(v);})+'</div></div>';
+    +goldList+'</div>'
+    +'<div class="pano-cardfoot">'+coin+' Total setmanal <b>+'+fmtGold(A.gold)+' or</b></div></div>';
   // Donut estat de tasques (missions actuals)
   var realM=missions.filter(function(m){return !m.isDaily_instance;});
   var doneN=realM.filter(function(m){return m.status==='done';}).length;
@@ -4979,15 +4986,22 @@ function renderPanoramica(){
     return '<div class="pano-attr-item"><div class="pano-attr-name">'+attrIcon(k)+' '+_esc(attrName(k).split('(')[0].trim())+' <b>+'+tot+'</b></div><div class="pano-attr-boxes">'+cells+'</div></div>';
   }).join('');
   var attrCard='<div class="card pano-card"><div class="stitle">Atributs guanyats</div><div class="pano-attr-wrap">'+attrItems+'</div></div>';
-  // Nivell i XP guanyada per persona
-  var xpMax=Math.max.apply(null,persons.map(function(p){return (A.byPid[p.id]&&A.byPid[p.id].xp)||0;}).concat([1]));
+  // Nivell i XP: progrés dins del nivell, XP que falta per pujar i XP guanyada la setmana
   var lvlRows=persons.map(function(p){
-    var xpw=(A.byPid[p.id]&&A.byPid[p.id].xp)||0;var pct=Math.round(xpw/xpMax*100);
-    return '<div class="pano-lvl-row"><span class="pano-pdot" style="background:'+p.color+';"></span><span class="pano-lvl-name">'+(p.emblem||'')+' '+_esc((p.name||'').split(' ')[0])+'</span>'
-      +'<div class="pano-lvl-bar"><div style="width:'+pct+'%;background:'+p.color+';"></div></div>'
-      +'<span class="pano-lvl-xp">+'+xpw.toLocaleString()+' XP</span><span class="pano-lvl-badge">Nvl '+(p.level||1)+'</span></div>';
+    var xp=p.xp||0;var lvl=levelFromXp(xp);
+    var inLvl=Math.max(0,Math.min(XP_PER_LEVEL,xp-(lvl-1)*XP_PER_LEVEL));
+    var rem=lvl>=MAX_LEVEL?0:(XP_PER_LEVEL-inLvl);var pct=Math.round(inLvl/XP_PER_LEVEL*100);
+    var xpw=(A.byPid[p.id]&&A.byPid[p.id].xp)||0;
+    return '<div class="pano-xprow">'
+      +'<div class="pano-xphead"><span class="pano-pdot" style="background:'+p.color+';"></span><span class="pano-pemb">'+(p.emblem||'')+'</span>'
+        +'<span class="pano-xpname" style="color:'+p.color+';">'+_esc((p.name||'').split(' ')[0])+'</span>'
+        +'<span class="pano-xpbadge">Nvl '+lvl+'</span>'
+        +'<span class="pano-xpwk'+(xpw>0?' up':'')+'">+'+xpw.toLocaleString()+' XP</span></div>'
+      +'<div class="pano-xpbar"><div style="width:'+pct+'%;background:'+p.color+';"></div></div>'
+      +'<div class="pano-xpfoot"><span>'+inLvl+' / '+XP_PER_LEVEL+' XP</span><span>'+(rem>0?('Falten <b>'+rem+' XP</b>'):'Nivell màxim')+'</span></div>'
+    +'</div>';
   }).join('');
-  var lvlCard='<div class="card pano-card"><div class="stitle">Nivell i XP guanyada</div><div class="pano-lvl-list">'+lvlRows+'</div></div>';
+  var lvlCard='<div class="card pano-card"><div class="stitle">Nivell i XP guanyada</div><div class="pano-xplist">'+lvlRows+'</div></div>';
 
   host.innerHTML=banner+nav+kpis
     +'<div class="pano-grid3">'+hoursCard+catCard+statusCard+'</div>'
