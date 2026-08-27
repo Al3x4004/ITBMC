@@ -1635,3 +1635,10 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 .pano-coltot{order:-1;}
 /* Llistes de persones agrupades i centrades (sense estirar amb buits) */
 .pano-plist,.pano-plist2{justify-content:center;}
+
+/* Menys separació entre dies perquè els números (i la moneda) hi càpiguen bé */
+.pano-bars{gap:6px !important;}
+.pano-chartrow{gap:12px !important;}
+.pano-coltot{white-space:nowrap;font-size:10.5px;}
+.pano-collbl{white-space:nowrap;}
+.pano-psub{white-space:nowrap;}
