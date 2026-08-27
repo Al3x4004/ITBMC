@@ -4865,12 +4865,20 @@ function openBannerEditor(){
   var ov=document.getElementById('banner-editor');
   if(!ov){ov=document.createElement('div');ov.id='banner-editor';ov.className='reward-pop';document.body.appendChild(ov);}
   ov.className='reward-pop show';ov.style.zIndex=500;
-  ov.innerHTML='<div class="reward-box" style="max-width:420px;text-align:left;" onclick="event.stopPropagation()">'
+  _beMode=(p.bannerPortraitMode==='photo')?'photo':'avatar';
+  var pv=p.bannerPortrait||'';
+  ov.innerHTML='<div class="reward-box" style="max-width:440px;text-align:left;max-height:90vh;overflow-y:auto;" onclick="event.stopPropagation()">'
     +'<div style="font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:14px;">Personalitzar banner</div>'
     +'<div class="field"><label>Frase / lema</label><input type="text" id="be-quote" maxlength="140" value="'+_esc(p.quote||'')+'" placeholder="El teu lema..."/></div>'
     +'<div class="field"><label>Color del banner</label><input type="color" id="be-color" value="'+(/^#[0-9a-fA-F]{6}$/.test(p.bannerColor||p.color||'')?(p.bannerColor||p.color):'#7f77dd')+'" style="height:40px;padding:3px;"/></div>'
-    +'<div class="field"><label>Imatge de fons (URL, opcional)</label><input type="text" id="be-img" value="'+_esc(p.bannerImg||'')+'" placeholder="https://..."/></div>'
-    +'<div class="field"><label>Retrat (URL, opcional — substitueix l\'avatar)</label><input type="text" id="be-portrait" value="'+_esc(p.bannerPortrait||'')+'" placeholder="https://..."/></div>'
+    +'<div class="field"><label>Imatge de fons (opcional)</label><input type="text" id="be-img" value="'+_esc(p.bannerImg||'')+'" placeholder="Enganxa una URL..."/>'
+      +'<label class="btn btn-sm" style="margin-top:6px;display:inline-block;">⬆ Pujar imatge de fons<input type="file" accept="image/*" style="display:none" onchange="bannerUpload(this,\'be-img\')"></label></div>'
+    +'<div class="field"><label>Retrat</label>'
+      +'<div class="be-seg"><button type="button" class="'+(_beMode==='avatar'?'active':'')+'" onclick="beSetMode(\'avatar\')">Avatar del joc</button><button type="button" class="'+(_beMode==='photo'?'active':'')+'" onclick="beSetMode(\'photo\')">Foto</button></div></div>'
+    +'<div class="field" id="be-photo-box" style="'+(_beMode==='photo'?'':'display:none;')+'">'
+      +'<input type="text" id="be-portrait" value="'+_esc(pv)+'" placeholder="URL de la foto..."/>'
+      +'<label class="btn btn-sm" style="margin-top:6px;display:inline-block;">⬆ Pujar foto<input type="file" accept="image/*" style="display:none" onchange="bannerUpload(this,\'be-portrait\')"></label>'
+      +'<img id="be-portrait-prev" src="'+_esc(pv)+'" style="'+(pv?'':'display:none;')+'max-height:90px;border-radius:8px;margin-top:8px;"/></div>'
     +'<div style="display:flex;gap:8px;justify-content:space-between;margin-top:16px;">'
       +'<button class="btn btn-sm" onclick="resetBanner()">↺ Restablir</button>'
       +'<div style="display:flex;gap:8px;"><button class="btn btn-sm" onclick="closeBannerEditor()">Cancel·lar</button><button class="btn btn-sm btn-p" onclick="saveBanner()">Desar</button></div>'
@@ -4879,22 +4887,47 @@ function openBannerEditor(){
   ov.onclick=function(){closeBannerEditor();};
 }
 function closeBannerEditor(){var ov=document.getElementById('banner-editor');if(ov)ov.className='reward-pop';}
+var _beMode='avatar';
+function beSetMode(m){_beMode=m;
+  var box=document.getElementById('be-photo-box');if(box)box.style.display=(m==='photo')?'':'none';
+  var segs=document.querySelectorAll('#banner-editor .be-seg button');segs.forEach(function(b,i){b.classList.toggle('active',(i===0&&m==='avatar')||(i===1&&m==='photo'));});
+}
+// Puja una imatge (redimensionada) i la posa com a dataURL al camp indicat
+function bannerUpload(input,targetId){
+  var f=input.files&&input.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var max=(targetId==='be-img')?1000:600;var w=img.width,h=img.height;var sc=Math.min(1,max/Math.max(w,h));
+      var cw=Math.max(1,Math.round(w*sc)),ch=Math.max(1,Math.round(h*sc));
+      var cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
+      cv.getContext('2d').drawImage(img,0,0,cw,ch);
+      var data=cv.toDataURL('image/jpeg',0.82);
+      var fld=document.getElementById(targetId);if(fld)fld.value=data;
+      if(targetId==='be-portrait'){var pv=document.getElementById('be-portrait-prev');if(pv){pv.src=data;pv.style.display='block';}}
+    };
+    img.src=e.target.result;
+  };
+  r.readAsDataURL(f);
+}
 function saveBanner(){
   var p=players.find(function(x){return x.id===session.playerId;});if(!p)return;
   var q=document.getElementById('be-quote');if(q)p.quote=q.value.trim();
   var c=document.getElementById('be-color');if(c)p.bannerColor=c.value;
   var im=document.getElementById('be-img');if(im)p.bannerImg=im.value.trim();
   var po=document.getElementById('be-portrait');if(po)p.bannerPortrait=po.value.trim();
+  p.bannerPortraitMode=_beMode;
   if(CFG.MODE==='supabase')saveToSupabase();
   closeBannerEditor();renderPanoramica();
 }
 function resetBanner(){
   var p=players.find(function(x){return x.id===session.playerId;});if(!p)return;
-  delete p.bannerColor;delete p.bannerImg;delete p.bannerPortrait;
+  delete p.bannerColor;delete p.bannerImg;delete p.bannerPortrait;delete p.bannerPortraitMode;
   if(CFG.MODE==='supabase')saveToSupabase();
   closeBannerEditor();renderPanoramica();
 }
-try{window.openBannerEditor=openBannerEditor;window.closeBannerEditor=closeBannerEditor;window.saveBanner=saveBanner;window.resetBanner=resetBanner;}catch(e){}
+try{window.openBannerEditor=openBannerEditor;window.closeBannerEditor=closeBannerEditor;window.saveBanner=saveBanner;window.resetBanner=resetBanner;window.beSetMode=beSetMode;window.bannerUpload=bannerUpload;}catch(e){}
 function _panoWeek(offset){
   var r=_statsRange('week',offset);
   var names=['Dl','Dt','Dc','Dj','Dv'];var days=[];
@@ -4962,7 +4995,7 @@ function renderPanoramica(){
   var bQuote=me?(me.quote||''):'Tens el control absolut del Quarter General.';
   var bColor=me?(me.bannerColor||me.color):'#e4a428';
   var bImg=me?(me.bannerImg||''):'';
-  var bPortrait=me?(me.bannerPortrait||''):'';
+  var bPortrait=(me&&me.bannerPortraitMode==='photo')?(me.bannerPortrait||''):'';
   var now=new Date();
   var dateStr=now.toLocaleDateString('ca-ES',{day:'numeric',month:'long',year:'numeric'}).toUpperCase();
   var dow=now.toLocaleDateString('ca-ES',{weekday:'long'}).toUpperCase();

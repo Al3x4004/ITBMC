@@ -1661,3 +1661,6 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 .pano-banner.has-img .pano-charname{color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.7);}
 .pano-banner.has-img .pano-quote{color:#cfccdd;}
 .pano-banner-avatar img{max-height:190px;width:auto;border-radius:10px;object-fit:contain;}
+.be-seg{display:inline-flex;border:0.5px solid var(--border2);border-radius:9px;overflow:hidden;}
+.be-seg button{background:transparent;border:none;color:var(--muted);font:inherit;font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;}
+.be-seg button.active{background:var(--accent);color:#1a1508;}
