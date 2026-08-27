@@ -4955,7 +4955,7 @@ function renderPanoramica(){
     return '<div class="pano-plist2">'+persons.map(function(p){
       var bv=badgeFn(p.id)||0;
       return '<div class="pano-prow2"><span class="pano-pdot" style="background:'+p.color+';"></span><span class="pano-pemb">'+(p.emblem||'')+'</span>'
-        +'<div class="pano-pmain"><div class="pano-pname" style="color:'+p.color+';">'+_esc((p.name||'').split(' ')[0])+'</div><div class="pano-psub"><span class="coin"></span> '+fmtGold(p.gold||0)+'</div></div>'
+        +'<div class="pano-pmain"><div class="pano-pname" style="color:'+p.color+';">'+_esc((p.name||'').split(' ')[0])+'</div><div class="pano-psub"><span class="coin"></span> '+Math.round(p.gold||0).toLocaleString()+'</div></div>'
         +'<span class="pano-pbadge'+(bv>0?' up':'')+'">'+(bv>0?'+'+badgeFmt(bv):'—')+'</span></div>';
     }).join('')+'</div>';
   }
