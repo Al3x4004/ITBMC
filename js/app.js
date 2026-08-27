@@ -194,13 +194,20 @@ function resetItemPurchases(id){if(!confirm('Reiniciar el comptador de compres d
 
 /* ══ CARGA ══ */
 
+// Claus de configuració/catàlegs (viuen a la fila game_data 'config', separades de l'estat)
+var CONFIG_KEYS=['attr_defs','custom_traits','widget_catalog','slot_defs','class_growth'];
 async function loadFromSupabase(){
   try{
-    const r=await fetch(`${CFG.SUPABASE_URL}/rest/v1/game_data?id=eq.main&select=data`,{
+    const r=await fetch(`${CFG.SUPABASE_URL}/rest/v1/game_data?id=in.(main,config)&select=id,data`,{
       headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY}
     });
     const rows=await r.json();
-    return rows&&rows.length?rows[0].data:null;
+    if(!Array.isArray(rows)||!rows.length)return null;
+    var main=null,cfg=null;
+    rows.forEach(function(x){if(x.id==='main')main=x.data;else if(x.id==='config')cfg=x.data;});
+    // Fusió tolerant: si hi ha 'config' les seves claus manen; si no, tot ve de 'main' (compatible amb dades antigues)
+    if(main&&cfg)return Object.assign({},main,cfg);
+    return main||cfg||null;
   }catch(e){console.error('Supabase load error',e);return null;}
 }
 
@@ -451,14 +458,19 @@ async function saveToSupabase(extraPlayerIds,removedIds){
     players.forEach(function(p){if(!removed[p.id]&&(mine[p.id]||!byId[p.id]))byId[p.id]=p;});
     Object.keys(removed).forEach(function(id){delete byId[id];});
     merged=Object.keys(byId).map(function(k){return byId[k];});
-    var data=Object.assign({},_sharedGameData(),{players:merged});
-    // 1) game_data = FONT DE VERITAT: si falla, no seguim i desem a la cua offline
+    var full=Object.assign({},_sharedGameData(),{players:merged});
+    // Separar catàlegs (config) de l'estat (main): la BD queda ordenada
+    var cfg={};var data={};
+    Object.keys(full).forEach(function(k){if(CONFIG_KEYS.indexOf(k)>=0)cfg[k]=full[k];else data[k]=full[k];});
+    // 1) game_data['main'] = FONT DE VERITAT (jugadors + estat): si falla, no seguim i desem a la cua offline
     try{
       await _postWithRetry(`${CFG.SUPABASE_URL}/rest/v1/game_data`,{id:'main',data:data});
+      // 1b) game_data['config'] = catàlegs (no crític: si falla, els catàlegs segueixen a 'main' fins al pròxim cop)
+      try{await _postWithRetry(`${CFG.SUPABASE_URL}/rest/v1/game_data`,{id:'config',data:cfg},2);}catch(e2){console.warn('config save (no crític)',e2);}
       _clearPendingSave();
     }catch(e){
       console.error('game_data save error',e);
-      _queuePendingSave(data);
+      _queuePendingSave(full);
       saveStatus('error');
       return;
     }
