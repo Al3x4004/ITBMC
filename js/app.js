@@ -3936,6 +3936,10 @@ function buildAvatarSvg(av){
   }catch(e){console.error('DiceBear local error',e);return null;}
 }
 function renderAvatar(p,sizeClass){
+  // Si el jugador ha triat una FOTO com a avatar, es mostra a tot arreu (perfil, rànquing, banner...)
+  if(p&&p.bannerPortraitMode==='photo'&&p.bannerPortrait){
+    return '<div class="pixel-avatar '+(sizeClass||'pixel-avatar-lg')+' pa-isphoto"><img class="pa-photo" src="'+_esc(p.bannerPortrait)+'" alt="" onerror="this.style.display=\'none\'"/></div>';
+  }
   var av=getPlayerAvatar(p);
   var emblem=p.emblem||'🧙';
   var bg=av.bgColor?(av.bgColor.charAt(0)==='#'?av.bgColor:'#'+av.bgColor):(p.colorBg||'var(--bg3)');
