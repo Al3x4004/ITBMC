@@ -1646,3 +1646,7 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 /* Una mica més d'ample per a la llista de persones (números grans) */
 .pano-plist,.pano-plist2{width:168px !important;}
 .pano-psub{overflow:visible;}
+/* Encara menys separacio entre dies + llista una mica mes ampla per numeros grans */
+.pano-bars{gap:3px !important;}
+.pano-plist,.pano-plist2{width:184px !important;}
+.pano-psub{font-size:11.5px;}

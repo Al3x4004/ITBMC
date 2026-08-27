@@ -4960,7 +4960,7 @@ function renderPanoramica(){
     return '<div class="pano-plist2">'+persons.map(function(p){
       var bv=badgeFn(p.id)||0;
       return '<div class="pano-prow2"><span class="pano-pdot" style="background:'+p.color+';"></span><span class="pano-pemb">'+(p.emblem||'')+'</span>'
-        +'<div class="pano-pmain"><div class="pano-pname" style="color:'+p.color+';">'+_esc((p.name||'').split(' ')[0])+'</div><div class="pano-psub"><span class="coin"></span> '+Math.round(p.gold||0).toLocaleString()+'</div></div>'
+        +'<div class="pano-pmain"><div class="pano-pname" style="color:'+p.color+';">'+_esc((p.name||'').split(' ')[0])+'</div><div class="pano-psub"><span class="coin"></span> '+fmtGold(p.gold||0)+'</div></div>'
         +'<span class="pano-pbadge'+(bv>0?' up':'')+'">'+(bv>0?'+'+badgeFmt(bv):'—')+'</span></div>';
     }).join('')+'</div>';
   }
@@ -4990,7 +4990,7 @@ function renderPanoramica(){
   var catCard='<div class="card pano-card"><div class="stitle">Categories reiteratives</div><div class="pano-donutrow">'+_panoDonut(catSegs,'TOTAL')+'<div class="pano-legs">'+catLegend+'</div></div></div>';
   // Atributs guanyats per persona — nom a dalt, quadrats a sota (compacte, en graella)
   var attrItems=attrKeys().map(function(k){
-    var cells=persons.map(function(p){var v=(A.byPid[p.id]&&A.byPid[p.id].attrs[k])||0;var cls=v>0?'pos':(v<0?'neg':'zero');return '<span class="pano-attr-box '+cls+'" style="'+(v>0?'border-color:'+p.color+';color:'+p.color+';':'')+'" title="'+_esc(p.name)+'">'+(v>0?'+'+v:(v<0?v:'0'))+'</span>';}).join('');
+    var cells=persons.map(function(p){var v=(A.byPid[p.id]&&A.byPid[p.id].attrs[k])||0;return '<span class="pano-attr-box" style="border-color:'+p.color+';color:'+(v!==0?p.color:'var(--muted)')+';" title="'+_esc(p.name)+'">'+(v>0?'+'+v:(v<0?v:'0'))+'</span>';}).join('');
     var tot=persons.reduce(function(s,p){return s+((A.byPid[p.id]&&A.byPid[p.id].attrs[k])||0);},0);
     return '<div class="pano-attr-item"><div class="pano-attr-name">'+attrIcon(k)+' '+_esc(attrName(k).split('(')[0].trim())+' <b>+'+tot+'</b></div><div class="pano-attr-boxes">'+cells+'</div></div>';
   }).join('');
