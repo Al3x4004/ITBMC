@@ -1602,3 +1602,27 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 .pano-xpbar>div{height:100%;border-radius:999px;}
 .pano-xpfoot{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);}
 .pano-xpfoot b{color:var(--gold);}
+
+/* Chart + llista costat a costat (no que caigui a sota) */
+.pano-chartrow{flex-wrap:nowrap !important;}
+.pano-bars{min-width:0 !important;}
+.pano-plist,.pano-plist2{flex:0 0 auto !important;width:150px;}
+@media(max-width:520px){.pano-chartrow{flex-wrap:wrap !important;}.pano-plist,.pano-plist2{width:100%;}}
+
+/* XP i Nivell: files horitzontals compactes (com el mockup) */
+.pano-hplist{display:flex;flex-direction:column;}
+.pano-hprow{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:0.5px solid var(--border);}
+.pano-hprow:last-child{border-bottom:none;}
+.pano-hp-id{display:flex;align-items:center;gap:7px;width:108px;flex-shrink:0;min-width:0;}
+.pano-hp-id .pano-pdot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.pano-hp-id .pano-pemb{font-size:14px;}
+.pano-hp-name{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pano-hp-mid{flex:1;min-width:0;}
+.pano-hp-bar{height:8px;border-radius:999px;background:var(--bg3);overflow:hidden;}
+.pano-hp-bar>div{height:100%;border-radius:999px;}
+.pano-hp-sub{font-size:10px;color:var(--muted);margin-top:4px;}
+.pano-hp-sub b{color:var(--gold);}
+.pano-hp-wk{font-size:13px;font-weight:800;color:var(--muted);min-width:54px;text-align:right;flex-shrink:0;}
+.pano-hp-wk span{font-size:9px;font-weight:600;margin-left:2px;}
+.pano-hp-wk.up{color:#3fb984;}
+.pano-hp-lvl{font-size:12px;font-weight:800;color:var(--gold);min-width:48px;text-align:right;flex-shrink:0;}

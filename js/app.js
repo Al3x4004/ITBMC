@@ -4992,16 +4992,14 @@ function renderPanoramica(){
     var inLvl=Math.max(0,Math.min(XP_PER_LEVEL,xp-(lvl-1)*XP_PER_LEVEL));
     var rem=lvl>=MAX_LEVEL?0:(XP_PER_LEVEL-inLvl);var pct=Math.round(inLvl/XP_PER_LEVEL*100);
     var xpw=(A.byPid[p.id]&&A.byPid[p.id].xp)||0;
-    return '<div class="pano-xprow">'
-      +'<div class="pano-xphead"><span class="pano-pdot" style="background:'+p.color+';"></span><span class="pano-pemb">'+(p.emblem||'')+'</span>'
-        +'<span class="pano-xpname" style="color:'+p.color+';">'+_esc((p.name||'').split(' ')[0])+'</span>'
-        +'<span class="pano-xpbadge">Nvl '+lvl+'</span>'
-        +'<span class="pano-xpwk'+(xpw>0?' up':'')+'">+'+xpw.toLocaleString()+' XP</span></div>'
-      +'<div class="pano-xpbar"><div style="width:'+pct+'%;background:'+p.color+';"></div></div>'
-      +'<div class="pano-xpfoot"><span>'+inLvl+' / '+XP_PER_LEVEL+' XP</span><span>'+(rem>0?('Falten <b>'+rem+' XP</b>'):'Nivell màxim')+'</span></div>'
+    return '<div class="pano-hprow">'
+      +'<div class="pano-hp-id"><span class="pano-pdot" style="background:'+p.color+';"></span><span class="pano-pemb">'+(p.emblem||'')+'</span><span class="pano-hp-name" style="color:'+p.color+';">'+_esc((p.name||'').split(' ')[0])+'</span></div>'
+      +'<div class="pano-hp-mid"><div class="pano-hp-bar"><div style="width:'+pct+'%;background:'+p.color+';"></div></div><div class="pano-hp-sub">'+inLvl+' / '+XP_PER_LEVEL+' XP'+(rem>0?(' · falten <b>'+rem+'</b>'):' · <b>màxim</b>')+'</div></div>'
+      +'<div class="pano-hp-wk'+(xpw>0?' up':'')+'">+'+xpw.toLocaleString()+'<span>XP</span></div>'
+      +'<div class="pano-hp-lvl">Nvl '+lvl+'</div>'
     +'</div>';
   }).join('');
-  var lvlCard='<div class="card pano-card"><div class="stitle">Nivell i XP guanyada</div><div class="pano-xplist">'+lvlRows+'</div></div>';
+  var lvlCard='<div class="card pano-card"><div class="stitle">Nivell i XP guanyada</div><div class="pano-hplist">'+lvlRows+'</div></div>';
 
   host.innerHTML=banner+nav+kpis
     +'<div class="pano-grid3">'+hoursCard+catCard+statusCard+'</div>'
