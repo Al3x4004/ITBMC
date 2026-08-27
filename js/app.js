@@ -4953,7 +4953,7 @@ function renderPanoramica(){
     +kpi(icClock,'HORES COMPUTADES',_fmtH(A.hours),'Objectiu setmanal: '+objH+'h',hPct)
     +kpi(icDoc,'ASSISTÈNCIES RESOLTES',A.missions,'Setmana passada: '+Ap.missions,null)
     +kpi(icRefresh,'PROJECTES ACTUALITZATS','—','(sense dades encara)',null)
-    +kpi(icTarget,'SATISFACCIÓ',(avg?Math.round(avg/5*100)+'%':'—'),(avg?'★'.repeat(Math.round(avg))+'☆'.repeat(5-Math.round(avg)):'sense valoracions'),null)
+    +kpi(icTarget,'SATISFACCIÓ',(function(){if(!avg)return '—';var pc=Math.round(avg/5*100);var col=pc>=75?'var(--teal)':pc>=50?'var(--gold)':'var(--coral)';return '<span style="color:'+col+'">'+pc+'%</span>';})(),(avg?('<span class="pano-stars">'+'★'.repeat(Math.round(avg))+'<span class="off">'+'★'.repeat(5-Math.round(avg))+'</span></span>'):'sense valoracions'),null)
   +'</div>';
   // Llista de persones: SEMPRE mostra l'or total sota el nom; el badge de la dreta canvia (hores o or setmanal)
   function _panoList(badgeFn,badgeFmt){
