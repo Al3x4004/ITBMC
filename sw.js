@@ -1,5 +1,5 @@
 /* Service Worker — BMC Global ITBMC */
-const CACHE='itbmc-v100';
+const CACHE='itbmc-v101';
 const SHELL=['./','./index.html','./css/styles.css','./js/app.js'];
 
 self.addEventListener('install',function(e){
@@ -19,7 +19,21 @@ self.addEventListener('fetch',function(e){
   var req=e.request;
   if(req.method!=='GET')return;
   var url=new URL(req.url);
-  // No interceptar Supabase ni APIs externes: sempre xarxa (dades sempre fresques)
+  // Llibreries de tercers (Chart.js, XLSX, Google Fonts): cache-first, immutables per versió
+  var VENDOR=['cdn.jsdelivr.net','cdnjs.cloudflare.com','fonts.googleapis.com','fonts.gstatic.com'];
+  if(VENDOR.indexOf(url.hostname)>=0){
+    e.respondWith(
+      caches.match(req).then(function(cached){
+        if(cached)return cached;
+        return fetch(req).then(function(res){
+          if(res&&(res.status===200||res.type==='opaque')){var copy=res.clone();caches.open(CACHE).then(function(c){c.put(req,copy);});}
+          return res;
+        });
+      })
+    );
+    return;
+  }
+  // No interceptar Supabase ni altres APIs externes: sempre xarxa (dades sempre fresques)
   if(url.origin!==self.location.origin)return;
 
   if(req.mode==='navigate'){

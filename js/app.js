@@ -154,6 +154,26 @@ var itemPurchases={};/* {itemId:{total:Number, by:{playerId:Number}}} compres fe
 var itemConsumable={};/* {itemId:true} items consumibles: en usar-los desapareixen (a game_data) */
 var itemDuration={};/* {itemId:Number} durada en DIES (des que s'obté); caducat → desapareix (a game_data) */
 var consumeHistory=[];/* [{itemId,name,icon,rareza,playerId,playerName,at,expired?}] historial de consum/caducitat (a game_data) */
+// Càrrega d'scripts sota demanda (lazy). Retorna una Promise cachejada per URL.
+var _scriptPromises={};
+function _loadScript(src){
+  if(_scriptPromises[src])return _scriptPromises[src];
+  _scriptPromises[src]=new Promise(function(res,rej){
+    var s=document.createElement('script');s.src=src;s.async=true;
+    s.onload=function(){res();};
+    s.onerror=function(){delete _scriptPromises[src];rej(new Error('No s\'ha pogut carregar '+src));};
+    document.head.appendChild(s);
+  });
+  return _scriptPromises[src];
+}
+function _ensureChart(){
+  if(typeof Chart!=='undefined')return Promise.resolve();
+  return _loadScript('https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js');
+}
+function _ensureXLSX(){
+  if(typeof XLSX!=='undefined')return Promise.resolve();
+  return _loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+}
 function isConsumable(id){return !!itemConsumable[id];}
 function itemDur(id){var d=itemDuration[id];return (d!=null&&d!==''&&!isNaN(d)&&d>0)?Number(d):null;}
 // Comprova i retira els ítems caducats de tots els jugadors (durada des que s'obté). Retorna true si hi ha canvis.
@@ -441,7 +461,30 @@ async function _flushPendingSave(){
   try{await _postWithRetry(`${CFG.SUPABASE_URL}/rest/v1/game_data`,{id:'main',data:data},2);_clearPendingSave();toast('Canvis pendents desats');}catch(e){/* segueix pendent */}
 }
 if(typeof window!=='undefined')window.addEventListener('online',function(){_flushPendingSave();});
-async function saveToSupabase(extraPlayerIds,removedIds){
+// Wrapper "debounce": agrupa desats seguits en un de sol (menys tràfic).
+// Acumula els ids afectats i buida immediatament si la pàgina es tanca (cap dada es perd).
+var _saveTimer=null,_saveAccExtra={},_saveAccRemoved={},_saveWaiters=[];
+function saveToSupabase(extraPlayerIds,removedIds){
+  (extraPlayerIds||[]).forEach(function(id){if(id)_saveAccExtra[id]=true;});
+  (removedIds||[]).forEach(function(id){if(id)_saveAccRemoved[id]=true;});
+  saveStatus('saving');
+  return new Promise(function(res){
+    _saveWaiters.push(res);
+    if(_saveTimer)clearTimeout(_saveTimer);
+    _saveTimer=setTimeout(_flushSave,450);
+  });
+}
+function _flushSave(){
+  if(_saveTimer){clearTimeout(_saveTimer);_saveTimer=null;}
+  if(!_saveWaiters.length)return Promise.resolve();
+  var extra=Object.keys(_saveAccExtra);_saveAccExtra={};
+  var removed=Object.keys(_saveAccRemoved);_saveAccRemoved={};
+  var waiters=_saveWaiters;_saveWaiters=[];
+  return _saveToSupabaseNow(extra,removed).then(function(){waiters.forEach(function(w){w();});},function(){waiters.forEach(function(w){w();});});
+}
+try{window.addEventListener('pagehide',function(){if(_saveWaiters.length)_flushSave();});
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'&&_saveWaiters.length)_flushSave();});}catch(e){}
+async function _saveToSupabaseNow(extraPlayerIds,removedIds){
   saveStatus('saving');
   var merged=null,removed={};
   try{
@@ -3386,7 +3429,11 @@ function parsePlannerCSV(text){
 
 function parsePlannerExcel(buffer){
   if(typeof XLSX==='undefined'){
-    document.getElementById('planner-drop').innerHTML='<div style="font-size:14px;color:var(--coral);">⚠️ No s\'ha pogut carregar el lector d\'Excel. Comprova la connexió i torna-ho a provar (o exporta com a CSV).</div>';
+    var _d=document.getElementById('planner-drop');
+    if(_d)_d.innerHTML='<div style="font-size:14px;color:var(--muted);">Carregant el lector d\'Excel…</div>';
+    _ensureXLSX().then(function(){parsePlannerExcel(buffer);}).catch(function(){
+      if(_d)_d.innerHTML='<div style="font-size:14px;color:var(--coral);">⚠️ No s\'ha pogut carregar el lector d\'Excel. Comprova la connexió i torna-ho a provar (o exporta com a CSV).</div>';
+    });
     return;
   }
   try{
@@ -4287,7 +4334,10 @@ function buildPentagon(attrs,color){
 }
 // Inicialitza (o reinicia) tots els radars presents al DOM
 function initRadars(){
-  if(typeof Chart==='undefined')return;
+  if(typeof Chart==='undefined'){
+    if(document.querySelector('canvas.radar-canvas')){_ensureChart().then(function(){try{initRadars();}catch(e){}}).catch(function(){});}
+    return;
+  }
   document.querySelectorAll('canvas.radar-canvas').forEach(function(cv){
     var raw=cv.getAttribute('data-cfg');if(!raw)return;
     var cfg;try{cfg=JSON.parse(decodeURIComponent(raw));}catch(e){return;}
@@ -5282,6 +5332,7 @@ function renderStats(){
       +'<div class="card"><div class="stitle">Per arc / categoria</div>'+arcHtml+'</div>'
     +'</div>';
   try{
+    if(typeof Chart==='undefined'){_ensureChart().then(function(){try{renderStats();}catch(e){}}).catch(function(){});}
     if(typeof Chart!=='undefined'){
       var cv=document.getElementById('stats-time');
       if(cv){

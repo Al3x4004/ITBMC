@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Oswald:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap">
+<!-- Noto Color Emoji retirat: els emojis del sistema (Segoe UI/Apple/Android) tenen prioritat al stack i el webfont (diversos MB) mai s'usava -->
 <link rel="icon" type="image/png" href="https://i.imgur.com/Z1wFN0q.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0b0a09">
@@ -1000,8 +1000,7 @@
   window.DiceBearPixelArt = pixelArt;
   window.dispatchEvent(new Event('dicebear-ready'));
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="js/app.js?v=124"></script>
+<!-- XLSX i Chart.js es carreguen sota demanda des de app.js (_ensureXLSX/_ensureChart) -->
+<script src="js/app.js?v=125"></script>
 </body>
 </html>
