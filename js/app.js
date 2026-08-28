@@ -5187,7 +5187,7 @@ function renderPanoramica(){
 function _dashReduced(){try{return window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}}
 function _countUp(el,target){
   if(_dashReduced()||!(target>0)||document.hidden){return;}
-  var dur=850,t0=null,done=false;
+  var dur=1150,t0=null,done=false;
   function fin(){if(done)return;done=true;el.textContent=target;}
   el.textContent='0';
   function step(ts){if(done)return;if(t0==null)t0=ts;var p=Math.min(1,(ts-t0)/dur);var e=1-Math.pow(1-p,3);el.textContent=Math.round(e*target);if(p<1){requestAnimationFrame(step);}else{fin();}}
@@ -5200,17 +5200,17 @@ function _dashStagger(list,cls,base,step){
 function _dashAnimate(root){
   if(!root)return;
   // 1) Entrada en cascada de banner, KPIs i targetes
-  _dashStagger(root.querySelectorAll('.pano-banner,.pano-kpi,.pano-card,.stat-kpi,.stats-grid>.card'),'anim-rise',0,55);
+  _dashStagger(root.querySelectorAll('.pano-banner,.pano-kpi,.pano-card,.stat-kpi,.stats-grid>.card'),'anim-rise',0,75);
   if(_dashReduced())return;
   // 2) Banner: línies de text que entren des de l'esquerra + avatar amb "pop"
-  _dashStagger(root.querySelectorAll('.pano-realname,.pano-charname,.pano-class,.pano-quote'),'anim-slideL',120,80);
-  var av=root.querySelector('.pano-banner-avatar');if(av){av.classList.remove('anim-pop');void av.offsetWidth;av.style.animationDelay='170ms';av.classList.add('anim-pop');}
-  var dt=root.querySelector('.pano-banner-date');if(dt){dt.classList.remove('anim-fade');void dt.offsetWidth;dt.style.animationDelay='340ms';dt.classList.add('anim-fade');}
+  _dashStagger(root.querySelectorAll('.pano-realname,.pano-charname,.pano-class,.pano-quote'),'anim-slideL',160,105);
+  var av=root.querySelector('.pano-banner-avatar');if(av){av.classList.remove('anim-pop');void av.offsetWidth;av.style.animationDelay='230ms';av.classList.add('anim-pop');}
+  var dt=root.querySelector('.pano-banner-date');if(dt){dt.classList.remove('anim-fade');void dt.offsetWidth;dt.style.animationDelay='460ms';dt.classList.add('anim-fade');}
   // 3) Files internes de cada targeta en cascada (persones, atributs, XP, llegendes)
-  _dashStagger(root.querySelectorAll('.pano-prow2'),'anim-rise',240,45);
-  _dashStagger(root.querySelectorAll('.pano-attr-item'),'anim-rise',240,45);
-  _dashStagger(root.querySelectorAll('.pano-hprow'),'anim-rise',240,45);
-  _dashStagger(root.querySelectorAll('.pano-leg'),'anim-slideL',240,55);
+  _dashStagger(root.querySelectorAll('.pano-prow2'),'anim-rise',320,60);
+  _dashStagger(root.querySelectorAll('.pano-attr-item'),'anim-rise',320,60);
+  _dashStagger(root.querySelectorAll('.pano-hprow'),'anim-rise',320,60);
+  _dashStagger(root.querySelectorAll('.pano-leg'),'anim-slideL',320,70);
   // 4) Comptador ascendent només en valors enters purs (segurs, sense format de locale)
   root.querySelectorAll('.pano-kpi-val,.pano-donut-num,.pano-legn,.stat-kpi .v,.lbstat-v').forEach(function(el){
     var t=(el.textContent||'').trim();
