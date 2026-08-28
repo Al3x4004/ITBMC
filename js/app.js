@@ -4959,7 +4959,17 @@ function beSetMode(m){_beMode=m;
   var box=document.getElementById('be-photo-box');if(box)box.style.display=(m==='photo')?'':'none';
   var segs=document.querySelectorAll('#banner-editor .be-seg button');segs.forEach(function(b,i){b.classList.toggle('active',(i===0&&m==='avatar')||(i===1&&m==='photo'));});
 }
-// Puja una imatge (redimensionada) i la posa com a dataURL al camp indicat
+// Puja el JPEG redimensionat a Supabase Storage (bucket "banners"). Retorna la URL pública.
+// Si el bucket no existeix o falla, es rebutja i el codi cau al dataURL (base64) — mai es perd la imatge.
+function _uploadBanner(blob,kind){
+  var path=(session.playerId||'anon')+'_'+kind+'.jpg';
+  var up=CFG.SUPABASE_URL+'/storage/v1/object/banners/'+encodeURIComponent(path);
+  return fetch(up,{method:'POST',headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'image/jpeg','x-upsert':'true'},body:blob})
+    .then(function(res){if(!res.ok)throw new Error('storage '+res.status);
+      return CFG.SUPABASE_URL+'/storage/v1/object/public/banners/'+encodeURIComponent(path)+'?t='+Date.now();});
+}
+// Puja una imatge (redimensionada): la mostra a l'instant en base64 i, en paral·lel, intenta desar-la
+// a Storage. Si ho aconsegueix, el camp guarda la URL (blob petit); si no, es queda el base64.
 function bannerUpload(input,targetId){
   var f=input.files&&input.files[0];if(!f)return;
   var r=new FileReader();
@@ -4972,7 +4982,18 @@ function bannerUpload(input,targetId){
       cv.getContext('2d').drawImage(img,0,0,cw,ch);
       var data=cv.toDataURL('image/jpeg',0.82);
       var fld=document.getElementById(targetId);if(fld)fld.value=data;
-      if(targetId==='be-portrait'){var pv=document.getElementById('be-portrait-prev');if(pv){pv.src=data;pv.style.display='block';}}
+      var prev=(targetId==='be-portrait')?document.getElementById('be-portrait-prev'):null;
+      if(prev){prev.src=data;prev.style.display='block';}
+      // Intent de pujada a Storage (no bloqueja la vista prèvia); si falla, es queda el base64.
+      var kind=(targetId==='be-img')?'bg':'portrait';
+      var toBlob=function(cb){if(cv.toBlob)cv.toBlob(cb,'image/jpeg',0.82);else cb(null);};
+      toBlob(function(blob){
+        if(!blob)return;
+        _uploadBanner(blob,kind).then(function(url){
+          if(fld)fld.value=url;
+          if(prev)prev.src=url;
+        }).catch(function(){/* fallback: es manté el base64 al camp */});
+      });
     };
     img.src=e.target.result;
   };
