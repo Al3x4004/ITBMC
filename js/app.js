@@ -5194,14 +5194,25 @@ function _countUp(el,target){
   requestAnimationFrame(step);
   setTimeout(fin,dur+400);/* xarxa de seguretat: si rAF es pausa (pestanya oculta), mai es queda a 0 */
 }
+function _dashStagger(list,cls,base,step){
+  Array.prototype.forEach.call(list,function(el,i){el.classList.remove(cls);void el.offsetWidth;el.style.animationDelay=(base+i*step)+'ms';el.classList.add(cls);});
+}
 function _dashAnimate(root){
   if(!root)return;
   // 1) Entrada en cascada de banner, KPIs i targetes
-  var rev=root.querySelectorAll('.pano-banner,.pano-kpi,.pano-card,.stat-kpi,.stats-grid>.card');
-  rev.forEach(function(el,i){el.classList.remove('anim-rise');void el.offsetWidth;el.style.animationDelay=(i*55)+'ms';el.classList.add('anim-rise');});
+  _dashStagger(root.querySelectorAll('.pano-banner,.pano-kpi,.pano-card,.stat-kpi,.stats-grid>.card'),'anim-rise',0,55);
   if(_dashReduced())return;
-  // 2) Comptador ascendent només en valors enters purs (segurs, sense format de locale)
-  root.querySelectorAll('.pano-kpi-val,.pano-donut-num,.stat-kpi .v,.lbstat-v').forEach(function(el){
+  // 2) Banner: línies de text que entren des de l'esquerra + avatar amb "pop"
+  _dashStagger(root.querySelectorAll('.pano-realname,.pano-charname,.pano-class,.pano-quote'),'anim-slideL',120,80);
+  var av=root.querySelector('.pano-banner-avatar');if(av){av.classList.remove('anim-pop');void av.offsetWidth;av.style.animationDelay='170ms';av.classList.add('anim-pop');}
+  var dt=root.querySelector('.pano-banner-date');if(dt){dt.classList.remove('anim-fade');void dt.offsetWidth;dt.style.animationDelay='340ms';dt.classList.add('anim-fade');}
+  // 3) Files internes de cada targeta en cascada (persones, atributs, XP, llegendes)
+  _dashStagger(root.querySelectorAll('.pano-prow2'),'anim-rise',240,45);
+  _dashStagger(root.querySelectorAll('.pano-attr-item'),'anim-rise',240,45);
+  _dashStagger(root.querySelectorAll('.pano-hprow'),'anim-rise',240,45);
+  _dashStagger(root.querySelectorAll('.pano-leg'),'anim-slideL',240,55);
+  // 4) Comptador ascendent només en valors enters purs (segurs, sense format de locale)
+  root.querySelectorAll('.pano-kpi-val,.pano-donut-num,.pano-legn,.stat-kpi .v,.lbstat-v').forEach(function(el){
     var t=(el.textContent||'').trim();
     if(/^\d{1,7}$/.test(t)){_countUp(el,parseInt(t,10));}
   });

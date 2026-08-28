@@ -1686,7 +1686,13 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 .anim-rise .pano-donut{transform-origin:center;animation:dashDonut .7s cubic-bezier(.22,.8,.2,1) both;animation-delay:.1s;}
 @keyframes dashW{from{width:0 !important;}}
 .anim-rise .pano-kpi-bar>div{animation:dashW .9s cubic-bezier(.22,.8,.2,1) both;animation-delay:.2s;}
+@keyframes dashSlideL{from{opacity:0;transform:translateX(-18px);}to{opacity:1;transform:none;}}
+.anim-slideL{animation:dashSlideL .5s cubic-bezier(.22,.8,.2,1) both;}
+@keyframes dashPop{0%{opacity:0;transform:scale(.55);}62%{transform:scale(1.07);}100%{opacity:1;transform:scale(1);}}
+.anim-pop{animation:dashPop .62s cubic-bezier(.22,.8,.2,1) both;}
+@keyframes dashFade{from{opacity:0;}to{opacity:1;}}
+.anim-fade{animation:dashFade .55s ease both;}
 @media (prefers-reduced-motion: reduce){
-  .anim-rise,.anim-rise .pano-seg,.anim-rise .pano-donut,.anim-rise .pano-kpi-bar>div{animation:none !important;}
+  .anim-rise,.anim-slideL,.anim-pop,.anim-fade,.anim-rise .pano-seg,.anim-rise .pano-donut,.anim-rise .pano-kpi-bar>div{animation:none !important;}
   .pano-card,.pano-kpi{transition:none !important;}
 }
