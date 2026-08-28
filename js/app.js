@@ -5180,7 +5180,33 @@ function renderPanoramica(){
   host.innerHTML=banner+nav+kpis
     +'<div class="pano-grid3">'+hoursCard+catCard+statusCard+'</div>'
     +'<div class="pano-grid3">'+goldCard+attrCard+lvlCard+'</div>';
+  try{_dashAnimate(host);}catch(e){}
 }
+// ── Animacions de dashboard (entrada en cascada + comptador ascendent) ──
+// Purament visual: no toca dades ni lògica. Respecta "prefers-reduced-motion".
+function _dashReduced(){try{return window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}}
+function _countUp(el,target){
+  if(_dashReduced()||!(target>0)||document.hidden){return;}
+  var dur=850,t0=null,done=false;
+  function fin(){if(done)return;done=true;el.textContent=target;}
+  el.textContent='0';
+  function step(ts){if(done)return;if(t0==null)t0=ts;var p=Math.min(1,(ts-t0)/dur);var e=1-Math.pow(1-p,3);el.textContent=Math.round(e*target);if(p<1){requestAnimationFrame(step);}else{fin();}}
+  requestAnimationFrame(step);
+  setTimeout(fin,dur+400);/* xarxa de seguretat: si rAF es pausa (pestanya oculta), mai es queda a 0 */
+}
+function _dashAnimate(root){
+  if(!root)return;
+  // 1) Entrada en cascada de banner, KPIs i targetes
+  var rev=root.querySelectorAll('.pano-banner,.pano-kpi,.pano-card,.stat-kpi,.stats-grid>.card');
+  rev.forEach(function(el,i){el.classList.remove('anim-rise');void el.offsetWidth;el.style.animationDelay=(i*55)+'ms';el.classList.add('anim-rise');});
+  if(_dashReduced())return;
+  // 2) Comptador ascendent només en valors enters purs (segurs, sense format de locale)
+  root.querySelectorAll('.pano-kpi-val,.pano-donut-num,.stat-kpi .v,.lbstat-v').forEach(function(el){
+    var t=(el.textContent||'').trim();
+    if(/^\d{1,7}$/.test(t)){_countUp(el,parseInt(t,10));}
+  });
+}
+try{window._dashAnimate=_dashAnimate;}catch(e){}
 
 /* ══ EXPONER FUNCIONES EN WINDOW (para onclick del HTML) ══ */
 // Necesario al tener el JS en archivo externo: garantiza que los onclick="fn()" encuentren las funciones.
@@ -5352,6 +5378,7 @@ function renderStats(){
       +'<div class="card"><div class="stitle">Ranquing del periode</div>'+tbl+'</div>'
       +'<div class="card"><div class="stitle">Per arc / categoria</div>'+arcHtml+'</div>'
     +'</div>';
+  try{_dashAnimate(cont);}catch(e){}
   try{
     if(typeof Chart==='undefined'){_ensureChart().then(function(){try{renderStats();}catch(e){}}).catch(function(){});}
     if(typeof Chart!=='undefined'){

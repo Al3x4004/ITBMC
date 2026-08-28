@@ -1673,3 +1673,20 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 .pa-photo{width:100%;height:100%;object-fit:cover;display:block;}
 /* Totals "Total setmanal" a la dreta */
 .pano-cardfoot{justify-content:flex-end !important;}
+
+/* ══ ANIMACIONS DE DASHBOARD (entrada en cascada, creixement de gràfics, hover) ══ */
+/* Purament visual. Es desactiva automàticament amb prefers-reduced-motion. */
+@keyframes dashRise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+.anim-rise{animation:dashRise .5s cubic-bezier(.22,.8,.2,1) both;}
+.pano-card,.pano-kpi{transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;}
+.pano-card:hover,.pano-kpi:hover{transform:translateY(-3px);box-shadow:0 12px 28px -14px rgba(0,0,0,.6);border-color:var(--border2);}
+@keyframes dashBar{from{transform:scaleY(0);}to{transform:scaleY(1);}}
+.anim-rise .pano-seg{transform-origin:bottom center;animation:dashBar .7s cubic-bezier(.22,.8,.2,1) both;animation-delay:.16s;}
+@keyframes dashDonut{from{opacity:0;transform:rotate(-24deg) scale(.9);}to{opacity:1;transform:none;}}
+.anim-rise .pano-donut{transform-origin:center;animation:dashDonut .7s cubic-bezier(.22,.8,.2,1) both;animation-delay:.1s;}
+@keyframes dashW{from{width:0 !important;}}
+.anim-rise .pano-kpi-bar>div{animation:dashW .9s cubic-bezier(.22,.8,.2,1) both;animation-delay:.2s;}
+@media (prefers-reduced-motion: reduce){
+  .anim-rise,.anim-rise .pano-seg,.anim-rise .pano-donut,.anim-rise .pano-kpi-bar>div{animation:none !important;}
+  .pano-card,.pano-kpi{transition:none !important;}
+}
