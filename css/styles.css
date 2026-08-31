@@ -1703,6 +1703,6 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 .pano-sw-lbl{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);transition:color .16s;}
 .pano-sw.on .pano-sw-lbl{color:var(--accent,var(--gold));}
 .pano-sw-track{position:relative;display:block;width:44px;height:24px;border-radius:999px;background:var(--bg3);border:0.5px solid var(--border2);transition:background .18s,border-color .18s;box-sizing:border-box;}
-.pano-sw-knob{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:transform .18s,background .18s;}
+.pano-sw-knob{position:absolute;top:50%;margin-top:-9px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:transform .18s,background .18s;}
 .pano-sw.on .pano-sw-track{background:color-mix(in srgb,var(--accent,var(--gold)) 22%,transparent);border-color:var(--accent,var(--gold));}
 .pano-sw.on .pano-sw-knob{transform:translateX(20px);background:var(--accent,var(--gold));}
