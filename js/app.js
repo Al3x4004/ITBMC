@@ -5136,7 +5136,9 @@ function renderPanoramica(){
   var toggle=hasMe?('<button type="button" role="switch" aria-checked="'+(personal?'true':'false')+'" class="pano-sw'+(personal?' on':'')+'" onclick="panoTogglePersonal()">'
     +'<span class="pano-sw-track"><span class="pano-sw-knob"></span></span>'
     +'<span class="pano-sw-lbl">Personal</span></button>'):'';
-  var nav='<div class="pano-nav"><button onclick="panoNav(-1)" aria-label="Anterior">‹</button><span>'+_esc(week.label)+'</span><button onclick="panoNav(1)" '+(panoOffset>=0?'disabled':'')+' aria-label="Següent">›</button>'+toggle+'</div>';
+  var tvOn=document.body.classList.contains('pano-tv');
+  var tvBtn='<button type="button" class="pano-tv-btn'+(tvOn?' on':'')+'" onclick="panoToggleTV()" title="'+(tvOn?'Sortir de pantalla completa':'Mode TV / pantalla completa')+'" aria-label="Mode TV"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(tvOn?'<path d="M9 3v6H3M21 9h-6V3M3 15h6v6M15 21v-6h6"/>':'<path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M16 21h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>')+'</svg></button>';
+  var nav='<div class="pano-nav">'+tvBtn+'<button onclick="panoNav(-1)" aria-label="Anterior">‹</button><span>'+_esc(week.label)+'</span><button onclick="panoNav(1)" '+(panoOffset>=0?'disabled':'')+' aria-label="Següent">›</button>'+toggle+'</div>';
   // KPIs
   var avg=A.starsN?(A.starsSum/A.starsN):0;
   var objH=35;var hPct=Math.min(100,Math.round(A.hours/objH*100));
@@ -5207,11 +5209,46 @@ function renderPanoramica(){
   }).join('');
   var lvlCard='<div class="card pano-card"><div class="stitle">Nivell i XP guanyada</div><div class="pano-hplist">'+lvlRows+'</div></div>';
 
+  // Podi de la setmana (per hores) — només en vista d'equip
+  var podium='';
+  if(!personal){
+    var medals=['🥇','🥈','🥉'];
+    var rank=persons.map(function(p){var b=A.byPid[p.id]||{};return {p:p,hours:b.hours||0,missions:b.missions||0};})
+      .filter(function(x){return x.hours>0||x.missions>0;})
+      .sort(function(a,b){return (b.hours-a.hours)||(b.missions-a.missions);}).slice(0,3);
+    if(rank.length){
+      // Ordre visual: 2n, 1r, 3r (podi clàssic)
+      var order=rank.length>=3?[1,0,2]:(rank.length===2?[1,0]:[0]);
+      podium='<div class="card pano-card pano-podium"><div class="stitle">🏆 Podi de la setmana · Hores</div><div class="pano-podium-row">'
+        +order.map(function(idx){var x=rank[idx];if(!x)return '';return '<div class="pano-pod pano-pod-'+(idx+1)+'">'
+          +'<div class="pano-pod-medal">'+medals[idx]+'</div>'
+          +'<div class="pano-pod-ava" style="border-color:'+x.p.color+';color:'+x.p.color+';">'+(x.p.emblem||'★')+'</div>'
+          +'<div class="pano-pod-name" style="color:'+x.p.color+';">'+_esc((x.p.name||'').split(' ')[0])+'</div>'
+          +'<div class="pano-pod-val">'+_fmtH(x.hours)+'</div>'
+          +'<div class="pano-pod-sub">'+x.missions+' missions</div>'
+          +'<div class="pano-pod-bar"></div></div>';}).join('')
+        +'</div></div>';
+    }
+  }
+
   host.innerHTML=banner+nav+kpis
+    +(podium?('<div class="pano-podwrap">'+podium+'</div>'):'')
     +'<div class="pano-grid3">'+hoursCard+catCard+statusCard+'</div>'
     +'<div class="pano-grid3">'+goldCard+attrCard+lvlCard+'</div>';
   try{_dashAnimate(host);}catch(e){}
 }
+// Mode TV / pantalla completa per a la Panoràmica (per deixar-la en una pantalla de l'oficina)
+function panoToggleTV(){
+  var on=document.body.classList.toggle('pano-tv');
+  try{
+    if(on){if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});}
+    else{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});}
+  }catch(e){}
+  try{renderPanoramica();}catch(e){}
+}
+try{window.panoToggleTV=panoToggleTV;
+document.addEventListener('fullscreenchange',function(){if(!document.fullscreenElement&&document.body.classList.contains('pano-tv')){document.body.classList.remove('pano-tv');try{renderPanoramica();}catch(e){}}});
+}catch(e){}
 // ── Animacions de dashboard (entrada en cascada + comptador ascendent) ──
 // Purament visual: no toca dades ni lògica. Respecta "prefers-reduced-motion".
 function _dashReduced(){try{return window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}}

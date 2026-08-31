@@ -1706,3 +1706,31 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 .pano-sw-knob{position:absolute;top:50%;margin-top:-9px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:transform .18s,background .18s;}
 .pano-sw.on .pano-sw-track{background:color-mix(in srgb,var(--accent,var(--gold)) 22%,transparent);border-color:var(--accent,var(--gold));}
 .pano-sw.on .pano-sw-knob{transform:translateX(20px);background:var(--accent,var(--gold));}
+
+/* ══ Podi de la setmana (Panoràmica) ══ */
+.pano-podwrap{margin-bottom:14px;}
+.pano-podium .stitle{text-align:center;}
+.pano-podium-row{display:flex;align-items:flex-end;justify-content:center;gap:18px;padding:8px 0 4px;flex-wrap:wrap;}
+.pano-pod{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:96px;}
+.pano-pod-medal{font-size:26px;line-height:1;}
+.pano-pod-ava{width:52px;height:52px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--bg3);}
+.pano-pod-name{font-weight:700;font-size:14px;}
+.pano-pod-val{font-weight:700;font-size:15px;color:var(--text);}
+.pano-pod-sub{font-size:11px;color:var(--muted);}
+.pano-pod-bar{width:100%;border-radius:8px 8px 0 0;margin-top:4px;background:linear-gradient(180deg,color-mix(in srgb,var(--accent,var(--gold)) 40%,transparent),transparent);}
+.pano-pod-1 .pano-pod-bar{height:34px;}
+.pano-pod-1 .pano-pod-ava{width:62px;height:62px;font-size:28px;border-width:3px;box-shadow:0 0 18px -4px color-mix(in srgb,var(--gold) 60%,transparent);}
+.pano-pod-2 .pano-pod-bar{height:22px;}
+.pano-pod-3 .pano-pod-bar{height:14px;}
+
+/* ══ Botó Mode TV ══ */
+.pano-nav button.pano-tv-btn{position:absolute;left:0;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;border:0.5px solid var(--border2);background:var(--bg2);color:var(--muted);cursor:pointer;padding:0;transition:color .16s,border-color .16s;}
+.pano-nav button.pano-tv-btn svg{width:16px;height:16px;}
+.pano-nav button.pano-tv-btn:hover,.pano-nav button.pano-tv-btn.on{color:var(--accent,var(--gold));border-color:var(--accent,var(--gold));}
+
+/* ══ Mode TV: amaga capçalera/navegació i amplia el tauler ══ */
+body.pano-tv .topbar{display:none !important;}
+body.pano-tv .app{margin-left:0 !important;margin-right:0 !important;max-width:100% !important;padding:16px 26px 26px !important;}
+body.pano-tv .pano-banner{min-height:150px;}
+body.pano-tv .pano-kpi-val{font-size:2.4em;}
+body.pano-tv .pano-podium-row{gap:28px;}
