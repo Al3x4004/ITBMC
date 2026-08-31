@@ -210,7 +210,7 @@ function itemBoughtTotal(id){return (itemPurchases[id]&&itemPurchases[id].total)
 function itemBoughtBy(id,pid){return (itemPurchases[id]&&itemPurchases[id].by&&itemPurchases[id].by[pid])||0;}
 function itemStockLeft(id){var l=itemLim(id);if(l.total==null||l.total==='')return Infinity;return Math.max(0,(+l.total)-itemBoughtTotal(id));}
 function itemPerLeft(id,pid){var l=itemLim(id);if(l.per==null||l.per==='')return Infinity;return Math.max(0,(+l.per)-itemBoughtBy(id,pid));}
-function resetItemPurchases(id){if(!confirm('Reiniciar el comptador de compres d\'aquest ítem? Tornarà a estar disponible per a tothom.'))return;delete itemPurchases[id];if(CFG.MODE==='supabase')saveToSupabase();try{openAdminEditItem(id);}catch(e){}renderShop();}
+async function resetItemPurchases(id){if(!await uiConfirm('Reiniciar el comptador de compres d\'aquest ítem? Tornarà a estar disponible per a tothom.'))return;delete itemPurchases[id];if(CFG.MODE==='supabase')saveToSupabase();try{openAdminEditItem(id);}catch(e){}renderShop();}
 
 /* ══ CARGA ══ */
 
@@ -747,15 +747,15 @@ function backupData(){
   var _x=document.getElementById('umenu-inline');if(_x)_x.style.display='none';
   toast('Còpia descarregada');
 }
-function restoreData(input){
-  if(!session.isAdmin){alert('Només l\'admin pot restaurar.');return;}
+async function restoreData(input){
+  if(!session.isAdmin){uiAlert('Només l\'admin pot restaurar.');return;}
   var f=input&&input.files&&input.files[0];if(!f)return;
   var rd=new FileReader();
-  rd.onload=function(){
+  rd.onload=async function(){
     try{
       var d=JSON.parse(rd.result);
-      if(!d||!Array.isArray(d.players)){alert('Fitxer de còpia no vàlid.');return;}
-      if(!confirm('Restaurar '+d.players.length+' jugadors i tota la configuració? AIXÒ SOBREESCRIU les dades actuals de Supabase.'))return;
+      if(!d||!Array.isArray(d.players)){uiAlert('Fitxer de còpia no vàlid.');return;}
+      if(!await uiConfirm('Restaurar '+d.players.length+' jugadors i tota la configuració? AIXÒ SOBREESCRIU les dades actuals de Supabase.'))return;
       players=d.players;
       if(Array.isArray(d.arcs))arcs=d.arcs;
       if(Array.isArray(d.market))market=d.market;
@@ -779,17 +779,17 @@ function restoreData(input){
       if(CFG.MODE==='supabase')saveToSupabase();
       renderAll();
       input.value='';
-      alert('Restauració completada: '+players.length+' jugadors.');
-    }catch(e){alert('Error llegint el fitxer: '+e);}
+      uiAlert('Restauració completada: '+players.length+' jugadors.');
+    }catch(e){uiAlert('Error llegint el fitxer: '+e);}
   };
   rd.readAsText(f);
 }
 
 /* ══ CÒPIES DEL SERVIDOR (RPC) ══ */
 var _adminPwCache=null;
-function _askAdminPw(){
+async function _askAdminPw(){
   if(_adminPwCache)return _adminPwCache;
-  var pw=prompt('Contrasenya d\'admin per gestionar còpies del servidor:');
+  var pw=await uiPrompt('Contrasenya d\'admin per gestionar còpies del servidor:');
   if(pw)_adminPwCache=pw;
   return pw;
 }
@@ -799,7 +799,7 @@ async function openServerBackups(){
   var m=document.getElementById('server-backups-modal');if(m)m.style.display='flex';
   var list=document.getElementById('server-backups-list');
   if(list)list.innerHTML='<div style="font-size:13px;color:var(--muted);">Carregant…</div>';
-  var pw=_askAdminPw();if(!pw){closeServerBackups();return;}
+  var pw=await _askAdminPw();if(!pw){closeServerBackups();return;}
   try{
     var r=await fetch(CFG.SUPABASE_URL+'/rest/v1/rpc/list_backups',{
       method:'POST',
@@ -820,19 +820,19 @@ async function openServerBackups(){
 function closeServerBackups(){var m=document.getElementById('server-backups-modal');if(m)m.style.display='none';}
 async function restoreServerBackup(bid){
   if(!session.isAdmin)return;
-  var pw=_askAdminPw();if(!pw)return;
-  if(!confirm('Restaurar aquesta còpia? SOBREESCRIU les dades actuals del servidor.'))return;
+  var pw=await _askAdminPw();if(!pw)return;
+  if(!await uiConfirm('Restaurar aquesta còpia? SOBREESCRIU les dades actuals del servidor.'))return;
   try{
     var r=await fetch(CFG.SUPABASE_URL+'/rest/v1/rpc/restore_backup',{
       method:'POST',
       headers:{'apikey':CFG.SUPABASE_KEY,'Authorization':'Bearer '+CFG.SUPABASE_KEY,'Content-Type':'application/json'},
       body:JSON.stringify({pw:pw,bid:bid})
     });
-    if(!r.ok){var t=await r.text();alert('No s\'ha pogut restaurar: '+r.status+' '+t.slice(0,160));return;}
+    if(!r.ok){var t=await r.text();uiAlert('No s\'ha pogut restaurar: '+r.status+' '+t.slice(0,160));return;}
     closeServerBackups();
-    alert('Còpia restaurada. Es recarregarà l\'app.');
+    uiAlert('Còpia restaurada. Es recarregarà l\'app.');
     location.reload();
-  }catch(e){alert('Error: '+e);}
+  }catch(e){uiAlert('Error: '+e);}
 }
 
 /* ══ AUTH ══ */
@@ -1340,9 +1340,9 @@ async function createWidget(){
   var name=document.getElementById('wg-name').value.trim();
   var url=toEmbedUrl(document.getElementById('wg-url').value.trim());
   if(!name){toast('Posa un nom');return;}
-  if(!url){alert('Cal la URL d\'inserció (embed).');return;}
+  if(!url){uiAlert('Cal la URL d\'inserció (embed).');return;}
   // Validación básica: debe ser https
-  if(url.indexOf('https://')!==0){alert('La URL ha de començar per https://');return;}
+  if(url.indexOf('https://')!==0){uiAlert('La URL ha de començar per https://');return;}
   var icon=document.getElementById('wg-icon').value.trim()||'🧩';
   var type=document.getElementById('wg-type').value;
   if(wgEditId){
@@ -1360,8 +1360,8 @@ async function createWidget(){
   ['wg-name','wg-icon','wg-url'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   renderWidgetAdmin();
 }
-function deleteWidget(id){
-  if(!confirm('Eliminar aquest widget del catàleg? Es traurà del tauler de tots els usuaris.'))return;
+async function deleteWidget(id){
+  if(!await uiConfirm('Eliminar aquest widget del catàleg? Es traurà del tauler de tots els usuaris.'))return;
   widgetCatalog=widgetCatalog.filter(function(w){return w.id!==id;});
   // quitarlo de los usuarios que lo tuvieran
   players.forEach(function(p){if(p.widgets)p.widgets=p.widgets.filter(function(wid){return wid!==id;});});
@@ -1500,9 +1500,9 @@ function bulkComplete(){
   ids.forEach(function(id){var m=missions.find(function(x){return x.id===id;});if(m&&m.status!=='done')completeMission(id);});
   selMissions={};renderMissions();
 }
-function bulkDelete(){
+async function bulkDelete(){
   var ids=_selIds();if(!ids.length)return;
-  if(!confirm('Esborrar '+ids.length+' missions seleccionades?'))return;
+  if(!await uiConfirm('Esborrar '+ids.length+' missions seleccionades?'))return;
   ids.forEach(function(id){missions=missions.filter(function(m){return m.id!==id;});delete missionAssignees[id];delete rewardsPending[id];if(CFG.MODE==='supabase')deleteMissionFromSupabase(id);});
   selMissions={};
   if(CFG.MODE==='supabase')saveToSupabase();
@@ -1515,11 +1515,11 @@ function bulkAssign(pid){
   if(CFG.MODE==='supabase')saveToSupabase(newIds);
   selMissions={};renderMissions();renderAll();
 }
-function clearCompletedMissions(){
+async function clearCompletedMissions(){
   if(!session.isAdmin)return;
   var done=missions.filter(function(m){return m.status==='done'&&!m.isDaily_instance&&!_isWeekly(m);});
-  if(!done.length){alert('No hi ha missions completades per netejar.');return;}
-  if(!confirm('Esborrar '+done.length+' missions completades? Aquesta acció no es pot desfer.'))return;
+  if(!done.length){uiAlert('No hi ha missions completades per netejar.');return;}
+  if(!await uiConfirm('Esborrar '+done.length+' missions completades? Aquesta acció no es pot desfer.'))return;
   var ids=done.map(function(m){return m.id;});
   missions=missions.filter(function(m){return ids.indexOf(m.id)<0;});
   ids.forEach(function(id){delete missionAssignees[id];delete rewardsPending[id];if(CFG.MODE==='supabase')deleteMissionFromSupabase(id);});
@@ -1626,8 +1626,8 @@ function updateArcCounts(){
     a.done=arcMs.filter(function(m){return m.status==='done';}).length;
   });
 }
-function deleteArc(id){
-  if(!confirm('Esborrar aquest arc?'))return;
+async function deleteArc(id){
+  if(!await uiConfirm('Esborrar aquest arc?'))return;
   arcs=arcs.filter(function(a){return a.id!==id;});
   if(CFG.MODE==='supabase')saveToSupabase();
   renderAll();
@@ -1787,7 +1787,7 @@ function awardMissionTo(p,m){
 function claimMissionReward(id){
   var m=missions.find(function(x){return x.id===id;});if(!m||!rewardsPending[id])return;
   var assignees=getAssignees(m);
-  if(!assignees.length){alert('Aquesta missió no té ningú assignat. Assigna-la abans de reclamar la recompensa.');return;}
+  if(!assignees.length){uiAlert('Aquesta missió no té ningú assignat. Assigna-la abans de reclamar la recompensa.');return;}
   var mFrag=m.frag||fragForDiff(m.diff);
   assignees.forEach(function(ap){
     ap.xp+=m.xp;var _g=awardGold(ap,m.gold);ap.fragments=(ap.fragments||0)+mFrag;ap.missions++;
@@ -2584,13 +2584,13 @@ function renderConsumeHistoryAdmin(){
   var el=document.getElementById('admin-consume-history');if(!el)return;
   el.innerHTML=consumeHistoryHTML(consumeHistory);
 }
-function consumeItem(itemId){
+async function consumeItem(itemId){
   var p=players.find(function(pl){return pl.id===session.playerId;});
   var item=shopItems.find(function(i){return i.id===itemId;});
   if(!p||!item)return;
   var idx=(p.inventory||[]).indexOf(itemId);
   if(idx<0){toast('No tens aquest ítem.');return;}
-  if(!confirm('Consumir «'+item.name+'»? Desapareixerà de la teva motxilla.'))return;
+  if(!await uiConfirm('Consumir «'+item.name+'»? Desapareixerà de la teva motxilla.'))return;
   p.inventory.splice(idx,1);
   if(p.equipped)Object.keys(p.equipped).forEach(function(k){if(p.equipped[k]===itemId)p.equipped[k]=null;});
   consumeHistory.unshift({itemId:itemId,name:item.name,icon:item.icon||'📦',rareza:item.rareza||'comun',playerId:p.id,playerName:p.name,at:new Date().toISOString()});
@@ -2638,11 +2638,11 @@ function openEditModal(pid){
   document.getElementById('modal-edit').style.display='block';
 }
 function closeEdit(){document.getElementById('modal-edit').style.display='none';editPid=null;}
-function deletePlayer(){
+async function deletePlayer(){
   if(!session.isAdmin)return;
   const p=players.find(p=>p.id===editPid);
   if(!p)return;
-  if(!confirm('Segur que vols esborrar '+p.name+'? Aquesta acció no es pot desfer.'))return;
+  if(!await uiConfirm('Segur que vols esborrar '+p.name+'? Aquesta acció no es pot desfer.'))return;
   const _delId=editPid;
   players=players.filter(p=>p.id!==_delId);
   missions=missions.map(m=>m.playerId===_delId?{...m,playerId:''}:m);
@@ -2830,7 +2830,7 @@ function unequipItem(itemId){
 }
 async function adminCreateItemFull(){
   var name=document.getElementById('ai-name').value.trim();
-  if(!name){alert('El ítem necessita un nom.');return;}
+  if(!name){uiAlert('El ítem necessita un nom.');return;}
   var icon=document.getElementById('ai-icon').value.trim()||'📦';
   var imageUrl=document.getElementById('ai-imageurl').value.trim()||null;
   var desc=document.getElementById('ai-desc').value.trim();
@@ -2872,7 +2872,7 @@ async function adminChangeVia(itemId, via){
   renderShop();
 }
 async function adminDeleteItemFull(itemId){
-  if(!confirm('Eliminar aquest ítem?'))return;
+  if(!await uiConfirm('Eliminar aquest ítem?'))return;
   shopItems=shopItems.filter(function(i){return i.id!==itemId;});
   players.forEach(function(p){
     if(p.inventory)p.inventory=p.inventory.filter(function(id){return id!==itemId;});
@@ -2930,9 +2930,9 @@ function setSlotIcon(key,val){
   if(CFG.MODE==='supabase')saveToSupabase();
   slotRefresh();
 }
-function deleteSlot(key){
+async function deleteSlot(key){
   var s=SLOT_DEFS.find(function(x){return x.key===key;});if(!s)return;
-  if(!confirm('Eliminar la categoria "'+s.label+'"? Es desequiparà de tots els personatges i els ítems d\'aquesta categoria deixaran de ser equipables.'))return;
+  if(!await uiConfirm('Eliminar la categoria "'+s.label+'"? Es desequiparà de tots els personatges i els ítems d\'aquesta categoria deixaran de ser equipables.'))return;
   SLOT_DEFS=SLOT_DEFS.filter(function(x){return x.key!==key;});
   players.forEach(function(p){if(p.equipped&&p.equipped[key])p.equipped[key]=null;});
   if(CFG.MODE==='supabase')saveToSupabase();
@@ -3147,7 +3147,7 @@ function switchAdminTab(btn, tabId){
 }
 async function adminCreateCarta(){
   var name=document.getElementById('ac-name').value.trim();
-  if(!name){alert('La carta necessita un nom.');return;}
+  if(!name){uiAlert('La carta necessita un nom.');return;}
   var carta={
     id:'c'+Date.now(),
     name:name,
@@ -3161,7 +3161,7 @@ async function adminCreateCarta(){
   renderAdminCartasPage();
 }
 async function adminDeleteCarta(id){
-  if(!confirm('Eliminar aquesta carta?'))return;
+  if(!await uiConfirm('Eliminar aquesta carta?'))return;
   gachaCards=gachaCards.filter(function(c){return c.id!==id;});
   await deleteCartaFromSupabase(id);
   renderAdminCartasPage();
@@ -3343,9 +3343,9 @@ function saveEvent(){
   closeEventModal();renderCalendar();
 }
 
-function deleteEvent(){
+async function deleteEvent(){
   if(!calState.editingEventId)return;
-  if(!confirm('Esborrar aquest esdeveniment?'))return;
+  if(!await uiConfirm('Esborrar aquest esdeveniment?'))return;
   calEvents=calEvents.filter(e=>e.id!==calState.editingEventId);
   if(CFG.MODE==='supabase')saveToSupabase();
   closeEventModal();renderCalendar();
@@ -3629,9 +3629,9 @@ function addAttr(){
   renderClassesAdmin();
   toast('Atribut afegit');
 }
-function removeAttr(key){
+async function removeAttr(key){
   if(ATTRS.length<=1){toast('Ha d\'haver almenys un atribut');return;}
-  if(!confirm('Segur que vols treure aquest atribut? Es perdrà a tots els personatges.'))return;
+  if(!await uiConfirm('Segur que vols treure aquest atribut? Es perdrà a tots els personatges.'))return;
   ATTRS=ATTRS.filter(function(a){return a.key!==key;});
   players.forEach(function(p){if(p.attrs)delete p.attrs[key];});
   CLASSES.forEach(function(cl){if(cl.attrs)delete cl.attrs[key];});
@@ -3656,7 +3656,7 @@ function toggleClassCard(idx){
 }
 async function recalcAllStats(){
   if(!players.length){toast('No hi ha personatges.');return;}
-  if(!confirm('Sincronitzar els stats base de TOTS els personatges ('+players.length+') amb la base de la seva classe?\n\nNomés canvia la part base (la diferència respecte de la base que tenien). Es mantenen els punts guanyats per nivell i missions.\n\nEls personatges que encara no tenen base registrada NO es modifiquen (només se\'ls registra la base actual).'))return;
+  if(!await uiConfirm('Sincronitzar els stats base de TOTS els personatges ('+players.length+') amb la base de la seva classe?\n\nNomés canvia la part base (la diferència respecte de la base que tenien). Es mantenen els punts guanyats per nivell i missions.\n\nEls personatges que encara no tenen base registrada NO es modifiquen (només se\'ls registra la base actual).'))return;
   var ids=[];var changedCount=0;var anchoredCount=0;
   players.forEach(function(p){
     var cls=CLASSES.find(function(c){return c.name===p.cls;});
@@ -3774,8 +3774,8 @@ async function deleteClassFromSupabase(id){
 }
 async function deleteClass(idx){
   var cls=CLASSES[idx];if(!cls)return;
-  if(CLASSES.length<=1){alert('Ha d\'haver-hi almenys una classe.');return;}
-  if(!confirm('Esborrar la classe "'+cls.name+'"? Els personatges que la tinguin la conservaran com a text.'))return;
+  if(CLASSES.length<=1){uiAlert('Ha d\'haver-hi almenys una classe.');return;}
+  if(!await uiConfirm('Esborrar la classe "'+cls.name+'"? Els personatges que la tinguin la conservaran com a text.'))return;
   CLASSES.splice(idx,1);
   if(classGrowthMap[cls.name])delete classGrowthMap[cls.name];
   if(CFG.MODE==='supabase'){await deleteClassFromSupabase(cls.id);saveToSupabase();}
@@ -3786,7 +3786,7 @@ async function saveClassEdit(idx){
   var cls=CLASSES[idx];
   if(!cls)return;
   var newName=document.getElementById('cls-name-'+idx).value.trim();
-  if(!newName){alert('La classe necessita un nom.');return;}
+  if(!newName){uiAlert('La classe necessita un nom.');return;}
   var oldName=cls.name;
   cls.name=newName;
   cls.role=document.getElementById('cls-role-'+idx).value.trim();
@@ -4710,9 +4710,9 @@ function applyMenuNames(){
     }
   });
 }
-function promptRenameMenu(key){
+async function promptRenameMenu(key){
   var current=menuNames[key]||menuDefaults[key]||key;
-  var newName=prompt('Nou nom per a la pestanya "'+current+'":',current);
+  var newName=await uiPrompt('Nou nom per a la pestanya "'+current+'":',current);
   if(newName===null)return;
   newName=newName.trim();
   if(!newName){delete menuNames[key];}   // buit = torna al nom per defecte
@@ -4724,6 +4724,39 @@ function promptRenameMenu(key){
 /* ══ TOAST ══ */
 let toastT;
 function toast(msg){/* toasts desactivados a petición del usuario */}
+
+/* ══ DIÀLEGS AMB ESTIL (substitueixen alert/confirm/prompt natius) ══ */
+function uiModal(opts){
+  return new Promise(function(resolve){
+    var ov=document.getElementById('ui-dialog');
+    if(!ov){ov=document.createElement('div');ov.id='ui-dialog';ov.className='ui-dialog';document.body.appendChild(ov);}
+    var isPrompt=opts.type==='prompt',isAlert=opts.type==='alert';
+    ov.innerHTML='<div class="ui-dialog-box" role="dialog" aria-modal="true" onclick="event.stopPropagation()">'
+      +(opts.title?'<div class="ui-dialog-title">'+_esc(opts.title)+'</div>':'')
+      +'<div class="ui-dialog-msg">'+_esc(opts.message||'').replace(/\n/g,'<br>')+'</div>'
+      +(isPrompt?'<input type="text" class="ui-dialog-input" id="ui-dialog-input" value="'+_esc(opts.defaultValue||'')+'"/>':'')
+      +'<div class="ui-dialog-btns">'
+        +(isAlert?'':'<button class="btn btn-sm" data-act="cancel">'+_esc(opts.cancelText||'Cancel·lar')+'</button>')
+        +'<button class="btn btn-sm '+(opts.danger?'ui-danger':'btn-p')+'" data-act="ok">'+_esc(opts.okText||'D\'acord')+'</button>'
+      +'</div></div>';
+    ov.classList.add('show');
+    var input=document.getElementById('ui-dialog-input');
+    function done(val){ov.classList.remove('show');document.removeEventListener('keydown',onKey);resolve(val);}
+    function onKey(e){
+      if(e.key==='Escape'){e.preventDefault();done(isAlert?true:(isPrompt?null:false));}
+      else if(e.key==='Enter'){e.preventDefault();done(isPrompt?(input?input.value:''):true);}
+    }
+    ov.querySelector('[data-act="ok"]').onclick=function(){done(isPrompt?(input?input.value:''):true);};
+    var c=ov.querySelector('[data-act="cancel"]');if(c)c.onclick=function(){done(isPrompt?null:false);};
+    ov.onclick=function(){done(isAlert?true:(isPrompt?null:false));};
+    document.addEventListener('keydown',onKey);
+    if(input){setTimeout(function(){input.focus();input.select();},30);}else{setTimeout(function(){var b=ov.querySelector('[data-act="ok"]');if(b)b.focus();},30);}
+  });
+}
+function uiAlert(message,opts){opts=opts||{};return uiModal({type:'alert',message:message,title:opts.title,okText:opts.okText});}
+function uiConfirm(message,opts){opts=opts||{};return uiModal({type:'confirm',message:message,title:opts.title,okText:opts.okText,cancelText:opts.cancelText,danger:opts.danger});}
+function uiPrompt(message,defaultValue,opts){opts=opts||{};return uiModal({type:'prompt',message:message,defaultValue:defaultValue,title:opts.title,okText:opts.okText,cancelText:opts.cancelText});}
+try{window.uiAlert=uiAlert;window.uiConfirm=uiConfirm;window.uiPrompt=uiPrompt;}catch(e){}
 
 /* ══ TEMA ══ */
 function toggleTheme(){

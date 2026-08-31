@@ -1734,3 +1734,32 @@ body.pano-tv .app{margin-left:0 !important;margin-right:0 !important;max-width:1
 body.pano-tv .pano-banner{min-height:150px;}
 body.pano-tv .pano-kpi-val{font-size:2.4em;}
 body.pano-tv .pano-podium-row{gap:28px;}
+
+/* ══ Animació sutil (sense so) en pujar de nivell / reclamar recompensa ══ */
+.reward-box,.levelup-box{position:relative;overflow:visible;}
+/* Anell de llum que s'expandeix darrere de la caixa */
+.reward-pop.show .reward-box::before,.levelup-pop.show .levelup-box::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;
+  box-shadow:0 0 0 0 color-mix(in srgb,var(--gold) 55%,transparent);
+  animation:rewardGlow 1.1s cubic-bezier(.2,.7,.3,1) .05s 2;
+}
+@keyframes rewardGlow{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--gold) 55%,transparent);}70%{box-shadow:0 0 0 26px transparent;}100%{box-shadow:0 0 0 26px transparent;}}
+/* L'emoji superior fa un petit bot */
+.reward-pop.show .reward-emoji,.levelup-pop.show .levelup-box>div:first-child{display:inline-block;animation:rewardBounce .7s cubic-bezier(.2,.8,.2,1) .1s 1;}
+@keyframes rewardBounce{0%{transform:scale(.4) translateY(6px);opacity:.2;}55%{transform:scale(1.18) translateY(-4px);}100%{transform:scale(1) translateY(0);opacity:1;}}
+@media (prefers-reduced-motion: reduce){
+  .reward-pop.show .reward-box::before,.levelup-pop.show .levelup-box::before,
+  .reward-pop.show .reward-emoji,.levelup-pop.show .levelup-box>div:first-child{animation:none !important;}
+}
+
+/* ══ Diàlegs amb estil (uiAlert/uiConfirm/uiPrompt) ══ */
+.ui-dialog{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1200;align-items:center;justify-content:center;padding:20px;}
+.ui-dialog.show{display:flex;}
+.ui-dialog-box{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem 1.5rem 1.25rem;max-width:400px;width:100%;text-align:left;box-shadow:0 24px 60px -20px rgba(0,0,0,.7);animation:popIn .22s ease;}
+.ui-dialog-title{font-family:var(--font-display,inherit);font-size:17px;font-weight:700;margin-bottom:.5rem;color:var(--text);}
+.ui-dialog-msg{font-size:14px;line-height:1.5;color:var(--text);margin-bottom:1.1rem;}
+.ui-dialog-input{width:100%;padding:9px 12px;font-size:14px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text);outline:none;margin-bottom:1.1rem;box-sizing:border-box;}
+.ui-dialog-input:focus{border-color:var(--accent,var(--gold));}
+.ui-dialog-btns{display:flex;gap:8px;justify-content:flex-end;}
+.ui-dialog-btns .btn{min-width:96px;}
+.ui-dialog-btns .ui-danger{background:var(--coral,#e5484d);border-color:transparent;color:#fff;}
