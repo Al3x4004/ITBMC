@@ -399,6 +399,19 @@ async function saveClassToSupabase(cls,idx){
 /* Config compartida (no és dada de compte). */
 /* gacha_cards NO s'hi desa: les cartes viuen a la taula "cartas" (aquí seria un duplicat mort) */
 function _sharedGameData(){return {arcs:arcs,cal_events:calEvents,attr_defs:ATTRS,custom_traits:customTraits,widget_catalog:widgetCatalog,slot_defs:SLOT_DEFS,class_growth:classGrowthMap,market:market,market_history:marketHistory,weekly_templates:weeklyTemplates,mission_assignees:missionAssignees,rewards_pending:rewardsPending,item_limits:itemLimits,item_purchases:itemPurchases,item_consumable:itemConsumable,item_duration:itemDuration,consume_history:consumeHistory,stats_log:statsLog};}
+// Neteja referències òrfenes: claus de rewards_pending / mission_assignees que apunten a
+// missions que ja no existeixen (fantasmes irreclamables). Retorna true si ha canviat res.
+function _pruneOrphans(){
+  try{
+    var mids={};(missions||[]).forEach(function(m){if(m&&m.id!=null)mids[String(m.id)]=true;});
+    var changed=false;
+    [rewardsPending,missionAssignees].forEach(function(map){
+      if(!map||typeof map!=='object')return;
+      Object.keys(map).forEach(function(k){if(!mids[String(k)]){delete map[k];changed=true;}});
+    });
+    return changed;
+  }catch(e){return false;}
+}
 // Registra una activitat (finalització de missió) per a les estadístiques setmanals/mensuals
 function logActivity(pid,m,goldGiven){
   if(!pid||!m)return;
@@ -623,6 +636,9 @@ async function loadData(){
         missions=[];
       }
       arcs    =d.arcs    ||[];
+      // Neteja fantasmes acumulats (recompenses/assignacions de missions ja esborrades).
+      // Només en memòria; es persisteix al pròxim desat natural (sense escriptura extra a la càrrega).
+      try{_pruneOrphans();}catch(e){}
     }else{
       players =[];
       var _sbM=await loadMissionsFromSupabase();
@@ -1487,7 +1503,7 @@ function bulkComplete(){
 function bulkDelete(){
   var ids=_selIds();if(!ids.length)return;
   if(!confirm('Esborrar '+ids.length+' missions seleccionades?'))return;
-  ids.forEach(function(id){missions=missions.filter(function(m){return m.id!==id;});delete missionAssignees[id];if(CFG.MODE==='supabase')deleteMissionFromSupabase(id);});
+  ids.forEach(function(id){missions=missions.filter(function(m){return m.id!==id;});delete missionAssignees[id];delete rewardsPending[id];if(CFG.MODE==='supabase')deleteMissionFromSupabase(id);});
   selMissions={};
   if(CFG.MODE==='supabase')saveToSupabase();
   renderMissions();renderAll();
@@ -1506,7 +1522,7 @@ function clearCompletedMissions(){
   if(!confirm('Esborrar '+done.length+' missions completades? Aquesta acció no es pot desfer.'))return;
   var ids=done.map(function(m){return m.id;});
   missions=missions.filter(function(m){return ids.indexOf(m.id)<0;});
-  ids.forEach(function(id){delete missionAssignees[id];if(CFG.MODE==='supabase')deleteMissionFromSupabase(id);});
+  ids.forEach(function(id){delete missionAssignees[id];delete rewardsPending[id];if(CFG.MODE==='supabase')deleteMissionFromSupabase(id);});
   if(CFG.MODE==='supabase')saveToSupabase();
   renderMissions();renderAll();
 }
@@ -1619,12 +1635,15 @@ function deleteArc(id){
 function deleteMission(id){
   var m=missions.find(function(x){return x.id===id;});if(!m)return;
   var _savedAssignees=missionAssignees[id];
+  var _savedPending=rewardsPending[id];
   missions=missions.filter(function(x){return x.id!==id;});
   delete missionAssignees[id];
+  delete rewardsPending[id];
   if(CFG.MODE==='supabase'){deleteMissionFromSupabase(id);saveToSupabase();}
   renderAll();
   showUndo('Missió eliminada: '+(m.name||''),function(){
     if(_savedAssignees)missionAssignees[id]=_savedAssignees;
+    if(_savedPending)rewardsPending[id]=_savedPending;
     missions.push(m);
     if(CFG.MODE==='supabase')saveToSupabase();
     renderAll();
