@@ -2042,7 +2042,7 @@ function renderHeroProfile(i){
             <div class="pquote">"${p.quote}"</div>
           </div>
         </div>
-        ${canEdit?`<div class="pedit-btns"><button class="btn btn-sm" onclick="goToInventory()">🎒 Inventari</button><button class="btn btn-sm pedit-btn" onclick="openEditModal('${p.id}')">✏️ Editar</button></div>`:''}
+        ${canEdit?`<div class="pedit-btns"><button class="btn btn-sm pedit-btn" onclick="openEditModal('${p.id}')">✏️ Editar</button></div>`:''}
         <div class="xpw">
           <div class="xpl"><span>${inLvl} / ${XP_PER_LEVEL} XP</span><span>${atMax?'Nivell màxim (100)':('Falten '+toNext+' XP per al nivell '+(lvl+1))}</span></div>
           <div class="xpt"><div class="xpf" style="width:${xpPct}%;background:${p.color};"></div></div>
