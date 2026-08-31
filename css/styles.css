@@ -1698,7 +1698,8 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
 }
 
 /* ══ Switch de vista PERSONAL a la Panoràmica (knob sempre dins del carril) ══ */
-.pano-sw{position:absolute;right:0;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:8px;background:none;border:0;padding:0;cursor:pointer;flex-shrink:0;}
+/* .pano-nav .pano-sw: especificitat alta per guanyar a ".pano-nav button" (fletxes rodones) */
+.pano-nav button.pano-sw{position:absolute;right:0;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:flex-start;gap:8px;width:auto;height:auto;background:none;border:0;border-radius:0;padding:0;cursor:pointer;flex-shrink:0;font-size:inherit;}
 .pano-sw-lbl{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);transition:color .16s;}
 .pano-sw.on .pano-sw-lbl{color:var(--accent,var(--gold));}
 .pano-sw-track{position:relative;display:block;width:44px;height:24px;border-radius:999px;background:var(--bg3);border:0.5px solid var(--border2);transition:background .18s,border-color .18s;box-sizing:border-box;}
