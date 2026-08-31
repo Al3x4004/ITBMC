@@ -1696,3 +1696,12 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
   .anim-rise,.anim-slideL,.anim-pop,.anim-fade,.anim-rise .pano-seg,.anim-rise .pano-donut,.anim-rise .pano-kpi-bar>div{animation:none !important;}
   .pano-card,.pano-kpi{transition:none !important;}
 }
+
+/* ══ Interruptor de vista PERSONAL a la Panoràmica ══ */
+.pano-toggle{display:inline-flex;align-items:center;gap:8px;margin-left:6px;cursor:pointer;user-select:none;}
+.pano-toggle>span{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);transition:color .15s;}
+.pano-toggle.on>span{color:var(--accent,var(--gold));}
+.pano-switch{position:relative;width:42px;height:24px;border-radius:999px;border:0.5px solid var(--border2);background:var(--bg3);cursor:pointer;padding:0;transition:background .18s,border-color .18s;flex-shrink:0;}
+.pano-switch .pano-switch-kn{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:transform .18s,background .18s;}
+.pano-switch.on{background:color-mix(in srgb,var(--accent,var(--gold)) 30%,transparent);border-color:var(--accent,var(--gold));}
+.pano-switch.on .pano-switch-kn{transform:translateX(18px);background:var(--accent,var(--gold));}

@@ -4944,7 +4944,10 @@ window.addEventListener('dicebear-ready',function(){
 
 /* ══ PANORÀMICA (dashboard setmanal de l'equip) ══ */
 var panoOffset=0;
+var panoPersonal=(function(){try{return localStorage.getItem('cg_pano_personal')==='1';}catch(e){return false;}})();
 function panoNav(d){panoOffset+=d;if(panoOffset>0)panoOffset=0;renderPanoramica();}
+function panoTogglePersonal(){panoPersonal=!panoPersonal;try{localStorage.setItem('cg_pano_personal',panoPersonal?'1':'0');}catch(e){}renderPanoramica();}
+try{window.panoTogglePersonal=panoTogglePersonal;}catch(e){}
 // ── Personalitzar el banner (cada jugador el seu) ──
 function openBannerEditor(){
   var p=players.find(function(x){return x.id===session.playerId;});if(!p)return;
@@ -5041,12 +5044,13 @@ function _panoWeek(offset){
   for(var i=0;i<5;i++){var dd=new Date(r.start);dd.setDate(r.start.getDate()+i);days.push({key:dd.toISOString().slice(0,10),label:names[i]});}
   return {start:r.start,end:r.end,label:r.label,days:days};
 }
-// Agregació setmanal de TOT l'equip (ignora el filtre de persona de les Analítiques)
-function _panoAgg(start,end){
+// Agregació setmanal de l'equip (o d'una sola persona si es passa pidFilter)
+function _panoAgg(start,end,pidFilter){
   var s=start.toISOString(),e=end.toISOString();
   var A={missions:0,hours:0,gold:0,xp:0,starsSum:0,starsN:0,byPid:{},byTag:{},byArc:{}};
   statsLog.forEach(function(x){
     if(!(x.t>=s&&x.t<e))return;
+    if(pidFilter&&x.pid!==pidFilter)return;
     A.missions++;A.hours+=x.hours||0;A.gold+=x.gold||0;A.xp+=x.xp||0;
     if(x.stars>0){A.starsSum+=x.stars;A.starsN++;}
     var b=A.byPid[x.pid]=A.byPid[x.pid]||{hours:0,gold:0,xp:0,missions:0,byDay:{},attrs:{}};
@@ -5087,10 +5091,14 @@ function _panoPersonList(persons,valFn,fmtFn){
 }
 function renderPanoramica(){
   var host=document.getElementById('pano-body');if(!host)return;
+  // Mode personal: només les dades del jugador de la sessió (requereix tenir personatge)
+  var hasMe=!!players.find(function(p){return p.id===session.playerId;});
+  var personal=panoPersonal&&hasMe;
+  var pidFilter=personal?session.playerId:null;
   var week=_panoWeek(panoOffset);
-  var A=_panoAgg(week.start,week.end);
-  var prev=_panoWeek(panoOffset-1);var Ap=_panoAgg(prev.start,prev.end);
-  var persons=players.filter(function(p){return p&&p.id;});
+  var A=_panoAgg(week.start,week.end,pidFilter);
+  var prev=_panoWeek(panoOffset-1);var Ap=_panoAgg(prev.start,prev.end,pidFilter);
+  var persons=personal?players.filter(function(p){return p&&p.id===session.playerId;}):players.filter(function(p){return p&&p.id;});
   var coin='<span class="coin"></span>';
   // Banner: jugador de la sessió (o genèric si admin)
   var me=players.find(function(p){return p.id===session.playerId;});
@@ -5124,8 +5132,11 @@ function renderPanoramica(){
     +'<div class="pano-banner-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M3 9.5h18"/><path d="M8 2.5v4"/><path d="M16 2.5v4"/></svg><span class="pbd-txt">'+dateStr+'<br><span class="pbd-dow">'+dow+'</span></span></div>'
     +'<div class="pano-banner-avatar">'+avatarHtml+'</div>'
   +'</div>';
-  // Navegació setmanal
-  var nav='<div class="pano-nav"><button onclick="panoNav(-1)" aria-label="Anterior">‹</button><span>'+_esc(week.label)+'</span><button onclick="panoNav(1)" '+(panoOffset>=0?'disabled':'')+' aria-label="Següent">›</button></div>';
+  // Navegació setmanal + interruptor de vista personal (només si tens personatge)
+  var toggle=hasMe?('<label class="pano-toggle'+(personal?' on':'')+'"><span>Personal</span>'
+    +'<button type="button" role="switch" aria-checked="'+(personal?'true':'false')+'" class="pano-switch'+(personal?' on':'')+'" onclick="panoTogglePersonal()"><span class="pano-switch-kn"></span></button>'
+    +'</label>'):'';
+  var nav='<div class="pano-nav"><button onclick="panoNav(-1)" aria-label="Anterior">‹</button><span>'+_esc(week.label)+'</span><button onclick="panoNav(1)" '+(panoOffset>=0?'disabled':'')+' aria-label="Següent">›</button>'+toggle+'</div>';
   // KPIs
   var avg=A.starsN?(A.starsSum/A.starsN):0;
   var objH=35;var hPct=Math.min(100,Math.round(A.hours/objH*100));
