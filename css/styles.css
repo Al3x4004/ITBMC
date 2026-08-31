@@ -1697,8 +1697,11 @@ body.on-inicio .app{max-width:none !important;padding-left:1.5rem !important;pad
   .pano-card,.pano-kpi{transition:none !important;}
 }
 
-/* ══ Botó de vista PERSONAL / EQUIP a la Panoràmica (píndola, sense res que es mogui) ══ */
-.pano-personal-btn{position:absolute;right:0;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 14px;border-radius:999px;border:0.5px solid var(--border2);background:var(--bg2);color:var(--muted);font-size:12px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;cursor:pointer;transition:background .16s,border-color .16s,color .16s;flex-shrink:0;}
-.pano-personal-btn svg{width:15px;height:15px;flex-shrink:0;}
-.pano-personal-btn:hover{border-color:var(--accent,var(--gold));color:var(--text);}
-.pano-personal-btn.on{background:color-mix(in srgb,var(--accent,var(--gold)) 18%,transparent);border-color:var(--accent,var(--gold));color:var(--accent,var(--gold));}
+/* ══ Switch de vista PERSONAL a la Panoràmica (knob sempre dins del carril) ══ */
+.pano-sw{position:absolute;right:0;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:8px;background:none;border:0;padding:0;cursor:pointer;flex-shrink:0;}
+.pano-sw-lbl{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);transition:color .16s;}
+.pano-sw.on .pano-sw-lbl{color:var(--accent,var(--gold));}
+.pano-sw-track{position:relative;display:block;width:44px;height:24px;border-radius:999px;background:var(--bg3);border:0.5px solid var(--border2);transition:background .18s,border-color .18s;box-sizing:border-box;}
+.pano-sw-knob{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:transform .18s,background .18s;}
+.pano-sw.on .pano-sw-track{background:color-mix(in srgb,var(--accent,var(--gold)) 22%,transparent);border-color:var(--accent,var(--gold));}
+.pano-sw.on .pano-sw-knob{transform:translateX(20px);background:var(--accent,var(--gold));}

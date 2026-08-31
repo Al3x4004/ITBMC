@@ -5133,9 +5133,9 @@ function renderPanoramica(){
     +'<div class="pano-banner-avatar">'+avatarHtml+'</div>'
   +'</div>';
   // Navegació setmanal + interruptor de vista personal (només si tens personatge)
-  var toggle=hasMe?('<button type="button" role="switch" aria-checked="'+(personal?'true':'false')+'" class="pano-personal-btn'+(personal?' on':'')+'" onclick="panoTogglePersonal()">'
-    +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>'
-    +'<span>'+(personal?'Personal':'Equip')+'</span></button>'):'';
+  var toggle=hasMe?('<button type="button" role="switch" aria-checked="'+(personal?'true':'false')+'" class="pano-sw'+(personal?' on':'')+'" onclick="panoTogglePersonal()">'
+    +'<span class="pano-sw-track"><span class="pano-sw-knob"></span></span>'
+    +'<span class="pano-sw-lbl">Personal</span></button>'):'';
   var nav='<div class="pano-nav"><button onclick="panoNav(-1)" aria-label="Anterior">‹</button><span>'+_esc(week.label)+'</span><button onclick="panoNav(1)" '+(panoOffset>=0?'disabled':'')+' aria-label="Següent">›</button>'+toggle+'</div>';
   // KPIs
   var avg=A.starsN?(A.starsSum/A.starsN):0;
