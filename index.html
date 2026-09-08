@@ -853,8 +853,23 @@
               <button class="btn btn-sm btn-p" onclick="confirmPlannerImport()">✓ Importar missions</button>
             </div>
           </div>
-          <div style="background:var(--accent-bg);border:0.5px solid var(--accent-border);border-radius:var(--radius);padding:.75rem;margin-bottom:1rem;font-size:12px;color:var(--muted);line-height:1.6;">
+          <div id="planner-info-planner" style="background:var(--accent-bg);border:0.5px solid var(--accent-border);border-radius:var(--radius);padding:.75rem;margin-bottom:1rem;font-size:12px;color:var(--muted);line-height:1.6;">
             ✅ Format detectat automàticament (full <strong>Datos consolidados</strong>). L'<strong>or</strong> es calcula pel <strong>temps</strong> (columna C) × les <strong>estrelles</strong> (columna R): 5★=100%, 4★=80%, 3★=60%, 2★=40%, 1★=20% · 1 or = 1 hora a 5★. Sense temps o estrelles → 0 or. Totes les missions donen <strong>10 XP</strong> i <strong>20 fragments</strong> fixos. La prioritat del Planner es manté només com a etiqueta/grau. Es guarden el creador, l'assignat, les etiquetes i les notes.
+          </div>
+          <div id="planner-info-assist" style="display:none;background:var(--accent-bg);border:0.5px solid var(--accent-border);border-radius:var(--radius);padding:.75rem;margin-bottom:1rem;font-size:12px;color:var(--muted);line-height:1.6;">
+            ✅ Format <strong>Assistències Tècniques</strong> detectat (full <strong>Assistencies_Tecniques</strong>). Cada assistència s'assigna al <strong>Tècnic</strong> (pel nom real). Amb <strong>valoració (estrelles)</strong> → entra <strong>completada</strong> i dóna recompensa; sense valoració → entra <strong>pendent</strong>. L'or = hores × (estrelles/5). La <strong>categoria</strong> es desa com a etiqueta. Tria el <strong>rang de dates</strong> per importar només el que vulguis.
+          </div>
+          <div id="planner-daterange" style="display:none;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius);padding:.85rem 1rem;margin-bottom:1rem;">
+            <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;">
+              <div class="field" style="margin:0;"><label style="font-size:11px;">Des de</label><input type="date" id="planner-date-from" onchange="updatePlannerRange()" style="padding:6px 10px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);"/></div>
+              <div class="field" style="margin:0;"><label style="font-size:11px;">Fins a</label><input type="date" id="planner-date-to" onchange="updatePlannerRange()" style="padding:6px 10px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);"/></div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button class="btn btn-sm" onclick="setPlannerRangePreset('week')">Última setmana</button>
+                <button class="btn btn-sm" onclick="setPlannerRangePreset('month')">Últim mes</button>
+                <button class="btn btn-sm" onclick="setPlannerRangePreset('all')">Tot</button>
+              </div>
+              <div id="planner-range-count" style="margin-left:auto;font-size:13px;font-weight:700;color:var(--gold);"></div>
+            </div>
           </div>
           <div style="overflow-x:auto;">
             <table style="width:100%;border-collapse:collapse;font-size:12px;" id="planner-table"></table>
@@ -1001,6 +1016,6 @@
   window.dispatchEvent(new Event('dicebear-ready'));
 </script>
 <!-- XLSX i Chart.js es carreguen sota demanda des de app.js (_ensureXLSX/_ensureChart) -->
-<script src="js/app.js?v=136"></script>
+<script src="js/app.js?v=137"></script>
 </body>
 </html>

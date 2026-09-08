@@ -417,7 +417,7 @@ function logActivity(pid,m,goldGiven){
   if(!pid||!m)return;
   var tags=(m.plannerTags&&m.plannerTags.indexOf('weekly:')!==0)?m.plannerTags.split(';').map(function(t){return t.trim();}).filter(Boolean):[];
   var _ak=m.attr?(attrKeyFromName(m.attr)||''):'';
-  statsLog.push({t:new Date().toISOString(),pid:pid,xp:m.xp||0,gold:goldGiven||0,frag:m.frag||0,hours:m.durationH||0,stars:m.stars||0,diff:m.diff||'C',arc:m.arc||'General',tags:tags,attr:_ak,attrPts:(_ak?(m.attrPts||0):0)});
+  statsLog.push({t:(arguments.length>3&&arguments[3])?arguments[3]:new Date().toISOString(),pid:pid,xp:m.xp||0,gold:goldGiven||0,frag:m.frag||0,hours:m.durationH||0,stars:m.stars||0,diff:m.diff||'C',arc:m.arc||'General',tags:tags,attr:_ak,attrPts:(_ak?(m.attrPts||0):0)});
   // Poda: conservar ~13 mesos i màxim 4000 entrades
   var lim=new Date();lim.setMonth(lim.getMonth()-13);var limS=lim.toISOString();
   statsLog=statsLog.filter(function(e){return e.t>=limS;});
@@ -1773,7 +1773,7 @@ function _doCompleteMission(id){
   renderAll();
 }
 // Aplica la recompensa d'una missió a un jugador concret (sense popup). Reutilitzat per l'import del Planner.
-function awardMissionTo(p,m){
+function awardMissionTo(p,m,whenISO){
   if(!p||!m)return;
   var mFrag=m.frag||fragForDiff(m.diff);
   p.xp=(p.xp||0)+(m.xp||0);
@@ -1781,7 +1781,7 @@ function awardMissionTo(p,m){
   p.fragments=(p.fragments||0)+mFrag;
   p.missions=(p.missions||0)+1;
   if(m.attrPts&&m.attr){var k=attrKeyFromName(m.attr);if(k)p.attrs[k]=(p.attrs[k]||0)+m.attrPts;}
-  logActivity(p.id,Object.assign({},m,{frag:mFrag}),_g);
+  logActivity(p.id,Object.assign({},m,{frag:mFrag}),_g,whenISO);
   checkLevelUp(p);
 }
 function claimMissionReward(id){
@@ -3357,6 +3357,29 @@ async function deleteEvent(){
 /* ══ PLANNER IMPORT ══ */
 let plannerRows=[];
 let plannerHeaders=[];
+let plannerFormat='planner';   // 'planner' (Microsoft Planner) o 'assist' (Assistencies_Tecniques)
+let plannerDateMin=null,plannerDateMax=null;
+function _plDate(v){
+  if(v==null||v==='')return null;
+  if(v instanceof Date)return isNaN(v.getTime())?null:v;
+  if(typeof v==='number'){var d=new Date(Math.round((v-25569)*86400*1000));return isNaN(d.getTime())?null:d;}
+  var d2=new Date(v);return isNaN(d2.getTime())?null:d2;
+}
+function _tsToInput(ts){if(!ts)return '';var d=new Date(ts);var mm=('0'+(d.getMonth()+1)).slice(-2),dd=('0'+d.getDate()).slice(-2);return d.getFullYear()+'-'+mm+'-'+dd;}
+function _inputToTs(str,endOfDay){if(!str)return null;var p=str.split('-');if(p.length!==3)return null;var d=new Date(+p[0],+p[1]-1,+p[2],endOfDay?23:0,endOfDay?59:0,endOfDay?59:0,endOfDay?999:0);return d.getTime();}
+function _plRangeTs(){
+  var f=document.getElementById('planner-date-from'),t=document.getElementById('planner-date-to');
+  return {from:_inputToTs(f?f.value:'',false),to:_inputToTs(t?t.value:'',true)};
+}
+function _plRowsInRange(){
+  var r=_plRangeTs();
+  return plannerRows.filter(function(row){
+    if(!row.__ts)return false;
+    if(r.from!=null&&row.__ts<r.from)return false;
+    if(r.to!=null&&row.__ts>r.to)return false;
+    return true;
+  });
+}
 
 // Decodifica el temps de la columna "Depósito" (emojis-dígit tipus 0️⃣:1️⃣5️⃣) → hores decimals.
 // Els emojis-teclat són dígit ASCII + U+FE0F + U+20E3; treiem els modificadors i queda "0:15".
@@ -3420,6 +3443,7 @@ function parsePlannerFile(file){
 }
 
 function parsePlannerCSV(text){
+  plannerFormat='planner';
   var lines=text.split(/\r\n|\n|\r/).filter(function(l){return l.trim();});
   if(!lines.length){return;}
   var sep=lines[0].includes('	')?'	':(lines[0].split(';').length>lines[0].split(',').length?';':',');
@@ -3456,7 +3480,29 @@ function parsePlannerExcel(buffer){
     return;
   }
   try{
-    var wb=XLSX.read(new Uint8Array(buffer),{type:'array'});
+    var wb=XLSX.read(new Uint8Array(buffer),{type:'array',cellDates:true});
+    // Format nou "Assistències Tècniques": full Assistencies_Tecniques amb columnes pròpies + dates
+    if(wb.SheetNames.indexOf('Assistencies_Tecniques')>=0){
+      plannerFormat='assist';
+      var wsA=wb.Sheets['Assistencies_Tecniques'];
+      var mA=XLSX.utils.sheet_to_json(wsA,{header:1,raw:true,blankrows:false});
+      if(!mA.length){toast('La fulla Assistencies_Tecniques està buida.');return;}
+      var hiA=0;for(var iA=0;iA<mA.length;iA++){if(mA[iA].some(function(c){return (''+(c==null?'':c)).trim();})){hiA=iA;break;}}
+      plannerHeaders=mA[hiA].map(function(h){return (''+(h==null?'':h)).trim();});
+      var diA=plannerHeaders.indexOf('Data');
+      plannerRows=mA.slice(hiA+1).map(function(cols){
+        var row={};plannerHeaders.forEach(function(h,i){if(h)row[h]=cols[i];});
+        var d=_plDate(diA>=0?cols[diA]:null);
+        row.__ts=d?d.getTime():null;row.__date=d?_tsToInput(d.getTime()):'';
+        return row;
+      }).filter(function(r){return (r['Descripció']||r['Descripcio']||r['Número']||r['Numero'])&&r.__ts;});
+      var tss=plannerRows.map(function(r){return r.__ts;}).filter(Boolean);
+      plannerDateMin=tss.length?Math.min.apply(null,tss):null;
+      plannerDateMax=tss.length?Math.max.apply(null,tss):null;
+      showPlannerPreview();
+      return;
+    }
+    plannerFormat='planner';
     // Preferim la fulla "Datos consolidados" (conté temps + etiquetes); si no, "Tareas"; si no, la primera
     var _pref=['Datos consolidados','Dades consolidades','Tareas','Tasques'];
     var sheetName=wb.SheetNames[0];
@@ -3482,6 +3528,14 @@ function parsePlannerExcel(buffer){
 function showPlannerPreview(){
   if(!plannerRows.length){toast('No s\'han trobat tasques al fitxer.');return;}
   document.getElementById('planner-preview').style.display='block';
+  var _ip=document.getElementById('planner-info-planner'),_ia=document.getElementById('planner-info-assist'),_dr=document.getElementById('planner-daterange');
+  if(plannerFormat==='assist'){
+    if(_ip)_ip.style.display='none';if(_ia)_ia.style.display='';if(_dr)_dr.style.display='';
+    // Rang per defecte: última setmana de dades del fitxer
+    setPlannerRangePreset('week',true);
+    return;
+  }
+  if(_ip)_ip.style.display='';if(_ia)_ia.style.display='none';if(_dr)_dr.style.display='none';
   document.getElementById('planner-preview-title').textContent='Previsualització — '+plannerRows.length+' tasques trobades';
 
   // Mapeo FIJO — el CSV de Planner siempre tiene el mismo formato
@@ -3503,7 +3557,84 @@ function showPlannerPreview(){
   }).join('')+'</tbody>';
 }
 
+// ── Selector de dates (format Assistències) ──
+function setPlannerRangePreset(kind,initMinMax){
+  var f=document.getElementById('planner-date-from'),t=document.getElementById('planner-date-to');
+  if(!f||!t)return;
+  if(initMinMax){f.min=t.min=_tsToInput(plannerDateMin);f.max=t.max=_tsToInput(plannerDateMax);}
+  var maxTs=plannerDateMax||Date.now();
+  if(kind==='all'){f.value=_tsToInput(plannerDateMin);t.value=_tsToInput(plannerDateMax);}
+  else{
+    var days=kind==='month'?29:6;
+    var fromTs=maxTs-days*86400000;if(plannerDateMin&&fromTs<plannerDateMin)fromTs=plannerDateMin;
+    f.value=_tsToInput(fromTs);t.value=_tsToInput(maxTs);
+  }
+  updatePlannerRange();
+}
+function updatePlannerRange(){
+  if(plannerFormat!=='assist')return;
+  var inR=_plRowsInRange();
+  var done=inR.filter(function(r){return plannerCountStars(r['Valoració'])>0;}).length;
+  var cntEl=document.getElementById('planner-range-count');
+  if(cntEl)cntEl.textContent=inR.length+' assistències · '+done+' completades';
+  var titEl=document.getElementById('planner-preview-title');
+  if(titEl)titEl.textContent='Previsualització — '+inR.length+' assistències al rang';
+  var table=document.getElementById('planner-table');if(!table)return;
+  var cols=['Data','Descripció','Tècnic','Categoria incidència','Duració (hores)','Valoració','Pla'];
+  var th=cols.map(function(h){return '<th style="text-align:left;padding:6px 8px;border-bottom:0.5px solid var(--border);font-size:11px;color:var(--muted);font-weight:500;">'+_esc(h)+'</th>';}).join('')
+    +'<th style="text-align:right;padding:6px 8px;border-bottom:0.5px solid var(--border);font-size:11px;color:var(--gold);font-weight:600;">Or</th>'
+    +'<th style="text-align:center;padding:6px 8px;border-bottom:0.5px solid var(--border);font-size:11px;color:var(--muted);font-weight:600;">Estat</th>';
+  table.innerHTML='<thead><tr>'+th+'</tr></thead><tbody>'+inR.slice(0,12).map(function(row){
+    var stars=plannerCountStars(row['Valoració']);var hours=parseFloat(row['Duració (hores)'])||0;
+    var gold=stars>0?Math.round(hours*(stars/5)*100)/100:0;
+    var estat=stars>0?'<span style="color:var(--teal);">✓ Completada</span>':'<span style="color:var(--muted);">Pendent</span>';
+    return '<tr>'+cols.map(function(h){
+      var v=h==='Data'?(row.__date||''):(row[h]!=null?row[h]:'');
+      return '<td style="padding:6px 8px;border-bottom:0.5px solid var(--border);font-size:12px;color:var(--text);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+_esc(''+v)+'</td>';
+    }).join('')
+    +'<td style="padding:6px 8px;border-bottom:0.5px solid var(--border);font-size:12px;text-align:right;font-weight:600;color:'+(gold>0?'var(--gold)':'var(--muted)')+';">'+gold+'</td>'
+    +'<td style="padding:6px 8px;border-bottom:0.5px solid var(--border);font-size:12px;text-align:center;">'+estat+'</td></tr>';
+  }).join('')+'</tbody>';
+}
+async function confirmAssistImport(){
+  var inR=_plRowsInRange();
+  if(!inR.length){toast('No hi ha assistències al rang seleccionat.');return;}
+  if(inR.length>600&&!await uiConfirm('Vas a importar '+inR.length+' assistències. És un volum gran i pot trigar bastant. Continuar?'))return;
+  function norm(s){return (s||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();}
+  var imported=0,skipped=0,autoClaimed=0,pend=0;
+  inR.forEach(function(row){
+    var num=(row['Número']!=null?row['Número']:row['Numero']);num=(num==null?'':(''+num)).trim();
+    var desc=(row['Descripció']!=null?row['Descripció']:(row['Descripcio']||''));desc=(''+desc).trim();
+    if(!num&&!desc)return;
+    var plannerId='assist_'+(num||desc.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,''));
+    if(missions.find(function(m){return m.plannerId===plannerId;})){skipped++;return;}
+    var stars=plannerCountStars(row['Valoració']);
+    var status=stars>0?'done':'pending';
+    var hours=parseFloat(row['Duració (hores)'])||0;
+    var gold=stars>0?Math.round(hours*(stars/5)*100)/100:0;
+    var tech=(''+(row['Tècnic']||'')).trim();var cn=norm(tech);
+    var assignedPlayer=players.find(function(p){return p.realName&&cn&&norm(p.realName)===cn;})
+      ||players.find(function(p){return p.realName&&cn&&(norm(p.realName).indexOf(cn)>=0||cn.indexOf(norm(p.realName))>=0);});
+    var cat=(''+(row['Categoria incidència']||'')).trim();
+    var arc=(''+(row['Pla']||'General')).trim()||'General';
+    var subj=(''+(row['Subjecte']||'')).trim();
+    var newM={id:'assist_'+Date.now()+'_'+imported,name:desc||'Assistència tècnica',desc:(subj?('Subjecte: '+subj):''),arc:arc,playerId:assignedPlayer?assignedPlayer.id:'',status:status,diff:'C',xp:MISSION_XP,gold:gold,frag:MISSION_FRAG,durationH:hours,stars:stars,attr:'Intel·ligència',attrPts:2,deadline:row.__date||'',daily:false,isDaily_instance:false,plannerId:plannerId,createdBy:session.playerId,fromPlanner:true,plannerCreator:tech,plannerAssignee:subj,plannerTags:cat};
+    missions.push(newM);
+    if(status==='done'){
+      if(assignedPlayer){awardMissionTo(assignedPlayer,newM,(row.__date?row.__date+'T12:00:00.000Z':null));autoClaimed++;}
+      else{rewardsPending[newM.id]=true;}
+    }else{pend++;}
+    imported++;
+  });
+  if(CFG.MODE==='supabase')saveToSupabase();
+  clearPlannerImport();
+  renderAll();try{renderPlannerImported();}catch(e){}
+  var el=document.getElementById('planner-imported');if(el)el.style.display='block';
+  var doneTotal=imported-pend;var doneNoAssignee=doneTotal-autoClaimed;
+  toast(imported+' importades · '+doneTotal+' completades'+(autoClaimed?(' ('+autoClaimed+' amb recompensa auto)'):'')+(doneNoAssignee?(' · '+doneNoAssignee+' sense tècnic (a reclamar)'):'')+' · '+pend+' pendents'+(skipped?(' · '+skipped+' duplicades omeses'):''));
+}
 function confirmPlannerImport(){
+  if(plannerFormat==='assist'){return confirmAssistImport();}
   // Mapeo FIJO — formato estándar de exportación de Planner
   var titleCol='Nombre de la tarea';
   var bucketCol='Depósito';
@@ -3593,9 +3724,10 @@ function confirmPlannerImport(){
 }
 
 function clearPlannerImport(){
-  plannerRows=[];plannerHeaders=[];
-  document.getElementById('planner-preview').style.display='none';
-  document.getElementById('planner-file').value='';
+  plannerRows=[];plannerHeaders=[];plannerFormat='planner';plannerDateMin=null;plannerDateMax=null;
+  var _dr=document.getElementById('planner-daterange');if(_dr)_dr.style.display='none';
+  var _pp=document.getElementById('planner-preview');if(_pp)_pp.style.display='none';
+  var _pf=document.getElementById('planner-file');if(_pf)_pf.value='';
   var drop=document.getElementById('planner-drop');
   if(drop)drop.innerHTML='<div style="font-size:32px;margin-bottom:8px;">📂</div><div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px;">Arrossega el teu fitxer aquí</div><div style="font-size:12px;color:var(--muted);">o fes clic per seleccionar — .xlsx, .csv</div><input type="file" id="planner-file" accept=".csv,.xlsx,.xls" style="display:none;" onchange="plannerFileSelected(this)"/>';
 }
@@ -5321,7 +5453,7 @@ try{window._dashAnimate=_dashAnimate;}catch(e){}
 
 /* ══ EXPONER FUNCIONES EN WINDOW (para onclick del HTML) ══ */
 // Necesario al tener el JS en archivo externo: garantiza que los onclick="fn()" encuentren las funciones.
-try{window.applyMenuNames=applyMenuNames;}catch(e){}try{window.assignMission=assignMission;}catch(e){}try{window.buildAttrBars=buildAttrBars;}catch(e){}try{window.buildAvatarUrl=buildAvatarUrl;}catch(e){}try{window.buildCreatorCls=buildCreatorCls;}catch(e){}try{window.buildCreatorColors=buildCreatorColors;}catch(e){}try{window.buildCreatorEmblems=buildCreatorEmblems;}catch(e){}try{window.buildPentagon=buildPentagon;}catch(e){}try{window.buildStartItemsPreview=buildStartItemsPreview;}catch(e){}try{window.consumeItem=consumeItem;}catch(e){}try{window.buyItem=buyItem;}catch(e){}try{window.cGoTo=cGoTo;}catch(e){}try{window.cNext=cNext;}catch(e){}try{window.calNav=calNav;}catch(e){}try{window.canBuyItem=canBuyItem;}catch(e){}try{window.checkDailyMissions=checkDailyMissions;}catch(e){}try{window.checkLevelUp=checkLevelUp;}catch(e){}try{window.classToRow=classToRow;}catch(e){}try{window.cleanOldCompleted=cleanOldCompleted;}catch(e){}try{window.clearPlannerImport=clearPlannerImport;}catch(e){}try{window.closeAdminEditModal=closeAdminEditModal;}catch(e){}try{window.closeAvatarEditor=closeAvatarEditor;}catch(e){}try{window.closeEdit=closeEdit;}catch(e){}try{window.closeEventModal=closeEventModal;}catch(e){}try{window.closeMissionModal=closeMissionModal;}catch(e){}try{window.closeReward=closeReward;}catch(e){}try{window.completeMission=completeMission;}catch(e){}try{window.computeClassBonus=computeClassBonus;}catch(e){}try{window.confirmLevelUp=confirmLevelUp;}catch(e){}try{window.confirmPlannerImport=confirmPlannerImport;}catch(e){}try{window.createArc=createArc;}catch(e){}try{window.createMission=createMission;}catch(e){}try{window.deleteArc=deleteArc;}catch(e){}try{window.deleteEvent=deleteEvent;}catch(e){}try{window.deleteMission=deleteMission;}catch(e){}try{window.deletePlayer=deletePlayer;}catch(e){}try{window.doAdminLogin=doAdminLogin;}catch(e){}try{window.doLogout=doLogout;}catch(e){}try{window.doPull=doPull;}catch(e){}try{window.enterApp=enterApp;}catch(e){}try{window.equipItem=equipItem;}catch(e){}try{window.eventItemHTML=eventItemHTML;}catch(e){}try{window.exportJSON=exportJSON;}catch(e){}try{window.backupData=backupData;}catch(e){}try{window.restoreData=restoreData;}catch(e){}try{window.formatDate=formatDate;}catch(e){}try{window.getAdminProfile=getAdminProfile;}catch(e){}try{window.getEffectiveAttrs=getEffectiveAttrs;}catch(e){}try{window.getFilteredEvents=getFilteredEvents;}catch(e){}try{window.getPlayerAvatar=getPlayerAvatar;}catch(e){}try{window.getRarityByChance=getRarityByChance;}catch(e){}try{window.goToInventory=goToInventory;}catch(e){}try{window.goToMyProfile=goToMyProfile;}catch(e){}try{window.initCalFilterBtns=initCalFilterBtns;}catch(e){}try{window.initTheme=initTheme;}catch(e){}try{window.invEquipSlot=invEquipSlot;}catch(e){}try{window.loadMenuNames=loadMenuNames;}catch(e){}try{window.mCard=mCard;}catch(e){}try{window.meetsReqs=meetsReqs;}catch(e){}try{window.missionToRow=missionToRow;}catch(e){}try{window.openAdminEditCarta=openAdminEditCarta;}catch(e){}try{window.openAdminEditItem=openAdminEditItem;}catch(e){}try{window.openAvatarEditor=openAvatarEditor;}catch(e){}try{window.openEditModal=openEditModal;}catch(e){}try{window.openEventModal=openEventModal;}catch(e){}try{window.openMissionModal=openMissionModal;}catch(e){}try{window.openShowcaseSelector=openShowcaseSelector;}catch(e){}try{window.parsePlannerCSV=parsePlannerCSV;}catch(e){}try{window.parsePlannerExcel=parsePlannerExcel;}catch(e){}try{window.parsePlannerFile=parsePlannerFile;}catch(e){}try{window.plannerDragOver=plannerDragOver;}catch(e){}try{window.plannerDrop=plannerDrop;}catch(e){}try{window.plannerFileSelected=plannerFileSelected;}catch(e){}try{window.populateArcSelect=populateArcSelect;}catch(e){}try{window.promptRenameMenu=promptRenameMenu;}catch(e){}try{window.pullCard=pullCard;}catch(e){}try{window.pullResult=pullResult;}catch(e){}try{window.renderAdminCartasPage=renderAdminCartasPage;}catch(e){}try{window.renderAdminItemsPage=renderAdminItemsPage;}catch(e){}try{window.renderAll=renderAll;}catch(e){}try{window.renderArcs=renderArcs;}catch(e){}try{window.renderAvatar=renderAvatar;}catch(e){}try{window.renderAvatarEditor=renderAvatarEditor;}catch(e){}try{window.renderCalendar=renderCalendar;}catch(e){}try{window.renderClassesAdmin=renderClassesAdmin;}catch(e){}try{window.renderDayEvents=renderDayEvents;}catch(e){}try{window.renderGachaGold=renderGachaGold;}catch(e){}try{window.renderGalleryCards=renderGalleryCards;}catch(e){}try{window.renderGalleryTabs=renderGalleryTabs;}catch(e){}try{window.renderHeroProfile=renderHeroProfile;}catch(e){}try{window.renderHeroTabs=renderHeroTabs;}catch(e){}try{window.renderInventario=renderInventario;}catch(e){}try{window.renderMStats=renderMStats;}catch(e){}try{window.renderMissions=renderMissions;}catch(e){}try{window.renderMyGallery=renderMyGallery;}catch(e){}try{window.renderPlannerImported=renderPlannerImported;}catch(e){}try{window.renderRanking=renderRanking;}catch(e){}try{window.renderShop=renderShop;}catch(e){}try{window.renderUpcoming=renderUpcoming;}catch(e){}try{window.rowToClass=rowToClass;}catch(e){}try{window.rowToMission=rowToMission;}catch(e){}try{window.saveAvatar=saveAvatar;}catch(e){}try{window.saveEdit=saveEdit;}catch(e){}try{window.saveEvent=saveEvent;}catch(e){}try{window.saveNewChar=saveNewChar;}catch(e){}try{window.selectCalDay=selectCalDay;}catch(e){}try{window.selectGalleryHero=selectGalleryHero;}catch(e){}try{window.showSubTab=showSubTab;}catch(e){}try{window.renderPanoramica=renderPanoramica;}catch(e){}try{window.panoNav=panoNav;}catch(e){}try{window.showInvTab=showInvTab;}catch(e){}try{window.toggleGalleryOwned=toggleGalleryOwned;}catch(e){}try{window.toggleGalleryDup=toggleGalleryDup;}catch(e){}
+try{window.applyMenuNames=applyMenuNames;}catch(e){}try{window.assignMission=assignMission;}catch(e){}try{window.buildAttrBars=buildAttrBars;}catch(e){}try{window.buildAvatarUrl=buildAvatarUrl;}catch(e){}try{window.buildCreatorCls=buildCreatorCls;}catch(e){}try{window.buildCreatorColors=buildCreatorColors;}catch(e){}try{window.buildCreatorEmblems=buildCreatorEmblems;}catch(e){}try{window.buildPentagon=buildPentagon;}catch(e){}try{window.buildStartItemsPreview=buildStartItemsPreview;}catch(e){}try{window.consumeItem=consumeItem;}catch(e){}try{window.buyItem=buyItem;}catch(e){}try{window.cGoTo=cGoTo;}catch(e){}try{window.cNext=cNext;}catch(e){}try{window.calNav=calNav;}catch(e){}try{window.canBuyItem=canBuyItem;}catch(e){}try{window.checkDailyMissions=checkDailyMissions;}catch(e){}try{window.checkLevelUp=checkLevelUp;}catch(e){}try{window.classToRow=classToRow;}catch(e){}try{window.cleanOldCompleted=cleanOldCompleted;}catch(e){}try{window.clearPlannerImport=clearPlannerImport;}catch(e){}try{window.closeAdminEditModal=closeAdminEditModal;}catch(e){}try{window.closeAvatarEditor=closeAvatarEditor;}catch(e){}try{window.closeEdit=closeEdit;}catch(e){}try{window.closeEventModal=closeEventModal;}catch(e){}try{window.closeMissionModal=closeMissionModal;}catch(e){}try{window.closeReward=closeReward;}catch(e){}try{window.completeMission=completeMission;}catch(e){}try{window.computeClassBonus=computeClassBonus;}catch(e){}try{window.confirmLevelUp=confirmLevelUp;}catch(e){}try{window.confirmPlannerImport=confirmPlannerImport;}catch(e){}try{window.setPlannerRangePreset=setPlannerRangePreset;}catch(e){}try{window.updatePlannerRange=updatePlannerRange;}catch(e){}try{window.confirmAssistImport=confirmAssistImport;}catch(e){}try{window.createArc=createArc;}catch(e){}try{window.createMission=createMission;}catch(e){}try{window.deleteArc=deleteArc;}catch(e){}try{window.deleteEvent=deleteEvent;}catch(e){}try{window.deleteMission=deleteMission;}catch(e){}try{window.deletePlayer=deletePlayer;}catch(e){}try{window.doAdminLogin=doAdminLogin;}catch(e){}try{window.doLogout=doLogout;}catch(e){}try{window.doPull=doPull;}catch(e){}try{window.enterApp=enterApp;}catch(e){}try{window.equipItem=equipItem;}catch(e){}try{window.eventItemHTML=eventItemHTML;}catch(e){}try{window.exportJSON=exportJSON;}catch(e){}try{window.backupData=backupData;}catch(e){}try{window.restoreData=restoreData;}catch(e){}try{window.formatDate=formatDate;}catch(e){}try{window.getAdminProfile=getAdminProfile;}catch(e){}try{window.getEffectiveAttrs=getEffectiveAttrs;}catch(e){}try{window.getFilteredEvents=getFilteredEvents;}catch(e){}try{window.getPlayerAvatar=getPlayerAvatar;}catch(e){}try{window.getRarityByChance=getRarityByChance;}catch(e){}try{window.goToInventory=goToInventory;}catch(e){}try{window.goToMyProfile=goToMyProfile;}catch(e){}try{window.initCalFilterBtns=initCalFilterBtns;}catch(e){}try{window.initTheme=initTheme;}catch(e){}try{window.invEquipSlot=invEquipSlot;}catch(e){}try{window.loadMenuNames=loadMenuNames;}catch(e){}try{window.mCard=mCard;}catch(e){}try{window.meetsReqs=meetsReqs;}catch(e){}try{window.missionToRow=missionToRow;}catch(e){}try{window.openAdminEditCarta=openAdminEditCarta;}catch(e){}try{window.openAdminEditItem=openAdminEditItem;}catch(e){}try{window.openAvatarEditor=openAvatarEditor;}catch(e){}try{window.openEditModal=openEditModal;}catch(e){}try{window.openEventModal=openEventModal;}catch(e){}try{window.openMissionModal=openMissionModal;}catch(e){}try{window.openShowcaseSelector=openShowcaseSelector;}catch(e){}try{window.parsePlannerCSV=parsePlannerCSV;}catch(e){}try{window.parsePlannerExcel=parsePlannerExcel;}catch(e){}try{window.parsePlannerFile=parsePlannerFile;}catch(e){}try{window.plannerDragOver=plannerDragOver;}catch(e){}try{window.plannerDrop=plannerDrop;}catch(e){}try{window.plannerFileSelected=plannerFileSelected;}catch(e){}try{window.populateArcSelect=populateArcSelect;}catch(e){}try{window.promptRenameMenu=promptRenameMenu;}catch(e){}try{window.pullCard=pullCard;}catch(e){}try{window.pullResult=pullResult;}catch(e){}try{window.renderAdminCartasPage=renderAdminCartasPage;}catch(e){}try{window.renderAdminItemsPage=renderAdminItemsPage;}catch(e){}try{window.renderAll=renderAll;}catch(e){}try{window.renderArcs=renderArcs;}catch(e){}try{window.renderAvatar=renderAvatar;}catch(e){}try{window.renderAvatarEditor=renderAvatarEditor;}catch(e){}try{window.renderCalendar=renderCalendar;}catch(e){}try{window.renderClassesAdmin=renderClassesAdmin;}catch(e){}try{window.renderDayEvents=renderDayEvents;}catch(e){}try{window.renderGachaGold=renderGachaGold;}catch(e){}try{window.renderGalleryCards=renderGalleryCards;}catch(e){}try{window.renderGalleryTabs=renderGalleryTabs;}catch(e){}try{window.renderHeroProfile=renderHeroProfile;}catch(e){}try{window.renderHeroTabs=renderHeroTabs;}catch(e){}try{window.renderInventario=renderInventario;}catch(e){}try{window.renderMStats=renderMStats;}catch(e){}try{window.renderMissions=renderMissions;}catch(e){}try{window.renderMyGallery=renderMyGallery;}catch(e){}try{window.renderPlannerImported=renderPlannerImported;}catch(e){}try{window.renderRanking=renderRanking;}catch(e){}try{window.renderShop=renderShop;}catch(e){}try{window.renderUpcoming=renderUpcoming;}catch(e){}try{window.rowToClass=rowToClass;}catch(e){}try{window.rowToMission=rowToMission;}catch(e){}try{window.saveAvatar=saveAvatar;}catch(e){}try{window.saveEdit=saveEdit;}catch(e){}try{window.saveEvent=saveEvent;}catch(e){}try{window.saveNewChar=saveNewChar;}catch(e){}try{window.selectCalDay=selectCalDay;}catch(e){}try{window.selectGalleryHero=selectGalleryHero;}catch(e){}try{window.showSubTab=showSubTab;}catch(e){}try{window.renderPanoramica=renderPanoramica;}catch(e){}try{window.panoNav=panoNav;}catch(e){}try{window.showInvTab=showInvTab;}catch(e){}try{window.toggleGalleryOwned=toggleGalleryOwned;}catch(e){}try{window.toggleGalleryDup=toggleGalleryDup;}catch(e){}
 try{window.renderMarket=renderMarket;}catch(e){}try{window.createListing=createListing;}catch(e){}try{window.cancelListing=cancelListing;}catch(e){}try{window.buyListing=buyListing;}catch(e){}try{window.tradeListing=tradeListing;}catch(e){}try{window.onListingModeChange=onListingModeChange;}catch(e){}try{window.quickSellCard=quickSellCard;}catch(e){}try{window.selectSellCard=selectSellCard;}catch(e){}try{window.selectWantCard=selectWantCard;}catch(e){}try{window.renderQuickSell=renderQuickSell;}catch(e){}try{window.renderCardPickers=renderCardPickers;}catch(e){}try{window.saveAvatarInline=saveAvatarInline;}catch(e){}try{window.avaOptLabel=avaOptLabel;}catch(e){}try{window.setPlayerFrame=setPlayerFrame;}catch(e){}try{window.renderFramePicker=renderFramePicker;}catch(e){}try{window.selectHero=selectHero;}catch(e){}try{window.setAvatarOpt=setAvatarOpt;}catch(e){}try{window.setCalFilter=setCalFilter;}catch(e){}try{window.showLevelUpPopup=showLevelUpPopup;}catch(e){}try{window.showPage=showPage;}catch(e){}try{window.showPage_planner=showPage_planner;}catch(e){}try{window.showPlannerPreview=showPlannerPreview;}catch(e){}try{window.showRewardPopup=showRewardPopup;}catch(e){}try{window.showScreen=showScreen;}catch(e){}try{window.switchAdminTab=switchAdminTab;}catch(e){}try{window.switchPTab=switchPTab;}catch(e){}try{window.toast=toast;}catch(e){}try{window.toggleDailyFields=toggleDailyFields;}catch(e){}try{window.toggleTheme=toggleTheme;}catch(e){}try{window.toggleUMenu=toggleUMenu;}catch(e){}try{window.unequipItem=unequipItem;}catch(e){}try{window.updateArcCounts=updateArcCounts;}catch(e){}try{window.updateSidebarAvatar=updateSidebarAvatar;}catch(e){}
 try{window.adminChangeVia=adminChangeVia;}catch(e){}try{window.adminCreateCarta=adminCreateCarta;}catch(e){}try{window.adminCreateItemFull=adminCreateItemFull;}catch(e){}try{window.adminDeleteCarta=adminDeleteCarta;}catch(e){}try{window.adminDeleteItemFull=adminDeleteItemFull;}catch(e){}try{window.deleteCartaFromSupabase=deleteCartaFromSupabase;}catch(e){}try{window.deleteItemFromSupabase=deleteItemFromSupabase;}catch(e){}try{window.deleteMissionFromSupabase=deleteMissionFromSupabase;}catch(e){}try{window.doLogin=doLogin;}catch(e){}try{window.loadClassesFromSupabase=loadClassesFromSupabase;}catch(e){}try{window.loadData=loadData;}catch(e){}try{window.loadFromSupabase=loadFromSupabase;}catch(e){}try{window.loadMissionsFromSupabase=loadMissionsFromSupabase;}catch(e){}try{window.saveAdminEdit=saveAdminEdit;}catch(e){}try{window.saveAllMissionsToSupabase=saveAllMissionsToSupabase;}catch(e){}try{window.saveCartaToSupabase=saveCartaToSupabase;}catch(e){}try{window.saveClassEdit=saveClassEdit;}catch(e){}try{window.saveClassToSupabase=saveClassToSupabase;}catch(e){}try{window.saveItemToSupabase=saveItemToSupabase;}catch(e){}try{window.saveMissionToSupabase=saveMissionToSupabase;}catch(e){}try{window.saveToSupabase=saveToSupabase;}catch(e){}
 try{window.saveAttrNames=saveAttrNames;}catch(e){}
