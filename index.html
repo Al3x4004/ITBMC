@@ -881,7 +881,10 @@
       <!-- Imported missions -->
       <div id="planner-imported" style="display:none;">
         <div class="card">
-          <div class="stitle">Missions importades des del Planner</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:.5rem;">
+            <div class="stitle" style="margin:0;">Missions importades des del Planner</div>
+            <button class="btn btn-sm" style="color:var(--coral);border-color:var(--coral-border);" onclick="clearImportedAssist()">🗑️ Esborrar assistències importades</button>
+          </div>
           <div id="planner-missions-list"></div>
         </div>
       </div>
@@ -1017,6 +1020,6 @@
   window.dispatchEvent(new Event('dicebear-ready'));
 </script>
 <!-- XLSX i Chart.js es carreguen sota demanda des de app.js (_ensureXLSX/_ensureChart) -->
-<script src="js/app.js?v=138"></script>
+<script src="js/app.js?v=139"></script>
 </body>
 </html>
