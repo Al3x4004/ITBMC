@@ -1848,9 +1848,10 @@ function checkLevelUp(p){
     }
     p.xpNext=Math.min(MAX_LEVEL,newLv+1)*XP_PER_LEVEL;
     p.level=newLv;
-    showLevelUpPopup(p,applied,levels);
+    if(!_suppressLevelUp)showLevelUpPopup(p,applied,levels);
   }
 }
+var _suppressLevelUp=false;
 function showLevelUpPopup(p,applied,levels){
   applied=applied||{};levels=levels||1;
   document.getElementById('lu-level').textContent='Nivell '+p.level+(levels>1?' (+'+levels+' nivells)':'');
@@ -3365,8 +3366,8 @@ function _plDate(v){
   if(typeof v==='number'){var d=new Date(Math.round((v-25569)*86400*1000));return isNaN(d.getTime())?null:d;}
   var d2=new Date(v);return isNaN(d2.getTime())?null:d2;
 }
-function _tsToInput(ts){if(!ts)return '';var d=new Date(ts);var mm=('0'+(d.getMonth()+1)).slice(-2),dd=('0'+d.getDate()).slice(-2);return d.getFullYear()+'-'+mm+'-'+dd;}
-function _inputToTs(str,endOfDay){if(!str)return null;var p=str.split('-');if(p.length!==3)return null;var d=new Date(+p[0],+p[1]-1,+p[2],endOfDay?23:0,endOfDay?59:0,endOfDay?59:0,endOfDay?999:0);return d.getTime();}
+function _tsToInput(ts){if(!ts)return '';var d=new Date(ts);var dd=('0'+d.getDate()).slice(-2),mm=('0'+(d.getMonth()+1)).slice(-2);return dd+'/'+mm+'/'+d.getFullYear();}
+function _inputToTs(str,endOfDay){if(!str)return null;var p=(''+str).split('/');if(p.length!==3)return null;var d=new Date(+p[2],+p[1]-1,+p[0],endOfDay?23:0,endOfDay?59:0,endOfDay?59:0,endOfDay?999:0);return isNaN(d.getTime())?null:d.getTime();}
 function _plRangeTs(){
   var f=document.getElementById('planner-date-from'),t=document.getElementById('planner-date-to');
   return {from:_inputToTs(f?f.value:'',false),to:_inputToTs(t?t.value:'',true)};
@@ -3596,12 +3597,60 @@ function updatePlannerRange(){
     +'<td style="padding:6px 8px;border-bottom:0.5px solid var(--border);font-size:12px;text-align:center;">'+estat+'</td></tr>';
   }).join('')+'</tbody>';
 }
+// ── Calendari propi dd/mm/aaaa amb setmana que comença en dilluns ──
+var _plCal={which:null,month:null};
+function openPlannerCal(which,el){
+  _plCal.which=which;
+  var cur=_inputToTs(document.getElementById('planner-date-'+which).value,false);
+  var base=cur?new Date(cur):(plannerDateMax?new Date(plannerDateMax):new Date());
+  _plCal.month=new Date(base.getFullYear(),base.getMonth(),1);
+  renderPlannerCal();
+  var pop=document.getElementById('planner-cal');
+  var r=el.getBoundingClientRect();
+  pop.style.position='fixed';pop.style.left=r.left+'px';pop.style.top=(r.bottom+4)+'px';pop.style.display='block';
+  setTimeout(function(){document.addEventListener('mousedown',_plCalOutside);},0);
+}
+function _plCalOutside(e){
+  var pop=document.getElementById('planner-cal');
+  if(pop&&!pop.contains(e.target)&&(''+(e.target.id||'')).indexOf('planner-date-')!==0){
+    pop.style.display='none';document.removeEventListener('mousedown',_plCalOutside);
+  }
+}
+function plCalNav(delta){_plCal.month=new Date(_plCal.month.getFullYear(),_plCal.month.getMonth()+delta,1);renderPlannerCal();}
+function renderPlannerCal(){
+  var pop=document.getElementById('planner-cal');if(!pop)return;
+  var y=_plCal.month.getFullYear(),m=_plCal.month.getMonth();
+  var mn=['Gener','Febrer','Març','Abril','Maig','Juny','Juliol','Agost','Setembre','Octubre','Novembre','Desembre'];
+  var wd=['Dl','Dt','Dc','Dj','Dv','Ds','Dg'];
+  var startOff=(new Date(y,m,1).getDay()+6)%7;
+  var dim=new Date(y,m+1,0).getDate();
+  var selTs=_inputToTs(document.getElementById('planner-date-'+_plCal.which).value,false);
+  var selStr=selTs?_tsToInput(selTs):'';
+  var html='<div class="plcal-head"><button type="button" onclick="plCalNav(-1)">‹</button><span>'+mn[m]+' '+y+'</span><button type="button" onclick="plCalNav(1)">›</button></div>';
+  html+='<div class="plcal-grid">'+wd.map(function(d){return '<div class="plcal-wd">'+d+'</div>';}).join('');
+  for(var i=0;i<startOff;i++)html+='<div></div>';
+  for(var d=1;d<=dim;d++){
+    var ds=('0'+d).slice(-2)+'/'+('0'+(m+1)).slice(-2)+'/'+y;
+    var ts=new Date(y,m,d).getTime();
+    var out=(plannerDateMin!=null&&ts<plannerDateMin)||(plannerDateMax!=null&&ts>plannerDateMax);
+    html+='<div class="plcal-day'+(ds===selStr?' sel':'')+(out?' out':'')+'"'+(out?'':' onclick="plCalPick(\''+ds+'\')"')+'>'+d+'</div>';
+  }
+  html+='</div>';
+  pop.innerHTML=html;
+}
+function plCalPick(ds){
+  document.getElementById('planner-date-'+_plCal.which).value=ds;
+  var pop=document.getElementById('planner-cal');if(pop)pop.style.display='none';
+  document.removeEventListener('mousedown',_plCalOutside);
+  updatePlannerRange();
+}
 async function confirmAssistImport(){
   var inR=_plRowsInRange();
   if(!inR.length){toast('No hi ha assistències al rang seleccionat.');return;}
   if(inR.length>600&&!await uiConfirm('Vas a importar '+inR.length+' assistències. És un volum gran i pot trigar bastant. Continuar?'))return;
   function norm(s){return (s||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();}
   var imported=0,skipped=0,autoClaimed=0,pend=0;
+  _suppressLevelUp=true;
   inR.forEach(function(row){
     var num=(row['Número']!=null?row['Número']:row['Numero']);num=(num==null?'':(''+num)).trim();
     var desc=(row['Descripció']!=null?row['Descripció']:(row['Descripcio']||''));desc=(''+desc).trim();
@@ -3626,6 +3675,7 @@ async function confirmAssistImport(){
     }else{pend++;}
     imported++;
   });
+  _suppressLevelUp=false;
   if(CFG.MODE==='supabase')saveToSupabase();
   clearPlannerImport();
   renderAll();try{renderPlannerImported();}catch(e){}
@@ -3648,6 +3698,7 @@ function confirmPlannerImport(){
   var DEFAULT_DIFF='C';
   var imported=0;
   var autoClaimed=0;
+  _suppressLevelUp=true;
 
   plannerRows.forEach(function(row){
     var title=(row[titleCol]||'').trim();
@@ -3714,6 +3765,7 @@ function confirmPlannerImport(){
     }
     imported++;
   });
+  _suppressLevelUp=false;
 
   if(CFG.MODE==='supabase')saveToSupabase();
   clearPlannerImport();
@@ -5453,7 +5505,7 @@ try{window._dashAnimate=_dashAnimate;}catch(e){}
 
 /* ══ EXPONER FUNCIONES EN WINDOW (para onclick del HTML) ══ */
 // Necesario al tener el JS en archivo externo: garantiza que los onclick="fn()" encuentren las funciones.
-try{window.applyMenuNames=applyMenuNames;}catch(e){}try{window.assignMission=assignMission;}catch(e){}try{window.buildAttrBars=buildAttrBars;}catch(e){}try{window.buildAvatarUrl=buildAvatarUrl;}catch(e){}try{window.buildCreatorCls=buildCreatorCls;}catch(e){}try{window.buildCreatorColors=buildCreatorColors;}catch(e){}try{window.buildCreatorEmblems=buildCreatorEmblems;}catch(e){}try{window.buildPentagon=buildPentagon;}catch(e){}try{window.buildStartItemsPreview=buildStartItemsPreview;}catch(e){}try{window.consumeItem=consumeItem;}catch(e){}try{window.buyItem=buyItem;}catch(e){}try{window.cGoTo=cGoTo;}catch(e){}try{window.cNext=cNext;}catch(e){}try{window.calNav=calNav;}catch(e){}try{window.canBuyItem=canBuyItem;}catch(e){}try{window.checkDailyMissions=checkDailyMissions;}catch(e){}try{window.checkLevelUp=checkLevelUp;}catch(e){}try{window.classToRow=classToRow;}catch(e){}try{window.cleanOldCompleted=cleanOldCompleted;}catch(e){}try{window.clearPlannerImport=clearPlannerImport;}catch(e){}try{window.closeAdminEditModal=closeAdminEditModal;}catch(e){}try{window.closeAvatarEditor=closeAvatarEditor;}catch(e){}try{window.closeEdit=closeEdit;}catch(e){}try{window.closeEventModal=closeEventModal;}catch(e){}try{window.closeMissionModal=closeMissionModal;}catch(e){}try{window.closeReward=closeReward;}catch(e){}try{window.completeMission=completeMission;}catch(e){}try{window.computeClassBonus=computeClassBonus;}catch(e){}try{window.confirmLevelUp=confirmLevelUp;}catch(e){}try{window.confirmPlannerImport=confirmPlannerImport;}catch(e){}try{window.setPlannerRangePreset=setPlannerRangePreset;}catch(e){}try{window.updatePlannerRange=updatePlannerRange;}catch(e){}try{window.confirmAssistImport=confirmAssistImport;}catch(e){}try{window.createArc=createArc;}catch(e){}try{window.createMission=createMission;}catch(e){}try{window.deleteArc=deleteArc;}catch(e){}try{window.deleteEvent=deleteEvent;}catch(e){}try{window.deleteMission=deleteMission;}catch(e){}try{window.deletePlayer=deletePlayer;}catch(e){}try{window.doAdminLogin=doAdminLogin;}catch(e){}try{window.doLogout=doLogout;}catch(e){}try{window.doPull=doPull;}catch(e){}try{window.enterApp=enterApp;}catch(e){}try{window.equipItem=equipItem;}catch(e){}try{window.eventItemHTML=eventItemHTML;}catch(e){}try{window.exportJSON=exportJSON;}catch(e){}try{window.backupData=backupData;}catch(e){}try{window.restoreData=restoreData;}catch(e){}try{window.formatDate=formatDate;}catch(e){}try{window.getAdminProfile=getAdminProfile;}catch(e){}try{window.getEffectiveAttrs=getEffectiveAttrs;}catch(e){}try{window.getFilteredEvents=getFilteredEvents;}catch(e){}try{window.getPlayerAvatar=getPlayerAvatar;}catch(e){}try{window.getRarityByChance=getRarityByChance;}catch(e){}try{window.goToInventory=goToInventory;}catch(e){}try{window.goToMyProfile=goToMyProfile;}catch(e){}try{window.initCalFilterBtns=initCalFilterBtns;}catch(e){}try{window.initTheme=initTheme;}catch(e){}try{window.invEquipSlot=invEquipSlot;}catch(e){}try{window.loadMenuNames=loadMenuNames;}catch(e){}try{window.mCard=mCard;}catch(e){}try{window.meetsReqs=meetsReqs;}catch(e){}try{window.missionToRow=missionToRow;}catch(e){}try{window.openAdminEditCarta=openAdminEditCarta;}catch(e){}try{window.openAdminEditItem=openAdminEditItem;}catch(e){}try{window.openAvatarEditor=openAvatarEditor;}catch(e){}try{window.openEditModal=openEditModal;}catch(e){}try{window.openEventModal=openEventModal;}catch(e){}try{window.openMissionModal=openMissionModal;}catch(e){}try{window.openShowcaseSelector=openShowcaseSelector;}catch(e){}try{window.parsePlannerCSV=parsePlannerCSV;}catch(e){}try{window.parsePlannerExcel=parsePlannerExcel;}catch(e){}try{window.parsePlannerFile=parsePlannerFile;}catch(e){}try{window.plannerDragOver=plannerDragOver;}catch(e){}try{window.plannerDrop=plannerDrop;}catch(e){}try{window.plannerFileSelected=plannerFileSelected;}catch(e){}try{window.populateArcSelect=populateArcSelect;}catch(e){}try{window.promptRenameMenu=promptRenameMenu;}catch(e){}try{window.pullCard=pullCard;}catch(e){}try{window.pullResult=pullResult;}catch(e){}try{window.renderAdminCartasPage=renderAdminCartasPage;}catch(e){}try{window.renderAdminItemsPage=renderAdminItemsPage;}catch(e){}try{window.renderAll=renderAll;}catch(e){}try{window.renderArcs=renderArcs;}catch(e){}try{window.renderAvatar=renderAvatar;}catch(e){}try{window.renderAvatarEditor=renderAvatarEditor;}catch(e){}try{window.renderCalendar=renderCalendar;}catch(e){}try{window.renderClassesAdmin=renderClassesAdmin;}catch(e){}try{window.renderDayEvents=renderDayEvents;}catch(e){}try{window.renderGachaGold=renderGachaGold;}catch(e){}try{window.renderGalleryCards=renderGalleryCards;}catch(e){}try{window.renderGalleryTabs=renderGalleryTabs;}catch(e){}try{window.renderHeroProfile=renderHeroProfile;}catch(e){}try{window.renderHeroTabs=renderHeroTabs;}catch(e){}try{window.renderInventario=renderInventario;}catch(e){}try{window.renderMStats=renderMStats;}catch(e){}try{window.renderMissions=renderMissions;}catch(e){}try{window.renderMyGallery=renderMyGallery;}catch(e){}try{window.renderPlannerImported=renderPlannerImported;}catch(e){}try{window.renderRanking=renderRanking;}catch(e){}try{window.renderShop=renderShop;}catch(e){}try{window.renderUpcoming=renderUpcoming;}catch(e){}try{window.rowToClass=rowToClass;}catch(e){}try{window.rowToMission=rowToMission;}catch(e){}try{window.saveAvatar=saveAvatar;}catch(e){}try{window.saveEdit=saveEdit;}catch(e){}try{window.saveEvent=saveEvent;}catch(e){}try{window.saveNewChar=saveNewChar;}catch(e){}try{window.selectCalDay=selectCalDay;}catch(e){}try{window.selectGalleryHero=selectGalleryHero;}catch(e){}try{window.showSubTab=showSubTab;}catch(e){}try{window.renderPanoramica=renderPanoramica;}catch(e){}try{window.panoNav=panoNav;}catch(e){}try{window.showInvTab=showInvTab;}catch(e){}try{window.toggleGalleryOwned=toggleGalleryOwned;}catch(e){}try{window.toggleGalleryDup=toggleGalleryDup;}catch(e){}
+try{window.applyMenuNames=applyMenuNames;}catch(e){}try{window.assignMission=assignMission;}catch(e){}try{window.buildAttrBars=buildAttrBars;}catch(e){}try{window.buildAvatarUrl=buildAvatarUrl;}catch(e){}try{window.buildCreatorCls=buildCreatorCls;}catch(e){}try{window.buildCreatorColors=buildCreatorColors;}catch(e){}try{window.buildCreatorEmblems=buildCreatorEmblems;}catch(e){}try{window.buildPentagon=buildPentagon;}catch(e){}try{window.buildStartItemsPreview=buildStartItemsPreview;}catch(e){}try{window.consumeItem=consumeItem;}catch(e){}try{window.buyItem=buyItem;}catch(e){}try{window.cGoTo=cGoTo;}catch(e){}try{window.cNext=cNext;}catch(e){}try{window.calNav=calNav;}catch(e){}try{window.canBuyItem=canBuyItem;}catch(e){}try{window.checkDailyMissions=checkDailyMissions;}catch(e){}try{window.checkLevelUp=checkLevelUp;}catch(e){}try{window.classToRow=classToRow;}catch(e){}try{window.cleanOldCompleted=cleanOldCompleted;}catch(e){}try{window.clearPlannerImport=clearPlannerImport;}catch(e){}try{window.closeAdminEditModal=closeAdminEditModal;}catch(e){}try{window.closeAvatarEditor=closeAvatarEditor;}catch(e){}try{window.closeEdit=closeEdit;}catch(e){}try{window.closeEventModal=closeEventModal;}catch(e){}try{window.closeMissionModal=closeMissionModal;}catch(e){}try{window.closeReward=closeReward;}catch(e){}try{window.completeMission=completeMission;}catch(e){}try{window.computeClassBonus=computeClassBonus;}catch(e){}try{window.confirmLevelUp=confirmLevelUp;}catch(e){}try{window.confirmPlannerImport=confirmPlannerImport;}catch(e){}try{window.setPlannerRangePreset=setPlannerRangePreset;}catch(e){}try{window.openPlannerCal=openPlannerCal;}catch(e){}try{window.plCalNav=plCalNav;}catch(e){}try{window.plCalPick=plCalPick;}catch(e){}try{window.updatePlannerRange=updatePlannerRange;}catch(e){}try{window.confirmAssistImport=confirmAssistImport;}catch(e){}try{window.createArc=createArc;}catch(e){}try{window.createMission=createMission;}catch(e){}try{window.deleteArc=deleteArc;}catch(e){}try{window.deleteEvent=deleteEvent;}catch(e){}try{window.deleteMission=deleteMission;}catch(e){}try{window.deletePlayer=deletePlayer;}catch(e){}try{window.doAdminLogin=doAdminLogin;}catch(e){}try{window.doLogout=doLogout;}catch(e){}try{window.doPull=doPull;}catch(e){}try{window.enterApp=enterApp;}catch(e){}try{window.equipItem=equipItem;}catch(e){}try{window.eventItemHTML=eventItemHTML;}catch(e){}try{window.exportJSON=exportJSON;}catch(e){}try{window.backupData=backupData;}catch(e){}try{window.restoreData=restoreData;}catch(e){}try{window.formatDate=formatDate;}catch(e){}try{window.getAdminProfile=getAdminProfile;}catch(e){}try{window.getEffectiveAttrs=getEffectiveAttrs;}catch(e){}try{window.getFilteredEvents=getFilteredEvents;}catch(e){}try{window.getPlayerAvatar=getPlayerAvatar;}catch(e){}try{window.getRarityByChance=getRarityByChance;}catch(e){}try{window.goToInventory=goToInventory;}catch(e){}try{window.goToMyProfile=goToMyProfile;}catch(e){}try{window.initCalFilterBtns=initCalFilterBtns;}catch(e){}try{window.initTheme=initTheme;}catch(e){}try{window.invEquipSlot=invEquipSlot;}catch(e){}try{window.loadMenuNames=loadMenuNames;}catch(e){}try{window.mCard=mCard;}catch(e){}try{window.meetsReqs=meetsReqs;}catch(e){}try{window.missionToRow=missionToRow;}catch(e){}try{window.openAdminEditCarta=openAdminEditCarta;}catch(e){}try{window.openAdminEditItem=openAdminEditItem;}catch(e){}try{window.openAvatarEditor=openAvatarEditor;}catch(e){}try{window.openEditModal=openEditModal;}catch(e){}try{window.openEventModal=openEventModal;}catch(e){}try{window.openMissionModal=openMissionModal;}catch(e){}try{window.openShowcaseSelector=openShowcaseSelector;}catch(e){}try{window.parsePlannerCSV=parsePlannerCSV;}catch(e){}try{window.parsePlannerExcel=parsePlannerExcel;}catch(e){}try{window.parsePlannerFile=parsePlannerFile;}catch(e){}try{window.plannerDragOver=plannerDragOver;}catch(e){}try{window.plannerDrop=plannerDrop;}catch(e){}try{window.plannerFileSelected=plannerFileSelected;}catch(e){}try{window.populateArcSelect=populateArcSelect;}catch(e){}try{window.promptRenameMenu=promptRenameMenu;}catch(e){}try{window.pullCard=pullCard;}catch(e){}try{window.pullResult=pullResult;}catch(e){}try{window.renderAdminCartasPage=renderAdminCartasPage;}catch(e){}try{window.renderAdminItemsPage=renderAdminItemsPage;}catch(e){}try{window.renderAll=renderAll;}catch(e){}try{window.renderArcs=renderArcs;}catch(e){}try{window.renderAvatar=renderAvatar;}catch(e){}try{window.renderAvatarEditor=renderAvatarEditor;}catch(e){}try{window.renderCalendar=renderCalendar;}catch(e){}try{window.renderClassesAdmin=renderClassesAdmin;}catch(e){}try{window.renderDayEvents=renderDayEvents;}catch(e){}try{window.renderGachaGold=renderGachaGold;}catch(e){}try{window.renderGalleryCards=renderGalleryCards;}catch(e){}try{window.renderGalleryTabs=renderGalleryTabs;}catch(e){}try{window.renderHeroProfile=renderHeroProfile;}catch(e){}try{window.renderHeroTabs=renderHeroTabs;}catch(e){}try{window.renderInventario=renderInventario;}catch(e){}try{window.renderMStats=renderMStats;}catch(e){}try{window.renderMissions=renderMissions;}catch(e){}try{window.renderMyGallery=renderMyGallery;}catch(e){}try{window.renderPlannerImported=renderPlannerImported;}catch(e){}try{window.renderRanking=renderRanking;}catch(e){}try{window.renderShop=renderShop;}catch(e){}try{window.renderUpcoming=renderUpcoming;}catch(e){}try{window.rowToClass=rowToClass;}catch(e){}try{window.rowToMission=rowToMission;}catch(e){}try{window.saveAvatar=saveAvatar;}catch(e){}try{window.saveEdit=saveEdit;}catch(e){}try{window.saveEvent=saveEvent;}catch(e){}try{window.saveNewChar=saveNewChar;}catch(e){}try{window.selectCalDay=selectCalDay;}catch(e){}try{window.selectGalleryHero=selectGalleryHero;}catch(e){}try{window.showSubTab=showSubTab;}catch(e){}try{window.renderPanoramica=renderPanoramica;}catch(e){}try{window.panoNav=panoNav;}catch(e){}try{window.showInvTab=showInvTab;}catch(e){}try{window.toggleGalleryOwned=toggleGalleryOwned;}catch(e){}try{window.toggleGalleryDup=toggleGalleryDup;}catch(e){}
 try{window.renderMarket=renderMarket;}catch(e){}try{window.createListing=createListing;}catch(e){}try{window.cancelListing=cancelListing;}catch(e){}try{window.buyListing=buyListing;}catch(e){}try{window.tradeListing=tradeListing;}catch(e){}try{window.onListingModeChange=onListingModeChange;}catch(e){}try{window.quickSellCard=quickSellCard;}catch(e){}try{window.selectSellCard=selectSellCard;}catch(e){}try{window.selectWantCard=selectWantCard;}catch(e){}try{window.renderQuickSell=renderQuickSell;}catch(e){}try{window.renderCardPickers=renderCardPickers;}catch(e){}try{window.saveAvatarInline=saveAvatarInline;}catch(e){}try{window.avaOptLabel=avaOptLabel;}catch(e){}try{window.setPlayerFrame=setPlayerFrame;}catch(e){}try{window.renderFramePicker=renderFramePicker;}catch(e){}try{window.selectHero=selectHero;}catch(e){}try{window.setAvatarOpt=setAvatarOpt;}catch(e){}try{window.setCalFilter=setCalFilter;}catch(e){}try{window.showLevelUpPopup=showLevelUpPopup;}catch(e){}try{window.showPage=showPage;}catch(e){}try{window.showPage_planner=showPage_planner;}catch(e){}try{window.showPlannerPreview=showPlannerPreview;}catch(e){}try{window.showRewardPopup=showRewardPopup;}catch(e){}try{window.showScreen=showScreen;}catch(e){}try{window.switchAdminTab=switchAdminTab;}catch(e){}try{window.switchPTab=switchPTab;}catch(e){}try{window.toast=toast;}catch(e){}try{window.toggleDailyFields=toggleDailyFields;}catch(e){}try{window.toggleTheme=toggleTheme;}catch(e){}try{window.toggleUMenu=toggleUMenu;}catch(e){}try{window.unequipItem=unequipItem;}catch(e){}try{window.updateArcCounts=updateArcCounts;}catch(e){}try{window.updateSidebarAvatar=updateSidebarAvatar;}catch(e){}
 try{window.adminChangeVia=adminChangeVia;}catch(e){}try{window.adminCreateCarta=adminCreateCarta;}catch(e){}try{window.adminCreateItemFull=adminCreateItemFull;}catch(e){}try{window.adminDeleteCarta=adminDeleteCarta;}catch(e){}try{window.adminDeleteItemFull=adminDeleteItemFull;}catch(e){}try{window.deleteCartaFromSupabase=deleteCartaFromSupabase;}catch(e){}try{window.deleteItemFromSupabase=deleteItemFromSupabase;}catch(e){}try{window.deleteMissionFromSupabase=deleteMissionFromSupabase;}catch(e){}try{window.doLogin=doLogin;}catch(e){}try{window.loadClassesFromSupabase=loadClassesFromSupabase;}catch(e){}try{window.loadData=loadData;}catch(e){}try{window.loadFromSupabase=loadFromSupabase;}catch(e){}try{window.loadMissionsFromSupabase=loadMissionsFromSupabase;}catch(e){}try{window.saveAdminEdit=saveAdminEdit;}catch(e){}try{window.saveAllMissionsToSupabase=saveAllMissionsToSupabase;}catch(e){}try{window.saveCartaToSupabase=saveCartaToSupabase;}catch(e){}try{window.saveClassEdit=saveClassEdit;}catch(e){}try{window.saveClassToSupabase=saveClassToSupabase;}catch(e){}try{window.saveItemToSupabase=saveItemToSupabase;}catch(e){}try{window.saveMissionToSupabase=saveMissionToSupabase;}catch(e){}try{window.saveToSupabase=saveToSupabase;}catch(e){}
 try{window.saveAttrNames=saveAttrNames;}catch(e){}

@@ -1763,3 +1763,15 @@ body.pano-tv .pano-podium-row{gap:28px;}
 .ui-dialog-btns{display:flex;gap:8px;justify-content:flex-end;}
 .ui-dialog-btns .btn{min-width:96px;}
 .ui-dialog-btns .ui-danger{background:var(--coral,#e5484d);border-color:transparent;color:#fff;}
+
+/* ── Calendari propi del Planner (dd/mm/aaaa, dilluns primer) ── */
+.plcal{z-index:200;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);box-shadow:0 8px 28px rgba(0,0,0,.4);padding:8px;width:238px;}
+.plcal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-weight:600;font-size:13px;}
+.plcal-head button{width:26px;height:26px;border:0;background:var(--bg3);border-radius:6px;color:var(--text);cursor:pointer;font-size:15px;line-height:1;}
+.plcal-head button:hover{background:var(--accent-bg);color:var(--accent);}
+.plcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.plcal-wd{text-align:center;font-size:10px;color:var(--muted);padding:2px 0;font-weight:600;}
+.plcal-day{text-align:center;font-size:12px;padding:6px 0;border-radius:6px;cursor:pointer;color:var(--text);}
+.plcal-day:hover{background:var(--bg3);}
+.plcal-day.sel{background:var(--gold);color:#1a1a1a;font-weight:700;}
+.plcal-day.out{opacity:.25;cursor:default;pointer-events:none;}
