@@ -209,6 +209,7 @@
             <button class="btn btn-sm" id="menu-restore" style="width:100%;text-align:left;margin-bottom:2px;display:none;" onclick="document.getElementById('restore-file').click()">♻️ Restaurar còpia (fitxer)</button>
             <input type="file" id="restore-file" accept=".json" style="display:none;" onchange="restoreData(this)"/>
             <button class="btn btn-sm" id="menu-server-backups" style="width:100%;text-align:left;margin-bottom:2px;display:none;" onclick="openServerBackups()">☁️ Còpies del servidor</button>
+            <button class="btn btn-sm" id="menu-reset-stats" style="width:100%;text-align:left;margin-bottom:2px;display:none;color:var(--coral);border-color:var(--coral-border);" onclick="resetAllStats()">🧪 Resetejar stats (proves)</button>
             <button class="btn btn-sm" style="width:100%;text-align:left;" onclick="doLogout()">← Tancar sessió</button>
           </div>
         </div>
@@ -1020,6 +1021,6 @@
   window.dispatchEvent(new Event('dicebear-ready'));
 </script>
 <!-- XLSX i Chart.js es carreguen sota demanda des de app.js (_ensureXLSX/_ensureChart) -->
-<script src="js/app.js?v=139"></script>
+<script src="js/app.js?v=140"></script>
 </body>
 </html>
